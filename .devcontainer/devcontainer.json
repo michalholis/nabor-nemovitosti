@@ -1,0 +1,30 @@
+{
+  "name": "pmh-app",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
+  "workspaceFolder": "/workspaces/Cri/",
+  "postCreateCommand": "cd pmh-app && npm ci",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker": {
+      
+    }
+  },
+  "forwardPorts": [
+    4200
+  ],
+  "portsAttributes": {
+    "4200": {
+      "label": "Angular dev server",
+      "onAutoForward": "notify"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Angular.ng-template",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  },
+  "remoteUser": "node"
+}
