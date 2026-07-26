@@ -1882,6 +1882,10 @@ export class App {
   }
 
   protected numericInputMode(item: ChecklistItem): 'text' | 'numeric' | 'decimal' {
+    if (this.isPhoneField(item)) {
+      return 'text';
+    }
+
     if (this.isDateTextField(item)) {
       return 'numeric';
     }
@@ -1908,13 +1912,13 @@ export class App {
       return;
     }
 
-    if (!this.isNumericText(item)) {
+    if (this.isPhoneField(item)) {
       this.stateFor(item.id).textValue = value;
       return;
     }
 
-    if (this.isPhoneField(item)) {
-      this.stateFor(item.id).textValue = this.formatPhoneNumber(value);
+    if (!this.isNumericText(item)) {
+      this.stateFor(item.id).textValue = value;
       return;
     }
 
@@ -1939,12 +1943,11 @@ export class App {
       return;
     }
 
-    if (!this.isNumericText(item)) {
+    if (this.isPhoneField(item)) {
       return;
     }
 
-    if (this.isPhoneField(item)) {
-      this.stateFor(item.id).textValue = this.formatPhoneNumber(this.stateFor(item.id).textValue);
+    if (!this.isNumericText(item)) {
       return;
     }
 
@@ -2693,17 +2696,12 @@ export class App {
   }
 
   private clientDisplayName(index: number): string {
-    const baseItem = this.findClientNameItem();
-    if (!baseItem) {
-      return '';
-    }
-
-    const itemId = this.clientScopedItemId(baseItem.id, index);
-    return this.stateFor(itemId).textValue.trim();
-  }
-
-  private findClientNameItem(): ChecklistItem | null {
-    return this.findItemBySectionAndLabel('KLIENT', 'Jméno (jména) a Příjmení');
+    return this.clientFieldValueAny(index, 'KLIENT', [
+      'Jméno (jména) a Příjmení',
+      'Jméno a příjmení',
+      'Jméno (jména)',
+      'Jméno'
+    ]).trim();
   }
 
   private clientFieldValue(clientIndex: number, sectionName: string, labelName: string): string {
@@ -3979,6 +3977,7 @@ export class App {
       selectedPropertyType: this.selectedPropertyType(),
       selectedService: this.selectedService(),
       selectedOwnership: this.selectedOwnership(),
+      clientCount: this.clientCount(),
       states: Array.from(this.states.entries()).map(([itemId, state]) => ({
         itemId,
         itemKey: this.itemPersistenceKeyById(itemId),
@@ -4299,6 +4298,7 @@ body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; 
           selectedPropertyType?: string;
           selectedService?: string;
           selectedOwnership?: string;
+          clientCount?: number;
           states?: Array<{ itemId?: string; itemKey?: string; state: Partial<ItemState> & { selectedOptions?: string[] } }>;
         };
 
@@ -4306,12 +4306,15 @@ body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; 
         this.selectedPropertyType.set(payload.selectedPropertyType || '');
         this.selectedService.set(payload.selectedService || '');
         this.selectedOwnership.set(payload.selectedOwnership || '');
+        let highestClientIndex = 0;
 
         for (const entry of payload.states || []) {
           const targetItemId = this.resolveLoadTargetItemId(entry?.itemId || '', entry?.itemKey || '');
           if (!targetItemId) {
             continue;
           }
+
+          highestClientIndex = Math.max(highestClientIndex, this.clientIndexFromItemId(targetItemId));
 
           const state = this.getState(targetItemId);
           const loaded = entry.state || {};
@@ -4343,6 +4346,12 @@ body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; 
           state.floorPlanPhotos = loaded.floorPlanPhotos || [];
           state.customParcelRows = loaded.customParcelRows || [];
         }
+
+        const loadedClientCount = typeof payload.clientCount === 'number' && Number.isFinite(payload.clientCount)
+          ? Math.floor(payload.clientCount || 1)
+          : 1;
+        this.clientCount.set(Math.min(10, Math.max(1, loadedClientCount, highestClientIndex + 1)));
+        this.activeClientIndex.set(0);
 
         this.bumpStateVersion();
       } catch (error) {
@@ -5360,25 +5369,6 @@ body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; 
   private isPhoneField(item: ChecklistItem): boolean {
     const label = this.normalize(item.label);
     return label.includes('TELEFON');
-  }
-
-  private formatPhoneNumber(value: string): string {
-    const hasPlus = value.trim().startsWith('+');
-    const digits = value.replace(/\D/g, '').slice(0, 15);
-    if (!digits) {
-      return '';
-    }
-
-    const groups: string[] = [];
-    let rest = digits;
-    while (rest.length > 3) {
-      groups.unshift(rest.slice(-3));
-      rest = rest.slice(0, -3);
-    }
-    groups.unshift(rest);
-
-    const formatted = groups.join(' ');
-    return hasPlus ? `+${formatted}` : formatted;
   }
 
   private parseAmount(value: string): number {
