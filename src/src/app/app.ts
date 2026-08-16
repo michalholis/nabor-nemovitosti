@@ -4,6 +4,12 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 type YesNo = 'ANO' | 'NE' | null;
+type ClientAccentTheme = 'pink' | 'gray' | 'emerald';
+
+type WorkspaceKey = 'dashboard' | 'clients' | 'properties' | 'floorPlans' | 'documents' | 'coldCalls' | 'agent' | 'calendar' | 'notes';
+type PropertyWorkspaceMode = 'new' | 'mine' | 'directory';
+type ClientWorkspaceMode = 'directory' | 'new';
+type NewClientTabKey = 'basic' | 'documents' | 'company' | 'aml' | 'docs';
 
 interface UploadedAsset {
   name: string;
@@ -30,6 +36,8 @@ interface Section {
   name: string;
   order: number;
   items: ChecklistItem[];
+  renderName?: string;
+  renderKey?: string;
 }
 
 interface SectionGroup {
@@ -57,6 +65,131 @@ interface CompactPrintBlock {
 interface CompactPrintCell {
   block: CompactPrintBlock | null;
 }
+
+interface WorkspaceNavItem {
+  key: WorkspaceKey;
+  label: string;
+  iconPath: string;
+  subItems: Array<{ key: string; label: string }>;
+}
+
+interface CalendarDayCell {
+  date: Date;
+  dayNumber: number;
+  isCurrentMonth: boolean;
+  isToday: boolean;
+}
+
+interface ClientDirectoryEntry {
+  index: number;
+  name: string;
+  phone: string;
+  email: string;
+  createdAt: string;
+  type: string;
+  status: 'Aktivní' | 'Neaktivní';
+}
+
+interface PropertyDirectoryEntry {
+  index: number;
+  title: string;
+  type: string;
+  address: string;
+  createdAt: string;
+  status: 'Aktivní' | 'Neaktivní';
+}
+
+interface NoteCard {
+  id: string;
+  text: string;
+  color: string;
+  createdAt: string;
+  expiresAt: string;
+}
+
+interface NewClientDraft {
+  clientType: 'fyzicka' | 'pravnicka';
+  clientInterest: 'zajemce' | 'kupujici' | 'prodavajici' | 'poptavajici' | 'pronajimatel' | 'zastupce' | 'developer' | 'najemce' | 'jiny';
+  hasTitle: boolean;
+  titleText: string;
+  actingMode: 'sam' | 'zastoupeni';
+  fullName: string;
+  birthDate: string;
+  phonePrefix: string;
+  phone: string;
+  email: string;
+  idType: 'obcansky-prukaz' | 'cestovni-pas' | 'jiny' | '';
+  otherIdDocument: string;
+  idNumber: string;
+  personalIdNumber: string;
+  birthPlace: string;
+  citizenship: string;
+  gender: string;
+  idIssuedAt: string;
+  idValidUntil: string;
+  idIssuedByAuthority: string;
+  idIssuedByState: string;
+  permanentResidence: string;
+  correspondenceAddress: string;
+  maritalStatus: string;
+  maritalStatusOnId: YesNo;
+  idUploadVisible: boolean;
+  idUploadFileName: string;
+  companyName: string;
+  companyIco: string;
+  companyAddress: string;
+  companyBeneficialOwner: string;
+  companyOwnershipStructure: string;
+  companyRepresentedPersonName: string;
+  companyRepresentationType: 'clenem-statutarniho-organu' | 'zamestnancem' | 'na-zaklade-plne-moci' | '';
+  companyPowerOfAttorneyDate: string;
+  amlTransactionPurpose: string;
+  amlSellerAcquisitionPeriod: string;
+  amlSourceOfFunds: string[];
+  amlOtherSourceDetails: string;
+  amlMonthlyIncomeBracket: string;
+  amlProofSale: string[];
+  amlProofInheritance: string[];
+  amlProofGift: string[];
+  amlProofLoan: string[];
+  amlProofSavings: string[];
+  amlProofEmployment: string[];
+  amlProofBusiness: string[];
+  amlProofBankLoan: string[];
+  amlProofOther: string[];
+  occupation: string;
+  sanctionsApplied: YesNo;
+  sanctionsDetails: string;
+  pepStatus: YesNo;
+  pepDetails: string;
+  bankAccount: string;
+  propertyOwnershipLength: string;
+  acceptedOptions: string[];
+  deliveredDocuments: string[];
+  actingAsRepresentativeFor: string;
+  clientDocuments: string[];
+}
+
+interface SavedClientRecord {
+  id: string;
+  createdAt: string;
+  draft: NewClientDraft;
+}
+
+interface SavedPropertyRecord {
+  id: string;
+  createdAt: string;
+  title: string;
+  propertyType: string;
+  address: string;
+  status: 'active' | 'inactive';
+}
+
+type PropertyDirectorySortKey = 'title' | 'type' | 'createdAt';
+type PropertyDirectoryView = 'all' | 'active';
+
+type ClientDirectorySortKey = 'name' | 'phone' | 'email' | 'createdAt' | 'type' | 'status';
+type ClientDirectoryView = 'all' | 'active';
 
 interface LeafletPrintEntry {
   label: string;
@@ -124,6 +257,81 @@ interface RoomAreaTotal {
 export class App {
   private readonly http = inject(HttpClient);
   private readonly customOptionLabel = 'Dopsat vlastní možnost';
+  protected readonly workspaceItems: WorkspaceNavItem[] = [
+    {
+      key: 'dashboard',
+      label: 'Nástěnka',
+      iconPath: 'M520-600v-240h320v240H520ZM120-440v-400h320v400H120Zm400 320v-400h320v400H520Zm-400 0v-240h320v240H120Zm80-400h160v-240H200v240Zm400 320h160v-240H600v240Zm0-480h160v-80H600v80ZM200-200h160v-80H200v80Zm160-320Zm240-160Zm0 240ZM360-280Z',
+      subItems: []
+    },
+    {
+      key: 'clients',
+      label: 'Klienti',
+      iconPath: 'M381-481q-41-41-41-99t41-99q41-41 99-41t99 41q41 41 41 99t-41 99q-41 41-99 41t-99-41Zm141.5-56.5Q540-555 540-580t-17.5-42.5Q505-640 480-640t-42.5 17.5Q420-605 420-580t17.5 42.5Q455-520 480-520t42.5-17.5ZM480-60 120-280v-400l360-220 360 220v400L480-60Zm0-93 147-91q-34-18-71.5-27t-75.5-9q-38 0-75.5 9T333-244l147 91ZM256-291q50-34 107-51.5T480-360q60 0 117 17.5T704-291l56-33v-311L480-806 200-635v311l56 33Zm224-189Z',
+      subItems: [
+        { key: 'directory', label: 'Databáze klientů' },
+        { key: 'new', label: 'Nový klient' }
+      ]
+    },
+      {
+        key: 'properties',
+        label: 'Nemovitosti',
+        iconPath: 'M680-600h80v-80h-80v80Zm0 160h80v-80h-80v80Zm0 160h80v-80h-80v80Zm0 160v-80h160v-560H480v56l-80-58v-78h520v720H680Zm-640 0v-400l280-200 280 200v400H360v-200h-80v200H40Zm80-80h80v-200h240v200h80v-280L320-622 120-480v280Zm560-360ZM440-200v-200H200v200-200h240v200Z',
+        subItems: [
+          { key: 'directory', label: 'Databáze nemovitostí' },
+          { key: 'new', label: '+ Nová nemovitost' },
+          { key: 'mine', label: 'Moje nemovitosti' }
+        ]
+      },
+    {
+      key: 'documents',
+      label: 'Doklady',
+      iconPath: 'M400-400h160v-80H400v80Zm0-120h320v-80H400v80Zm0-120h320v-80H400v80Zm-80 400q-33 0-56.5-23.5T240-320v-480q0-33 23.5-56.5T320-880h480q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H320Zm0-80h480v-480H320v480ZM160-80q-33 0-56.5-23.5T80-160v-560h80v560h560v80H160Zm160-720v480-480Z',
+      subItems: []
+    },
+    {
+      key: 'coldCalls',
+      label: 'Studená volání',
+      iconPath: 'M798-120q-125 0-247-54.5T329-329Q229-429 174.5-551T120-798q0-18 12-30t30-12h162q14 0 25 9.5t13 22.5l26 140q2 16-1 27t-11 19l-97 98q20 37 47.5 71.5T387-386q31 31 65 57.5t72 48.5l94-94q9-9 23.5-13.5T670-390l138 28q14 4 23 14.5t9 23.5v162q0 18-12 30t-30 12ZM241-600l66-66-17-94h-89q5 41 14 81t26 79Zm358 358q39 17 79.5 27t81.5 13v-88l-94-19-67 67ZM241-600Zm358 358Z',
+      subItems: [
+        { key: 'overview', label: 'Přehled volání' },
+        { key: 'new', label: 'Nové volání' }
+      ]
+    },
+    {
+      key: 'agent',
+      label: 'Makléř',
+      iconPath: 'M234-276q51-39 114-61.5T480-360q69 0 132 22.5T726-276q35-41 54.5-93T800-480q0-133-93.5-226.5T480-800q-133 0-226.5 93.5T160-480q0 59 19.5 111t54.5 93Zm146.5-204.5Q340-521 340-580t40.5-99.5Q421-720 480-720t99.5 40.5Q620-639 620-580t-40.5 99.5Q539-440 480-440t-99.5-40.5ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm100-95.5q47-15.5 86-44.5-39-29-86-44.5T480-280q-53 0-100 15.5T294-220q39 29 86 44.5T480-160q53 0 100-15.5ZM523-537q17-17 17-43t-17-43q-17-17-43-17t-43 17q-17 17-17 43t17 43q17 17 43 17t43-17Zm-43-43Zm0 360Z',
+      subItems: [
+        { key: 'profile', label: 'Profil makléře' },
+        { key: 'account', label: 'Uživatelský účet' }
+      ]
+    },
+    {
+      key: 'calendar',
+      label: 'Kalendář',
+      iconPath: 'M200-80q-33 0-56.5-23.5T120-160v-560q0-33 23.5-56.5T200-800h40v-80h80v80h320v-80h80v80h40q33 0 56.5 23.5T840-720v560q0 33-23.5 56.5T760-80H200Zm0-80h560v-400H200v400Zm0-480h560v-80H200v80Zm0 0v-80 80Zm280 240q-17 0-28.5-11.5T440-440q0-17 11.5-28.5T480-480q17 0 28.5 11.5T520-440q0 17-11.5 28.5T480-400Zm-188.5-11.5Q280-423 280-440t11.5-28.5Q303-480 320-480t28.5 11.5Q360-457 360-440t-11.5 28.5Q337-400 320-400t-28.5-11.5ZM640-400q-17 0-28.5-11.5T600-440q0-17 11.5-28.5T640-480q17 0 28.5 11.5T680-440q0 17-11.5 28.5T640-400ZM480-240q-17 0-28.5-11.5T440-280q0-17 11.5-28.5T480-320q17 0 28.5 11.5T520-280q0 17-11.5 28.5T480-240Zm-188.5-11.5Q280-263 280-280t11.5-28.5Q303-320 320-320t28.5 11.5Q360-297 360-280t-11.5 28.5Q337-240 320-240t-28.5-11.5ZM640-240q-17 0-28.5-11.5T600-280q0-17 11.5-28.5T640-320q17 0 28.5 11.5T680-280q0 17-11.5 28.5T640-240Z',
+      subItems: [
+        { key: 'month', label: 'Měsíční přehled' },
+        { key: 'agenda', label: 'Agenda' }
+      ]
+    },
+    {
+      key: 'notes',
+      label: 'Poznámky',
+      iconPath: 'M280-160v-441q0-33 24-56t57-23h439q33 0 56.5 23.5T880-600v320L680-80H360q-33 0-56.5-23.5T280-160ZM81-710q-6-33 13-59.5t52-32.5l434-77q33-6 59.5 13t32.5 52l10 54h-82l-7-40-433 77 40 226v279q-16-9-27.5-24T158-276L81-710Zm279 110v440h280v-160h160v-280H360Zm220 220Z',
+      subItems: [
+        { key: 'all', label: 'Všechny poznámky' },
+        { key: 'new', label: 'Nová poznámka' }
+      ]
+    },
+    {
+      key: 'floorPlans',
+      label: 'Půdorysy',
+      iconPath: 'M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h120v-160h160v160h280v-280H560v-160h160v-120H200v560Zm120-280v-160h160v160H320Zm240 80v-160h160v160H560ZM320-640Zm240 160Z',
+      subItems: []
+    }
+  ];
   private readonly gateFallbackOptions: GateOption[] = [
     {
       value: 'Vrata doleva',
@@ -169,7 +377,24 @@ export class App {
   private readonly handoverExpanded = signal<Record<string, boolean>>({});
   private readonly activeSectionKey = signal('');
   private readonly activeGroupKey = signal('');
+  protected readonly activeWorkspace = signal<WorkspaceKey>('clients');
+  protected readonly sidebarExpanded = signal(false);
+  protected readonly currentCalendarDate = signal(this.startOfMonth(new Date()));
+  protected readonly propertyWorkspaceMode = signal<PropertyWorkspaceMode>('new');
+  protected readonly clientWorkspaceMode = signal<ClientWorkspaceMode>('directory');
+  protected readonly expandedWorkspaceKeys = signal<WorkspaceKey[]>(['clients']);
+  protected readonly clientSearchQuery = signal('');
+  protected readonly activeNewClientTab = signal<NewClientTabKey>('basic');
+  protected readonly newClientLinkedPropertyCardVisible = signal(true);
+  protected readonly newClientRelatedClientCardCount = signal(0);
+  protected readonly savedClientRecords = signal<SavedClientRecord[]>([]);
+  private readonly activeSavedClientId = signal('');
   private readonly clientCount = signal(1);
+  protected readonly savedPropertyRecords = signal<SavedPropertyRecord[]>([]);
+  private readonly activePropertyId = signal('');
+  private readonly propertyDirectorySort = signal<{ key: PropertyDirectorySortKey; direction: 'asc' | 'desc' } | null>(null);
+  private readonly propertyDirectoryView = signal<PropertyDirectoryView>('all');
+  protected readonly propertySearchQuery = signal('');
   private readonly activeClientIndex = signal(0);
   private readonly activeLeafletLinkItemId = signal('');
   private readonly printMode = signal<'property' | 'buyer' | 'buyerAlt' | 'buyerCompact' | 'unfilled'>('property');
@@ -255,16 +480,303 @@ export class App {
   });
 
   protected readonly sectionGroups = computed<SectionGroup[]>(() => {
-    const sections = this.filteredSections();
+    const sections = this.sectionsForActiveWorkspace();
     if (sections.length === 0) {
       return [];
     }
 
     return sections.map((section) => ({
       key: this.sectionKey(section),
-      label: this.sectionTabLabel(section.name),
+      label: this.sectionTabLabel(this.displaySectionName(section)),
       sections: [section]
     }));
+  });
+
+  protected readonly showFormsWorkspace = computed(() => {
+    const workspace = this.activeWorkspace();
+    return workspace === 'agent'
+      || (workspace === 'properties' && this.propertyWorkspaceMode() === 'new');
+  });
+
+  protected readonly activeWorkspaceLabel = computed(() => {
+    const active = this.activeWorkspace();
+    return this.workspaceItems.find((item) => item.key === active)?.label || '';
+  });
+  protected readonly clientAccentTheme = signal<ClientAccentTheme>('pink');
+  protected readonly clientDirectorySort = signal<{ key: ClientDirectorySortKey; direction: 'asc' | 'desc' } | null>(null);
+  protected readonly previewClientRecordId = signal('');
+  protected readonly clientDirectoryView = signal<ClientDirectoryView>('all');
+  protected readonly allClientDirectoryEntries = computed<ClientDirectoryEntry[]>(() =>
+    this.savedClientRecords().map((record, index) => ({
+      index,
+      name: record.draft.fullName.trim() || record.draft.companyName.trim() || `Klient ${index + 1}`,
+      phone: this.displayNewClientPhone(record.draft),
+      email: record.draft.email.trim(),
+      createdAt: record.createdAt,
+      type: this.newClientInterestLabel(record.draft.clientInterest),
+      status: this.clientRecordStatus(record)
+    }))
+  );
+
+  protected readonly activeClientDirectoryEntries = computed<ClientDirectoryEntry[]>(() => {
+    const query = this.normalizeForLooseMatch(this.clientSearchQuery());
+    const entries = this.clientDirectoryView() === 'active'
+      ? this.allClientDirectoryEntries().filter((entry) => entry.status === 'Aktivní')
+      : this.allClientDirectoryEntries();
+
+    const filtered = query
+      ? entries.filter((entry) =>
+        this.normalizeForLooseMatch([entry.name, entry.phone, entry.email, entry.type, entry.createdAt].join(' ')).includes(query)
+      )
+      : entries;
+
+    const sort = this.clientDirectorySort();
+    if (!sort) {
+      return filtered;
+    }
+
+    return [...filtered].sort((a, b) => {
+      const aValue = this.normalizeForLooseMatch(String(a[sort.key] || ''));
+      const bValue = this.normalizeForLooseMatch(String(b[sort.key] || ''));
+      const result = aValue.localeCompare(bValue, 'cs');
+      return sort.direction === 'asc' ? result : -result;
+    });
+  });
+
+  protected sortClientDirectoryBy(key: ClientDirectorySortKey): void {
+    const current = this.clientDirectorySort();
+    if (!current || current.key !== key) {
+      this.clientDirectorySort.set({ key, direction: 'asc' });
+      return;
+    }
+
+    this.clientDirectorySort.set({
+      key,
+      direction: current.direction === 'asc' ? 'desc' : 'asc'
+    });
+  }
+
+  protected clientDirectorySortDirection(key: ClientDirectorySortKey): 'asc' | 'desc' | '' {
+    const current = this.clientDirectorySort();
+    if (!current || current.key !== key) {
+      return '';
+    }
+
+    return current.direction;
+  }
+
+  protected setClientDirectoryView(view: ClientDirectoryView): void {
+    this.clientDirectoryView.set(view);
+  }
+
+  protected isClientDirectoryView(view: ClientDirectoryView): boolean {
+    return this.clientDirectoryView() === view;
+  }
+
+  protected readonly activeClientCount = computed(() =>
+    this.allClientDirectoryEntries().filter((entry) => entry.status === 'Aktivní').length
+  );
+
+   protected readonly totalClientCount = computed(() => this.allClientDirectoryEntries().length);
+
+   protected readonly inactiveClientCount = computed(() => this.allClientDirectoryEntries().length);
+
+   protected readonly allPropertyDirectoryEntries = computed<PropertyDirectoryEntry[]>(() =>
+     this.savedPropertyRecords().map((record, index) => ({
+       index,
+       title: record.title,
+       type: record.propertyType,
+       address: record.address,
+       createdAt: record.createdAt,
+       status: record.status === 'active' ? 'Aktivní' : 'Neaktivní'
+     }))
+   );
+
+   protected readonly activePropertyDirectoryEntries = computed<PropertyDirectoryEntry[]>(() => {
+     const query = this.normalizeForLooseMatch(this.propertySearchQuery());
+     const entries = this.propertyDirectoryView() === 'active'
+       ? this.allPropertyDirectoryEntries().filter((entry) => entry.status === 'Aktivní')
+       : this.allPropertyDirectoryEntries();
+
+     const filtered = query
+       ? entries.filter((entry) =>
+         this.normalizeForLooseMatch([entry.title, entry.type, entry.address, entry.createdAt].join(' ')).includes(query)
+       )
+       : entries;
+
+     const sort = this.propertyDirectorySort();
+     if (!sort) {
+       return filtered;
+     }
+
+     return [...filtered].sort((a, b) => {
+       const aValue = this.normalizeForLooseMatch(String(a[sort.key] || ''));
+       const bValue = this.normalizeForLooseMatch(String(b[sort.key] || ''));
+       const result = aValue.localeCompare(bValue, 'cs');
+       return sort.direction === 'asc' ? result : -result;
+     });
+   });
+
+   protected sortPropertyDirectoryBy(key: PropertyDirectorySortKey): void {
+     const current = this.propertyDirectorySort();
+     if (!current || current.key !== key) {
+       this.propertyDirectorySort.set({ key, direction: 'asc' });
+       return;
+     }
+
+     this.propertyDirectorySort.set({
+       key,
+       direction: current.direction === 'asc' ? 'desc' : 'asc'
+     });
+   }
+
+   protected propertyDirectorySortDirection(key: PropertyDirectorySortKey): 'asc' | 'desc' | '' {
+     const current = this.propertyDirectorySort();
+     if (!current || current.key !== key) {
+       return '';
+     }
+
+     return current.direction;
+   }
+
+   protected setPropertyDirectoryView(view: PropertyDirectoryView): void {
+     this.propertyDirectoryView.set(view);
+   }
+
+   protected isPropertyDirectoryView(view: PropertyDirectoryView): boolean {
+     return this.propertyDirectoryView() === view;
+   }
+
+   protected updatePropertySearchQuery(query: string): void {
+     this.propertySearchQuery.set(query);
+   }
+
+   protected readonly activePropertyCount = computed(() =>
+     this.allPropertyDirectoryEntries().filter((entry) => entry.status === 'Aktivní').length
+   );
+
+   protected readonly totalPropertyCount = computed(() => this.allPropertyDirectoryEntries().length);
+
+   private readonly previewPropertyRecordId = signal('');
+
+  protected readonly noteColors = ['#fff2a8', '#ffd6e7', '#d9f3ff', '#daf5d8', '#ece1ff'];
+  protected readonly notes = signal<NoteCard[]>([]);
+  protected readonly newClientDraft = signal<NewClientDraft>(this.createDefaultNewClientDraft());
+
+  private readonly clientSectionRenderGroups: Array<{ key: string; title: string; labels: string[] }> = [
+    {
+      key: 'client-basic',
+      title: 'ZÁKLADNÍ INFORMACE',
+      labels: [
+        'Typ klienta',
+        'Zájem klienta',
+        'Pokud výše uvedená osoba jedná jako zástupce klienta',
+        'Jméno (jména) a Příjmení',
+        'Jméno a příjmení',
+        'Titul před nebo za jménem',
+        'Titul před jménem',
+        'Titul za jménem',
+        'Datum narození',
+        'Kontaktní telefon',
+        'Telefon',
+        'E-mail',
+        'Email',
+        '?????'
+      ]
+    },
+    {
+      key: 'client-documents',
+      title: 'DOKLADOVÉ ÚDAJE',
+      labels: [
+        'Druh průkazu totožnosti',
+        'Jiný doklad totožnosti',
+        'Číslo průkazu totožnosti',
+        'Rodné číslo (není-li datum narození)',
+        'Obec a stát místa narození',
+        'Státní občanství',
+        'Pohlaví',
+        'Datum vydání dokladu',
+        'Doba platnosti dokladu',
+        'Orgán, který průkaz vydal',
+        'Stát, který průkaz vydal',
+        'Trvalý nebo jiný pobyt',
+        'Skutečné místo pobytu (korespondenční adresa)',
+        'Rodinný stav',
+        'Uveden rodinný stav v dokladu',
+        'Zaměstnání / obor podnikání',
+        'Jste osoba, vůči níž ČR uplatňuje mezinárodní sankce podle zákona č. 69/2006 Sb. o provádění mezinárodních sankcí',
+        'Pokud ano, uveďte podrobnosti',
+        'Jste / byl/a jste v posledních 12 měsících politicky exponovanou osobou nebo jste blízkou osobou politicky exponované osoby?',
+        'Pokud ano, uveďte podrobnosti',
+        'Bankovní spojení',
+        'Délka vlastnictví nemovitosti',
+        'Klient akceptuje',
+        'Dodané dokumenty',
+        'Pokud výše uvedená osoba jedná jako zástupce klienta'
+      ]
+    },
+    {
+      key: 'client-company',
+      title: 'FIRMA',
+      labels: [
+        'Obchodní firma nebo název, včetně odlišujícího dodatku nebo dalšího označení',
+        'Identifikační číslo',
+        'Sídlo společnosti',
+        'Skutečný majitel dle § 4 odst. 4 AML zákona',
+        'Vlastnická a řídící struktura',
+        'Jméno a příjmení zastoupeného',
+        'Zastoupení'
+      ]
+    }
+  ];
+
+  private readonly amlSectionRenderGroups: Array<{ key: string; title: string; labels: string[] }> = [];
+
+  protected readonly calendarWeekdayLabels = ['Po', 'Ut', 'St', 'Ct', 'Pa', 'So', 'Ne'];
+
+  protected readonly calendarMonthLabel = computed(() => {
+    const value = this.currentCalendarDate();
+    return value.toLocaleDateString('cs-CZ', { month: 'long', year: 'numeric' });
+  });
+
+  protected readonly todayDayLabel = computed(() => String(new Date().getDate()));
+
+  protected readonly todayWeekdayLabel = computed(() =>
+    new Date().toLocaleDateString('cs-CZ', { weekday: 'long' }).toLocaleUpperCase('cs-CZ')
+  );
+
+  protected readonly todayMonthLabel = computed(() =>
+    new Date().toLocaleDateString('cs-CZ', { month: 'long' })
+  );
+
+  protected readonly calendarWeeks = computed<CalendarDayCell[][]>(() => {
+    const monthStart = this.currentCalendarDate();
+    const start = new Date(monthStart);
+    const day = start.getDay();
+    const diffToMonday = day === 0 ? 6 : day - 1;
+    start.setDate(start.getDate() - diffToMonday);
+
+    const weeks: CalendarDayCell[][] = [];
+    const today = this.startOfDay(new Date());
+
+    for (let weekIndex = 0; weekIndex < 6; weekIndex += 1) {
+      const week: CalendarDayCell[] = [];
+
+      for (let dayIndex = 0; dayIndex < 7; dayIndex += 1) {
+        const date = new Date(start);
+        date.setDate(start.getDate() + weekIndex * 7 + dayIndex);
+        week.push({
+          date,
+          dayNumber: date.getDate(),
+          isCurrentMonth: date.getMonth() === monthStart.getMonth(),
+          isToday: this.startOfDay(date).getTime() === today.getTime()
+        });
+      }
+
+      weeks.push(week);
+    }
+
+    return weeks;
   });
 
   private sectionTabLabel(name: string): string {
@@ -281,6 +793,991 @@ export class App {
 
   protected isClientSection(section: Section): boolean {
     return this.normalize(section.name) === 'KLIENT';
+  }
+
+  protected displaySectionName(section: Section): string {
+    return section.renderName || section.name;
+  }
+
+  protected isClientOrAmlSection(section: Section): boolean {
+    return this.isClientSection(section) || this.isAmlSectionName(this.normalize(section.name));
+  }
+
+  protected shouldShowSectionTabs(): boolean {
+    return this.sectionGroups().length > 1;
+  }
+
+  protected activateWorkspace(workspace: WorkspaceKey): void {
+    if (workspace === 'clients') {
+      this.activateClientWorkspaceMode('directory');
+      return;
+    }
+
+    this.activeWorkspace.set(workspace);
+    this.activeGroupKey.set('');
+    this.closeSidebarOnMobile();
+    if (workspace !== 'properties') {
+      this.propertyWorkspaceMode.set('new');
+    }
+    this.clientWorkspaceMode.set('directory');
+  }
+
+  protected isWorkspaceActive(workspace: WorkspaceKey): boolean {
+    return this.activeWorkspace() === workspace;
+  }
+
+  protected openActiveWorkspaceHome(): void {
+    if (this.isWorkspaceActive('clients')) {
+      this.activateClientWorkspaceMode('directory');
+      return;
+    }
+
+    this.activateWorkspace(this.activeWorkspace());
+  }
+
+  protected toggleSidebar(): void {
+    this.sidebarExpanded.update((value) => !value);
+  }
+
+  protected expandSidebarFromRow(): void {
+    if (!this.sidebarExpanded()) {
+      this.sidebarExpanded.set(true);
+    }
+  }
+
+  protected onCollapsedSidebarClick(event: MouseEvent): void {
+    if (this.sidebarExpanded()) {
+      return;
+    }
+
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('.sidebar-toggle') || target?.closest('.sidebar-link-icon')) {
+      return;
+    }
+
+    this.sidebarExpanded.set(true);
+  }
+
+  protected onSidebarLinkClick(event: MouseEvent, workspace: WorkspaceKey): void {
+    const target = event.target as HTMLElement | null;
+    const clickedIcon = Boolean(target?.closest('.sidebar-link-icon'));
+
+    if (!this.sidebarExpanded() && !clickedIcon) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.sidebarExpanded.set(true);
+      return;
+    }
+
+    this.activateWorkspace(workspace);
+  }
+
+  protected setClientAccentTheme(theme: ClientAccentTheme): void {
+    this.clientAccentTheme.set(theme);
+  }
+
+  protected isClientAccentTheme(theme: ClientAccentTheme): boolean {
+    return this.clientAccentTheme() === theme;
+  }
+
+  protected newClientMaritalStatusOptions(): string[] {
+    const gender = this.newClientDraft().gender;
+    const fromTable = this.maritalStatusOptionsFromTable(gender);
+    if (fromTable.length > 0) {
+      return fromTable;
+    }
+
+    if (gender === 'Žena') {
+      return ['svobodná', 'vdaná', 'rozvedená', 'ovdovělá'];
+    }
+
+    if (gender === 'Muž') {
+      return ['svobodný', 'ženatý', 'rozvedený', 'ovdovělý'];
+    }
+
+    return ['svobodný', 'ženatý', 'rozvedený', 'ovdovělý', 'svobodná', 'vdaná', 'rozvedená', 'ovdovělá'];
+  }
+
+  private maritalStatusOptionsFromTable(gender: string): string[] {
+    const section = this.sections().find((item) => this.normalize(item.name) === 'KLIENT - DOKLADY');
+    if (!section) {
+      return [];
+    }
+
+    const items = section.items.filter((item) => this.normalize(item.label) === 'RODINNY STAV');
+
+    if (gender === '') {
+      const all: string[] = [];
+      const seen = new Set<string>();
+      for (const item of items) {
+        for (const option of item.options) {
+          const trimmed = option.trim();
+          if (trimmed.length > 0 && !seen.has(trimmed)) {
+            seen.add(trimmed);
+            all.push(trimmed);
+          }
+        }
+      }
+      return all;
+    }
+
+    const normalizedGender = this.normalize(gender);
+    for (const item of items) {
+      const hiddenGender = this.maritalStatusHiddenGender(item.specialRule);
+      if (hiddenGender && hiddenGender === normalizedGender) {
+        continue;
+      }
+      if (item.options.length > 0) {
+        return item.options.map((option) => option.trim()).filter((option) => option.length > 0);
+      }
+    }
+    return [];
+  }
+
+  private maritalStatusHiddenGender(specialRule: string): string {
+    const match = specialRule?.match(/POHLAVÍ\s*=\s*([^\s=,]+)/i);
+    return match ? this.normalize(match[1]) : '';
+  }
+
+  protected newClientInterestLabel(value: NewClientDraft['clientInterest'] | ''): string {
+    if (value === 'poptavajici') {
+      return 'Poptávající';
+    }
+
+    if (value === 'pronajimatel') {
+      return 'Pronajímatel';
+    }
+
+    if (value === 'zastupce') {
+      return 'Zástupce';
+    }
+
+    if (value === 'developer') {
+      return 'Developer';
+    }
+
+    if (value === 'najemce') {
+      return 'Nájemce';
+    }
+
+    if (value === 'jiny') {
+      return 'Jiný';
+    }
+
+    if (value === 'kupujici') {
+      return 'Kupující';
+    }
+
+    if (value === 'prodavajici') {
+      return 'Prodávající';
+    }
+
+    return 'Zájemce';
+  }
+
+  protected newClientInterestOptions(): Array<{ value: string; label: string }> {
+    const section = this.sections().find((item) => this.normalize(item.name) === 'KLIENT - ZÁKLADNÍ INFORMACE');
+    const field = section?.items.find((item) => this.normalize(item.label) === 'ZAJEM KLIENTA');
+    const options = field?.options || [];
+
+    return options.map((option) => ({
+      value: this.normalize(option)
+        .replace(/Á/g, 'A')
+        .replace(/É/g, 'E')
+        .replace(/Í/g, 'I')
+        .replace(/Ý/g, 'Y')
+        .replace(/Ů/g, 'U')
+        .replace(/Ě/g, 'E')
+        .replace(/Š/g, 'S')
+        .replace(/Č/g, 'C')
+        .replace(/Ř/g, 'R')
+        .replace(/Ž/g, 'Z')
+        .replace(/Ť/g, 'T')
+        .replace(/Ď/g, 'D')
+        .replace(/Ň/g, 'N')
+        .replace(/Ó/g, 'O')
+        .replace(/Ú/g, 'U')
+        .replace(/Ľ/g, 'L')
+        .replace(/Ŕ/g, 'R')
+        .toLocaleLowerCase('cs-CZ')
+        .replace(/and/g, '')
+        .replace(/[^a-z0-9]+/g, ''),
+      label: option.trim()
+    }));
+  }
+
+  protected autosizeNewClientTextarea(event: Event): void {
+    const element = event.target as HTMLTextAreaElement | null;
+    if (!element) {
+      return;
+    }
+
+    element.style.height = 'auto';
+    element.style.height = `${element.scrollHeight}px`;
+  }
+
+  protected resizeAllNewClientTextareas(): void {
+    const elements = document.querySelectorAll<HTMLTextAreaElement>('.auto-grow-textarea');
+    elements.forEach((element) => {
+      element.style.height = 'auto';
+      element.style.height = `${element.scrollHeight}px`;
+    });
+  }
+
+  protected scheduleResizeNewClientTextareas(): void {
+    setTimeout(() => this.resizeAllNewClientTextareas(), 0);
+  }
+
+  protected resolvedNewClientInterestOptions(): Array<{ value: NewClientDraft['clientInterest']; label: string }> {
+    const section = this.sections().find((item) => this.normalize(item.name) === 'KLIENT - ZÁKLADNÍ INFORMACE');
+    const field = section?.items.find((item) => this.normalize(item.label) === 'ZAJEM KLIENTA');
+    const options = field?.options || [];
+    const valueByLabel = new Map<string, NewClientDraft['clientInterest']>([
+      ['PRODAVAJICI', 'prodavajici'],
+      ['KUPUJICI', 'kupujici'],
+      ['ZAJEMCE', 'zajemce'],
+      ['POPTAVAJICI', 'poptavajici'],
+      ['PRONAJIMATEL', 'pronajimatel'],
+      ['ZASTUPCE', 'zastupce'],
+      ['DEVELOPER', 'developer'],
+      ['NAJEMCE', 'najemce'],
+      ['JINY', 'jiny']
+    ]);
+
+    const mapped = options
+      .map((option) => {
+        const label = option.trim();
+        const value = valueByLabel.get(this.normalize(label));
+        return value ? { value, label } : null;
+      })
+      .filter((option): option is { value: NewClientDraft['clientInterest']; label: string } => option !== null);
+
+    return mapped.length > 0
+      ? mapped
+      : [
+        { value: 'prodavajici', label: 'Prodávající' },
+        { value: 'kupujici', label: 'Kupující' },
+        { value: 'zajemce', label: 'Zájemce' },
+        { value: 'poptavajici', label: 'Poptávající' },
+        { value: 'pronajimatel', label: 'Pronajímatel' },
+        { value: 'zastupce', label: 'Zástupce' },
+        { value: 'developer', label: 'Developer' },
+        { value: 'najemce', label: 'Nájemce' },
+        { value: 'jiny', label: 'Jiný' }
+      ];
+  }
+
+  protected newClientPhonePrefixOptions(): Array<{ value: string; label: string }> {
+    return [
+      { value: '+420', label: '🇨🇿 +420' },
+      { value: '+421', label: '🇸🇰 +421' },
+      { value: '+49', label: '🇩🇪 +49' },
+      { value: '+43', label: '🇦🇹 +43' },
+      { value: '+48', label: '🇵🇱 +48' },
+      { value: '+36', label: '🇭🇺 +36' },
+      { value: '+1', label: '🇺🇸 +1' },
+      { value: '+44', label: '🇬🇧 +44' }
+    ];
+  }
+
+  protected setNewClientPhonePrefix(prefix: string): void {
+    const digits = this.newClientDraft().phone.replace(/\D/g, '');
+    this.setNewClientDraftField('phonePrefix', prefix);
+    this.setNewClientDraftField('phone', this.formatPhoneByPrefix(prefix, digits));
+  }
+
+  protected setNewClientPhoneField(value: string): void {
+    const digits = value.replace(/\D/g, '');
+    this.setNewClientDraftField('phone', this.formatPhoneByPrefix(this.newClientDraft().phonePrefix, digits));
+  }
+
+  protected displayNewClientPhone(draft: NewClientDraft): string {
+    const phone = draft.phone.trim();
+    if (!phone) {
+      return '';
+    }
+
+    return `${draft.phonePrefix} ${phone}`.trim();
+  }
+
+  protected setNewClientDraftDateField(
+    field: 'birthDate' | 'idIssuedAt' | 'idValidUntil',
+    value: string
+  ): void {
+    const digits = value.replace(/\D/g, '').slice(0, 8);
+    const parts = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 8)].filter(Boolean);
+    this.setNewClientDraftField(field, parts.join('.'));
+  }
+
+  protected sanitizeDateFieldInput(event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    if (!input) {
+      return;
+    }
+
+    input.value = this.formatDateInput(input.value || '');
+  }
+
+  protected sanitizeItemDateInput(item: ChecklistItem, event: Event): void {
+    if (!this.isDateTextField(item)) {
+      return;
+    }
+
+    const input = event.target as HTMLInputElement | null;
+    if (!input) {
+      return;
+    }
+
+    const formatted = this.formatDateInput(input.value || '');
+    input.value = formatted;
+    this.stateFor(item.id).textValue = formatted;
+  }
+
+  protected validateNewClientDraftDateFieldOnBlur(field: 'birthDate' | 'idIssuedAt' | 'idValidUntil'): void {
+    const value = this.newClientDraft()[field];
+    if (value && !this.isValidFullDate(value)) {
+      this.setNewClientDraftField(field, '');
+    }
+  }
+
+  protected validateNewClientDraftShortDateFieldOnBlur(field: 'companyPowerOfAttorneyDate'): void {
+    const value = this.newClientDraft()[field];
+    if (value && !this.isValidFullShortDate(value)) {
+      this.setNewClientDraftField(field, '');
+    }
+  }
+
+  protected validateItemDateInputOnBlur(item: ChecklistItem): void {
+    if (!this.isDateTextField(item)) {
+      return;
+    }
+
+    const current = this.stateFor(item.id).textValue;
+    if (current && !this.isValidFullDate(current)) {
+      this.stateFor(item.id).textValue = '';
+    }
+  }
+
+  protected setNewClientDraftShortDateField(
+    field: 'companyPowerOfAttorneyDate',
+    value: string
+  ): void {
+    const digits = value.replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 1) {
+      this.setNewClientDraftField(field, digits);
+      return;
+    }
+
+    if (digits.length <= 3) {
+      this.setNewClientDraftField(field, `${digits.slice(0, 1)}.${digits.slice(1)}`);
+      return;
+    }
+
+    const parts = [digits.slice(0, 1), digits.slice(1, 2), digits.slice(2, 6)].filter(Boolean);
+    this.setNewClientDraftField(field, parts.join('.'));
+  }
+
+  protected activatePropertyWorkspaceMode(mode: PropertyWorkspaceMode): void {
+    this.activeWorkspace.set('properties');
+    this.propertyWorkspaceMode.set(mode);
+    this.activeGroupKey.set('');
+    this.closeSidebarOnMobile();
+  }
+
+  protected isPropertyWorkspaceMode(mode: PropertyWorkspaceMode): boolean {
+    return this.propertyWorkspaceMode() === mode;
+  }
+
+  protected activateClientWorkspaceMode(mode: ClientWorkspaceMode): void {
+    this.activeWorkspace.set('clients');
+    this.clientWorkspaceMode.set(mode);
+    this.activeGroupKey.set('');
+    this.closeSidebarOnMobile();
+    if (mode === 'new') {
+      this.activeNewClientTab.set('basic');
+      this.newClientLinkedPropertyCardVisible.set(true);
+      this.newClientRelatedClientCardCount.set(0);
+    }
+  }
+
+  protected createNewClient(): void {
+    this.activeSavedClientId.set('');
+    this.newClientDraft.set(this.createDefaultNewClientDraft());
+    this.activateClientWorkspaceMode('new');
+    this.scheduleResizeNewClientTextareas();
+  }
+
+  protected isClientWorkspaceMode(mode: ClientWorkspaceMode): boolean {
+    return this.clientWorkspaceMode() === mode;
+  }
+
+  protected toggleWorkspaceExpansion(workspace: WorkspaceKey, event?: Event): void {
+    event?.stopPropagation();
+    const expanded = new Set(this.expandedWorkspaceKeys());
+    if (expanded.has(workspace)) {
+      expanded.delete(workspace);
+    } else {
+      expanded.add(workspace);
+    }
+    this.expandedWorkspaceKeys.set(Array.from(expanded));
+  }
+
+  protected isWorkspaceExpanded(workspace: WorkspaceKey): boolean {
+    return this.expandedWorkspaceKeys().includes(workspace);
+  }
+
+  protected workspaceSubItemExpandedIcon(workspace: WorkspaceNavItem): string {
+    return this.isWorkspaceExpanded(workspace.key)
+      ? 'M560-280 360-480l200-200v400Z'
+      : 'M400-280v-400l200 200-200 200Z';
+  }
+
+  protected activateWorkspaceSubItem(workspace: WorkspaceNavItem, subItemKey: string): void {
+    if (workspace.key === 'properties') {
+      if (subItemKey === 'directory') {
+        this.activatePropertyWorkspaceMode('directory');
+      } else {
+        this.activatePropertyWorkspaceMode(subItemKey === 'new' ? 'new' : 'mine');
+      }
+      return;
+    }
+
+    if (workspace.key === 'clients') {
+      if (subItemKey === 'new') {
+        this.createNewClient();
+      } else {
+        this.activateClientWorkspaceMode('directory');
+      }
+      return;
+    }
+
+    this.activateWorkspace(workspace.key);
+  }
+
+  private closeSidebarOnMobile(): void {
+    if (typeof window !== 'undefined' && window.innerWidth <= 960) {
+      this.sidebarExpanded.set(false);
+    }
+  }
+
+  protected isWorkspaceSubItemActive(workspace: WorkspaceNavItem, subItemKey: string): boolean {
+    if (workspace.key === 'properties') {
+      if (subItemKey === 'directory') {
+        return this.isWorkspaceActive('properties') && this.propertyWorkspaceMode() === 'directory';
+      }
+      return this.isWorkspaceActive('properties') && this.propertyWorkspaceMode() === (subItemKey === 'mine' ? 'mine' : 'new');
+    }
+
+    if (workspace.key === 'clients') {
+      return this.isWorkspaceActive('clients') && this.clientWorkspaceMode() === (subItemKey === 'new' ? 'new' : 'directory');
+    }
+
+    return false;
+  }
+
+  protected updateClientSearchQuery(value: string): void {
+    this.clientSearchQuery.set(value);
+  }
+
+  protected addNote(): void {
+    const timestamp = new Date();
+    const note: NoteCard = {
+      id: `note-${timestamp.getTime()}-${Math.random().toString(36).slice(2, 8)}`,
+      text: '',
+      color: this.noteColors[0],
+      createdAt: timestamp.toLocaleDateString('cs-CZ'),
+      expiresAt: ''
+    };
+
+    this.notes.update((items) => [note, ...items]);
+  }
+
+  protected updateNoteText(noteId: string, value: string): void {
+    this.notes.update((items) => items.map((note) => note.id === noteId ? { ...note, text: value } : note));
+  }
+
+  protected setNoteColor(noteId: string, color: string): void {
+    this.notes.update((items) => items.map((note) => note.id === noteId ? { ...note, color } : note));
+  }
+
+  protected setNoteExpiresAt(noteId: string, value: string): void {
+    this.notes.update((items) => items.map((note) => note.id === noteId ? { ...note, expiresAt: value } : note));
+  }
+
+  protected setNewClientDraftField<K extends keyof NewClientDraft>(field: K, value: NewClientDraft[K]): void {
+    if (field === 'clientType' && value === 'fyzicka' && this.activeNewClientTab() === 'company') {
+      this.activeNewClientTab.set('documents');
+    }
+
+    this.newClientDraft.update((draft) => ({ ...draft, [field]: value }));
+  }
+
+  protected isNewClientDraftValue<K extends keyof NewClientDraft>(field: K, value: NewClientDraft[K]): boolean {
+    return this.newClientDraft()[field] === value;
+  }
+
+  protected setNewClientActingMode(mode: NewClientDraft['actingMode']): void {
+    this.setNewClientDraftField('actingMode', mode);
+
+    if (mode === 'zastoupeni') {
+      this.newClientRelatedClientCardCount.set(1);
+      return;
+    }
+
+    this.newClientRelatedClientCardCount.set(0);
+  }
+
+  protected setActiveNewClientTab(tab: NewClientTabKey): void {
+    this.activeNewClientTab.set(tab);
+  }
+
+  protected isActiveNewClientTab(tab: NewClientTabKey): boolean {
+    return this.activeNewClientTab() === tab;
+  }
+
+  protected readonly newClientDraftDocInput = signal('');
+  protected readonly clientDocSearch = signal('');
+
+  protected setNewClientDraftDocInput(value: string): void {
+    this.newClientDraftDocInput.set(value);
+  }
+
+  protected setClientDocSearch(value: string): void {
+    this.clientDocSearch.set(value);
+  }
+
+  protected filteredClientDocuments(): { index: number; name: string }[] {
+    const query = this.clientDocSearch().trim().toLowerCase();
+    const docs = this.newClientDraft().clientDocuments || [];
+    return docs
+      .map((name, index) => ({ index, name }))
+      .filter((doc) => !query || doc.name.toLowerCase().includes(query));
+  }
+
+  protected addNewClientDocument(): void {
+    const value = this.newClientDraftDocInput().trim();
+    if (!value) {
+      return;
+    }
+
+    this.newClientDraft.update((draft) => ({
+      ...draft,
+      clientDocuments: [...(draft.clientDocuments || []), value]
+    }));
+    this.newClientDraftDocInput.set('');
+  }
+
+  protected removeNewClientDocument(index: number): void {
+    const name = this.newClientDraft().clientDocuments?.[index] || 'tento doklad';
+    if (!window.confirm(`Opravdu chcete smazat doklad „${name}"?`)) {
+      return;
+    }
+    this.newClientDraft.update((draft) => ({
+      ...draft,
+      clientDocuments: (draft.clientDocuments || []).filter((_, i) => i !== index)
+    }));
+  }
+
+  protected toggleNewClientIdUpload(): void {
+    this.newClientDraft.update((draft) => ({
+      ...draft,
+      idUploadVisible: !draft.idUploadVisible
+    }));
+  }
+
+  protected setNewClientIdUploadFile(event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    const fileName = input?.files?.[0]?.name || '';
+    this.newClientDraft.update((draft) => ({ ...draft, idUploadFileName: fileName }));
+  }
+
+  protected toggleNewClientDraftYesNo(field: 'maritalStatusOnId' | 'sanctionsApplied' | 'pepStatus', value: 'ANO' | 'NE'): void {
+    this.newClientDraft.update((draft) => ({
+      ...draft,
+      [field]: draft[field] === value ? null : value
+    }));
+  }
+
+  protected toggleNewClientDraftChoice<K extends keyof NewClientDraft>(field: K, value: NewClientDraft[K], emptyValue: NewClientDraft[K] | ''): void {
+    this.setNewClientDraftField(field, (this.newClientDraft()[field] === value ? emptyValue : value) as NewClientDraft[K]);
+  }
+
+  private createDefaultNewClientDraft(): NewClientDraft {
+    return {
+      clientType: 'fyzicka',
+      clientInterest: 'zajemce',
+      hasTitle: false,
+      titleText: '',
+      actingMode: 'sam',
+      fullName: '',
+      birthDate: '',
+      phonePrefix: '+420',
+      phone: '',
+      email: '',
+      idType: '',
+      otherIdDocument: '',
+      idNumber: '',
+      personalIdNumber: '',
+      birthPlace: '',
+      citizenship: '',
+      gender: '',
+      idIssuedAt: '',
+      idValidUntil: '',
+      idIssuedByAuthority: '',
+      idIssuedByState: '',
+      permanentResidence: '',
+      correspondenceAddress: '',
+      maritalStatus: '',
+      maritalStatusOnId: null,
+      idUploadVisible: false,
+      idUploadFileName: '',
+      companyName: '',
+      companyIco: '',
+      companyAddress: '',
+      companyBeneficialOwner: '',
+      companyOwnershipStructure: '',
+      companyRepresentedPersonName: '',
+      companyRepresentationType: '',
+      companyPowerOfAttorneyDate: '',
+      amlTransactionPurpose: '',
+      amlSellerAcquisitionPeriod: '',
+      amlSourceOfFunds: [],
+      amlOtherSourceDetails: '',
+      amlMonthlyIncomeBracket: '',
+      amlProofSale: [],
+      amlProofInheritance: [],
+      amlProofGift: [],
+      amlProofLoan: [],
+      amlProofSavings: [],
+      amlProofEmployment: [],
+      amlProofBusiness: [],
+      amlProofBankLoan: [],
+      amlProofOther: [],
+      occupation: '',
+      sanctionsApplied: null,
+      sanctionsDetails: '',
+      pepStatus: null,
+      pepDetails: '',
+      bankAccount: '',
+      propertyOwnershipLength: '',
+      acceptedOptions: [],
+      deliveredDocuments: [],
+      actingAsRepresentativeFor: '',
+      clientDocuments: []
+    };
+  }
+
+  private cloneNewClientDraft(draft: NewClientDraft): NewClientDraft {
+    return {
+      ...this.createDefaultNewClientDraft(),
+      ...draft,
+      acceptedOptions: [...(draft.acceptedOptions || [])],
+      deliveredDocuments: [...(draft.deliveredDocuments || [])],
+      amlSourceOfFunds: [...(draft.amlSourceOfFunds || [])],
+      amlProofSale: [...(draft.amlProofSale || [])],
+      amlProofInheritance: [...(draft.amlProofInheritance || [])],
+      amlProofGift: [...(draft.amlProofGift || [])],
+      amlProofLoan: [...(draft.amlProofLoan || [])],
+      amlProofSavings: [...(draft.amlProofSavings || [])],
+      amlProofEmployment: [...(draft.amlProofEmployment || [])],
+      amlProofBusiness: [...(draft.amlProofBusiness || [])],
+      amlProofBankLoan: [...(draft.amlProofBankLoan || [])],
+      amlProofOther: [...(draft.amlProofOther || [])],
+      clientDocuments: [...(draft.clientDocuments || [])]
+    };
+  }
+
+  private snapshotNewClientDraft(): NewClientDraft {
+    return this.cloneNewClientDraft(this.newClientDraft());
+  }
+
+  protected saveCurrentNewClient(): void {
+    const draft = this.snapshotNewClientDraft();
+    const activeId = this.activeSavedClientId();
+
+    this.savedClientRecords.update((records) => {
+      if (activeId) {
+        return records.map((record) => record.id === activeId ? { ...record, draft } : record);
+      }
+
+      const id = `client-${Date.now()}`;
+      this.activeSavedClientId.set(id);
+      return [{
+        id,
+        createdAt: new Date().toLocaleDateString('cs-CZ'),
+        draft
+      }, ...records];
+    });
+
+    this.saveToXml();
+    this.clientWorkspaceMode.set('directory');
+  }
+
+  protected isEditingSavedClient(): boolean {
+    return this.activeSavedClientId().length > 0;
+  }
+
+  protected closeClientEditor(): void {
+    this.clientWorkspaceMode.set('directory');
+  }
+
+  protected openClientPreviewEntry(index: number): void {
+    const record = this.savedClientRecords()[index];
+    if (!record) {
+      return;
+    }
+
+    this.previewClientRecordId.set(record.id);
+  }
+
+  protected closeClientPreview(): void {
+    this.previewClientRecordId.set('');
+  }
+
+  protected previewClientRecord(): SavedClientRecord | null {
+    const id = this.previewClientRecordId();
+    return this.savedClientRecords().find((record) => record.id === id) || null;
+  }
+
+  protected openPropertyPreviewEntry(entry: PropertyDirectoryEntry): void {
+    const record = this.savedPropertyRecords()[entry.index];
+    if (!record) {
+      return;
+    }
+
+    this.previewPropertyRecordId.set(record.id);
+  }
+
+  protected openPropertyDirectoryEntry(entry: PropertyDirectoryEntry): void {
+    const record = this.savedPropertyRecords()[entry.index];
+    if (!record) {
+      this.activatePropertyWorkspaceMode('new');
+      return;
+    }
+
+    this.activePropertyId.set(record.id);
+    this.activatePropertyWorkspaceMode('new');
+  }
+
+  protected closePropertyPreview(): void {
+    this.previewPropertyRecordId.set('');
+  }
+
+  protected previewPropertyRecord(): SavedPropertyRecord | null {
+    const id = this.previewPropertyRecordId();
+    return this.savedPropertyRecords().find((record) => record.id === id) || null;
+  }
+
+  private clientRecordStatus(_record: SavedClientRecord): 'Aktivní' | 'Neaktivní' {
+    // Klient je aktivní pouze při reálné vazbě na nemovitost v prodeji.
+    // Tato vazba ani pole "Ukončení projektu" zatím v klientském záznamu neukládáme,
+    // proto je bezpečný výchozí stav neaktivní, dokud nedoplníme skutečné propojení.
+    return 'Neaktivní';
+  }
+
+  protected hasNewClientDraftListValue(
+    field:
+      | 'acceptedOptions'
+      | 'deliveredDocuments'
+      | 'amlSourceOfFunds'
+      | 'amlProofSale'
+      | 'amlProofInheritance'
+      | 'amlProofGift'
+      | 'amlProofLoan'
+      | 'amlProofSavings'
+      | 'amlProofEmployment'
+      | 'amlProofBusiness'
+      | 'amlProofBankLoan'
+      | 'amlProofOther',
+    value: string
+  ): boolean {
+    return this.newClientDraft()[field].includes(value);
+  }
+
+  protected newClientRelatedClientCards(): number[] {
+    return Array.from({ length: this.newClientRelatedClientCardCount() }, (_, index) => index);
+  }
+
+  protected toggleNewClientDraftListValue(
+    field:
+      | 'acceptedOptions'
+      | 'deliveredDocuments'
+      | 'amlSourceOfFunds'
+      | 'amlProofSale'
+      | 'amlProofInheritance'
+      | 'amlProofGift'
+      | 'amlProofLoan'
+      | 'amlProofSavings'
+      | 'amlProofEmployment'
+      | 'amlProofBusiness'
+      | 'amlProofBankLoan'
+      | 'amlProofOther',
+    value: string
+  ): void {
+    this.newClientDraft.update((draft) => {
+      const values = draft[field];
+      const nextValues = values.includes(value)
+        ? values.filter((item) => item !== value)
+        : [...values, value];
+
+      return { ...draft, [field]: nextValues };
+    });
+  }
+
+  protected openClientDirectoryEntry(index: number): void {
+    const record = this.savedClientRecords()[index];
+    if (!record) {
+      this.activateClientWorkspaceMode('new');
+      this.activateClientTab(index);
+      return;
+    }
+
+    this.activeSavedClientId.set(record.id);
+    this.newClientDraft.set(this.cloneNewClientDraft(record.draft));
+    this.newClientRelatedClientCardCount.set(record.draft.actingMode === 'zastoupeni' ? 1 : 0);
+    this.activateClientWorkspaceMode('new');
+    this.scheduleResizeNewClientTextareas();
+  }
+
+  protected workspaceIcon(workspace: WorkspaceNavItem): string {
+    return workspace.iconPath;
+  }
+
+  protected agentInitials(): string {
+    const fullName = this.fieldValueAny('MAKLÉŘ', ['Jméno (jména) a Příjmení', 'Jméno a příjmení']).trim();
+    if (!fullName) {
+      return '';
+    }
+
+    const parts = fullName.split(/\s+/).filter(Boolean);
+    if (parts.length === 0) {
+      return '';
+    }
+
+    const first = parts[0]?.charAt(0) || '';
+    const last = (parts.length > 1 ? parts[parts.length - 1] : parts[0])?.charAt(0) || '';
+    return `${first}${last}`.toLocaleUpperCase('cs-CZ');
+  }
+
+  protected showPreviousCalendarMonth(): void {
+    const value = new Date(this.currentCalendarDate());
+    value.setMonth(value.getMonth() - 1, 1);
+    this.currentCalendarDate.set(this.startOfMonth(value));
+  }
+
+  protected showNextCalendarMonth(): void {
+    const value = new Date(this.currentCalendarDate());
+    value.setMonth(value.getMonth() + 1, 1);
+    this.currentCalendarDate.set(this.startOfMonth(value));
+  }
+
+  protected visibleWorkspaceSections(): number {
+    return this.sectionsForActiveWorkspace().length;
+  }
+
+  private sectionsForActiveWorkspace(): Section[] {
+    const workspace = this.activeWorkspace();
+    const sections = this.filteredSections().filter((section) => this.sectionBelongsToWorkspace(section, workspace));
+    return this.expandRenderedSections(sections);
+  }
+
+  private expandRenderedSections(sections: Section[]): Section[] {
+    const expanded: Section[] = [];
+
+    for (const section of sections) {
+      const normalized = this.normalize(section.name);
+
+      if (normalized === 'KLIENT') {
+        expanded.push(...this.expandSectionByRenderGroups(section, this.clientSectionRenderGroups));
+        continue;
+      }
+
+      if (normalized === 'AML') {
+        expanded.push({
+          ...section,
+          renderName: 'AML',
+          renderKey: 'aml-main'
+        });
+        continue;
+      }
+
+      if (this.isAmlSectionName(normalized)) {
+        expanded.push({
+          ...section,
+          renderName: 'AML',
+          renderKey: `aml-${normalized}`
+        });
+        continue;
+      }
+
+      expanded.push(section);
+    }
+
+    return expanded;
+  }
+
+  private expandSectionByRenderGroups(section: Section, groups: Array<{ key: string; title: string; labels: string[] }>): Section[] {
+    const normalizedLabels = new Set<string>();
+    const renderedSections: Section[] = [];
+    let remainingItems = [...section.items];
+
+    for (const group of groups) {
+      const labels = group.labels.map((label) => this.normalize(label));
+      const items = remainingItems.filter((item) => labels.includes(this.normalize(item.label)));
+      items.forEach((item) => normalizedLabels.add(this.normalize(item.label)));
+      remainingItems = remainingItems.filter((item) => !labels.includes(this.normalize(item.label)));
+
+      if (items.length > 0) {
+        renderedSections.push({
+          ...section,
+          items,
+          renderName: group.title,
+          renderKey: group.key
+        });
+      }
+    }
+
+    if (remainingItems.length > 0) {
+      renderedSections.push({
+        ...section,
+        items: remainingItems,
+        renderName: this.remainingSectionRenderName(section),
+        renderKey: `${this.normalize(section.name)}-remaining`
+      });
+    }
+
+    return renderedSections.length > 0 ? renderedSections : [section];
+  }
+
+  private remainingSectionRenderName(section: Section): string {
+    return section.name;
+  }
+
+  private sectionBelongsToWorkspace(section: Section, workspace: WorkspaceKey): boolean {
+    const normalized = this.normalize(section.name);
+
+    if (workspace === 'agent') {
+      return normalized === 'MAKLER';
+    }
+
+    if (workspace === 'clients') {
+      return normalized === 'KLIENT' || this.isAmlSectionName(normalized);
+    }
+
+    if (workspace === 'properties') {
+      return normalized !== 'MAKLER'
+        && normalized !== 'KLIENT'
+        && !this.isAmlSectionName(normalized)
+        && normalized !== 'PREDAVACI PROTOKOL';
+    }
+
+    return false;
+  }
+
+  private isAmlSectionName(normalizedSectionName: string): boolean {
+    return normalizedSectionName === 'AML'
+      || normalizedSectionName === 'PUVOD MAJETKU'
+      || normalizedSectionName === 'PUVOD PENEZNICH PROSTREDKU';
   }
 
   private shouldHideBySpecialRule(item: ChecklistItem, property: string, service: string, ownership: string): boolean {
@@ -1878,7 +3375,16 @@ export class App {
 
   protected isDateTextField(item: ChecklistItem): boolean {
     const action = this.normalize(item.actionRaw);
-    return action.includes('DOPSAT TEXT') && action.includes('DATUM');
+    return (action.includes('DOPSAT TEXT') && action.includes('DATUM'))
+      || action.includes('DDMMRRRR');
+  }
+
+  protected dateInputMaxLength(item: ChecklistItem): number | null {
+    return this.isDateTextField(item) ? 10 : null;
+  }
+
+  protected dateInputPattern(item: ChecklistItem): string | null {
+    return this.isDateTextField(item) ? '\\d{2}\\.\\d{2}\\.\\d{4}' : null;
   }
 
   protected numericInputMode(item: ChecklistItem): 'text' | 'numeric' | 'decimal' {
@@ -1939,7 +3445,8 @@ export class App {
 
     if (this.isDateTextField(item)) {
       const current = this.stateFor(item.id).textValue;
-      this.stateFor(item.id).textValue = this.formatDateInput(current);
+      const formatted = this.formatDateInput(current);
+      this.stateFor(item.id).textValue = this.isValidFullDate(formatted) || formatted.length < 10 ? formatted : '';
       return;
     }
 
@@ -1986,6 +3493,9 @@ export class App {
   protected itemHeadingText(item: ChecklistItem): string {
     if (this.isSecurityCameraItem(item)) {
       return 'Vlastní kamerový systém';
+    }
+    if (item.label.trim() === '?????') {
+      return 'Klient jedná sám za sebe / klient jedná v zastoupení';
     }
     return item.label;
   }
@@ -2702,6 +4212,39 @@ export class App {
       'Jméno (jména)',
       'Jméno'
     ]).trim();
+  }
+
+  private clientRoleLabel(index: number): string {
+    const service = this.selectedService().trim();
+    const normalized = this.normalize(service);
+
+    if (normalized === 'PRODEJ') {
+      return 'Prodávající';
+    }
+
+    if (normalized === 'PRONAJEM' || normalized === 'PODNAJEM') {
+      return 'Poptávající';
+    }
+
+    return index === 0 ? 'Prodávající' : 'Kupující';
+  }
+
+  private clientCreatedAtLabel(index: number): string {
+    const item = this.findItemBySectionAndLabel('KLIENT', 'Jméno (jména) a Příjmení')
+      || this.findItemBySectionAndLabel('KLIENT', 'Jméno a příjmení');
+    if (!item) {
+      return '-';
+    }
+
+    const targetId = this.clientScopedItemId(item.id, index);
+    const state = this.stateFor(targetId);
+    const hasAnyValue = state.textValue.trim().length > 0 || Array.from(state.selectedOptions).length > 0 || state.yesNo !== null;
+
+    if (!hasAnyValue) {
+      return '-';
+    }
+
+    return new Date().toLocaleDateString('cs-CZ');
   }
 
   private clientFieldValue(clientIndex: number, sectionName: string, labelName: string): string {
@@ -3782,6 +5325,10 @@ export class App {
 
   protected trackByValue = (_: number, value: string): string => value;
 
+  protected trackByWorkspace = (_: number, workspace: WorkspaceNavItem): WorkspaceKey => workspace.key;
+
+  protected trackByWorkspaceSubItem = (_: number, subItem: { key: string; label: string }): string => subItem.key;
+
   protected trackByGate = (_: number, gate: GateOption): string => gate.value;
 
   protected trackByGroup = (_: number, group: SectionGroup): string => group.key;
@@ -3933,15 +5480,37 @@ export class App {
   }
 
   private sectionKey(section: Section): string {
-    return `${section.order}-${section.name}`;
+    return `${section.order}-${section.renderKey || section.name}`;
   }
 
   private setActiveSectionByItem(item: ChecklistItem): void {
     const targetItemId = this.baseItemId(item.id);
     const section = this.sections().find((entry) => entry.name === item.section && entry.items.some((row) => row.id === targetItemId));
     if (section) {
+      this.activeWorkspace.set(this.workspaceForSection(section));
       this.activeSectionKey.set(this.sectionKey(section));
+      this.activeGroupKey.set(this.sectionKey(section));
     }
+  }
+
+  private workspaceForSection(section: Section): WorkspaceKey {
+    if (this.sectionBelongsToWorkspace(section, 'agent')) {
+      return 'agent';
+    }
+
+    if (this.sectionBelongsToWorkspace(section, 'clients')) {
+      return 'clients';
+    }
+
+    return 'properties';
+  }
+
+  private startOfMonth(value: Date): Date {
+    return new Date(value.getFullYear(), value.getMonth(), 1);
+  }
+
+  private startOfDay(value: Date): Date {
+    return new Date(value.getFullYear(), value.getMonth(), value.getDate());
   }
 
   private bumpStateVersion(): void {
@@ -3972,12 +5541,30 @@ export class App {
     this.printWithMode('unfilled');
   }
 
+  protected syncActiveNewClientToRecords(): void {
+    const activeId = this.activeSavedClientId();
+    if (!activeId) {
+      return;
+    }
+
+    const draft = this.snapshotNewClientDraft();
+    this.savedClientRecords.update((records) =>
+      records.map((record) => (record.id === activeId ? { ...record, draft } : record))
+    );
+  }
+
   protected saveToXml(): void {
+    this.syncActiveNewClientToRecords();
     const payload = {
       selectedPropertyType: this.selectedPropertyType(),
       selectedService: this.selectedService(),
       selectedOwnership: this.selectedOwnership(),
       clientCount: this.clientCount(),
+      savedClientRecords: this.savedClientRecords(),
+      newClientDraft: this.snapshotNewClientDraft(),
+      activeSavedClientId: this.activeSavedClientId(),
+      notes: this.notes(),
+      savedPropertyRecords: this.savedPropertyRecords(),
       states: Array.from(this.states.entries()).map(([itemId, state]) => ({
         itemId,
         itemKey: this.itemPersistenceKeyById(itemId),
@@ -4032,45 +5619,29 @@ export class App {
     input.click();
   }
 
-  protected generateAmlForm(): void {
-    const win = window.open('', '_blank', 'width=980,height=1200');
-    if (!win) {
-      window.alert('Nepodařilo se otevřít okno pro AML formulář. Zkontrolujte blokování vyskakovacích oken.');
-      return;
-    }
-
-    win.document.open();
-    win.document.write('<!doctype html><html lang="cs"><head><meta charset="utf-8"><title>AML</title></head><body>Generuji AML formulář...</body></html>');
-    win.document.close();
-
-    try {
-    const purpose = this.fieldValueAny('PŮVOD PENĚŽNÍCH PROSTŘEDKŮ', ['Účel realitní transakce']);
-    const acquisitionLabel = 'Prodávající: Nabytí nemovitosti';
-    const acquisitionOptions = this.fieldOptionsAny('PŮVOD MAJETKU', [acquisitionLabel, 'Prodávající - Nabytí nemovitosti']);
-    const avgIncomeLabel = 'Průměrný měsíční příjem (v době nabytí majetku)';
-    const avgIncomeOptions = this.fieldOptionsAny('PŮVOD PENĚŽNÍCH PROSTŘEDKŮ', [avgIncomeLabel, 'Průměrný měsíční příjem / v době nabytí majetku']);
-    const fundsLabel = 'Původ finančních prostředků / majetku';
-    const fundsOptions = this.fieldOptionsAny('PŮVOD PENĚŽNÍCH PROSTŘEDKŮ', [fundsLabel, 'Původ peněžních prostředků / majetku']);
+  private renderAmlFormHtml(d: NewClientDraft, brokerName: string): string {
+    const isLegalPerson = d.clientType === 'pravnicka';
+    const fullName = d.fullName || '';
+    const firstNames = fullName.split(' ').slice(0, -1).join(' ');
+    const surname = fullName.split(' ').slice(-1).join(' ');
     const amlDocumentTitle = this.amlDocumentTitle();
-    const proofOfSource = this.fieldValueAny('PŮVOD MAJETKU', ['Doklady k prokázání zdroje finančních prostředků / majetku'])
-      || this.fieldValueAny('PŮVOD PENĚŽNÍCH PROSTŘEDKŮ', ['Doklady k prokázání zdroje finančních prostředků / majetku'])
-      || this.collectValuesFromSectionByLabelKeywords('PŮVOD MAJETKU', [
-        'Doklady k prokázání zdroje finančních prostředků / majetku',
-        'Doklady k prokázání zdroje',
-        'Smlouva o daru',
-        'Identifikace dárce',
-        'Doložení původu peněz dárce',
-        'Bankovní výpis o převodu daru'
-      ]);
-
-    const yesNoPep = this.fieldYesNo('KLIENT', 'Jste / byl/a jste v posledních 12 měsících politicky exponovanou osobou nebo jste blízkou osobou politicky exponované osoby?');
-    const yesNoSanctions = this.fieldYesNo('KLIENT', 'Jste osoba, vůči níž ČR uplatňuje mezinárodní sankce podle zákona č. 69/2006 Sb. o provádění mezinárodních sankcí');
+    const idTypeObcansky = d.idType === 'obcansky-prukaz';
+    const idTypePas = d.idType === 'cestovni-pas';
+    const idTypeJiny = d.idType === 'jiny';
+    const genderMale = d.gender === 'Muž';
+    const genderFemale = d.gender === 'Žena';
+    const phone = ((d.phonePrefix ? d.phonePrefix + ' ' : '') + (d.phone || '')).trim();
+    const title = d.hasTitle ? (d.titleText || '') : '';
+    const repBody = d.companyRepresentationType === 'clenem-statutarniho-organu';
+    const repEmployee = d.companyRepresentationType === 'zamestnancem';
+    const repPower = d.companyRepresentationType === 'na-zaklade-plne-moci';
+    const funds = (d.amlSourceOfFunds || []).join(', ');
 
     const mark = (active: boolean): string => (active ? '☒' : '☐');
     const line = (value: string): string => this.escapeHtml(value || '');
     const yn = (value: YesNo, expected: 'ANO' | 'NE'): string => mark((value || '') === expected);
 
-    const html = `<!doctype html>
+    return `<!doctype html>
 <html lang="cs"><head><meta charset="utf-8" /><meta name="color-scheme" content="light" /><title>${this.escapeHtml(amlDocumentTitle)}</title>
 <style>
 @page { size: A4; margin: 10mm 15mm; }
@@ -4112,20 +5683,7 @@ body { font-family: Arial, sans-serif; margin: 0; font-size: 11.6px; -webkit-pri
 .aml-page { break-after: page; page-break-after: always; }
 .aml-page:last-child { break-after: auto; page-break-after: auto; }
 </style></head><body>
-${Array.from({ length: this.clientCount() }, (_, clientIndex) => {
-    const isLegalPerson = this.clientHasSelectedOption(clientIndex, 'KLIENT', 'Typ klienta', 'Právnická osoba');
-    const representedPerson = this.clientFieldValueAny(clientIndex, 'KLIENT', ['Pokud výše uvedená osoba jedná jako zástupce klienta - uveďte jméno a příjmení zastoupeného', 'Jméno a příjmení zastoupeného', 'Zastoupený']);
-    const representedByBody = this.clientHasSelectedOptionAny(clientIndex, 'KLIENT', ['Zastoupení', 'Zastoupení ...'], 'členem statutárního orgánu');
-    const representedByEmployee = this.clientHasSelectedOptionAny(clientIndex, 'KLIENT', ['Zastoupení', 'Zastoupení ...'], 'zaměstnancem');
-    const representedByPowerOfAttorney = this.clientHasSelectedOptionAny(clientIndex, 'KLIENT', ['Zastoupení', 'Zastoupení ...'], 'na základě plné moci');
-    const powerOfAttorneyDate = this.clientFieldValueAny(clientIndex, 'KLIENT', ['na základě plné moci ze dne', 'Plná moc ze dne']);
-    const yesNoPep = this.clientFieldYesNo(clientIndex, 'KLIENT', 'Jste / byl/a jste v posledních 12 měsících politicky exponovanou osobou nebo jste blízkou osobou politicky exponované osoby?');
-    const yesNoSanctions = this.clientFieldYesNo(clientIndex, 'KLIENT', 'Jste osoba, vůči níž ČR uplatňuje mezinárodní sankce podle zákona č. 69/2006 Sb. o provádění mezinárodních sankcí');
-    const fullName = this.clientFieldValue('KLIENT'.length && clientIndex >= 0 ? clientIndex : 0, 'KLIENT', 'Jméno (jména) a Příjmení');
-    const firstNames = fullName.split(' ').slice(0, -1).join(' ');
-    const surname = fullName.split(' ').slice(-1).join(' ');
-    return `
-<div class="aml aml-page">
+${`<div class="aml aml-page">
 <div class="banner">AML DOTAZNÍK</div>
 <div style="height:1px;"></div>
 <div class="note-mini">AML dotazník je nutný v případě, pokud měsíční nájemné nebo pachtovné převýší hodnotu 10 000 EUR (243 278 Kč)</div>
@@ -4137,58 +5695,58 @@ ${Array.from({ length: this.clientCount() }, (_, clientIndex) => {
     <div>
       <div class="row"><div class="label">Jméno (jména)</div><div class="value">${line(firstNames)}</div></div>
       <div class="row"><div class="label">Příjmení</div><div class="value">${line(surname)}</div></div>
-      <div class="row"><div class="label">Titul před jménem</div><div class="value">${line(this.clientFieldValue(clientIndex, 'KLIENT', 'Titul před jménem'))}</div></div>
-      <div class="row"><div class="label">Titul za jménem</div><div class="value">${line(this.clientFieldValue(clientIndex, 'KLIENT', 'Titul za jménem'))}</div></div>
-      <div class="row"><div class="label">Datum narození</div><div class="value">${line(this.clientFieldValueAny(clientIndex, 'KLIENT', ['Datum narození']))}</div></div>
-      <div class="row"><div class="label">Obec a stát místa narození</div><div class="value">${line(this.clientFieldValueAny(clientIndex, 'KLIENT', ['Obec a stát místa narození', 'Místo narození']))}</div></div>
-      <div class="row"><div class="label">Státní občanství</div><div class="value">${line(this.clientFieldValue(clientIndex, 'KLIENT', 'Státní občanství'))}</div></div>
-      <div class="row"><div class="label">Pohlaví</div><div class="value">${mark(this.clientHasSelectedOption(clientIndex, 'KLIENT', 'Pohlaví', 'Muž'))} Muž&nbsp;&nbsp; ${mark(this.clientHasSelectedOption(clientIndex, 'KLIENT', 'Pohlaví', 'Žena'))} Žena</div></div>
-      <div class="row"><div class="label">Telefon</div><div class="value">${line(this.clientFieldValueAny(clientIndex, 'KLIENT', ['Kontaktní telefon', 'Telefon']))}</div></div>
-      <div class="row"><div class="label">E-mail</div><div class="value">${line(this.clientFieldValueAny(clientIndex, 'KLIENT', ['E-mail', 'Email']))}</div></div>
-      <div class="row"><div class="label">Rodinný stav</div><div class="value">${line(this.clientFieldValue(clientIndex, 'KLIENT', 'Rodinný stav'))}</div></div>
-      <div class="row top-align-value"><div class="label">Jste / byl/a jste v posledních 12<br>měsících politicky exponovanou<br>osobou nebo jste blízkou osobou<br>politicky exponované osoby?</div><div class="value">${yn(yesNoPep, 'NE')} Ne<br>${yn(yesNoPep, 'ANO')} Ano (uveďte podrobnosti)</div></div>
+      <div class="row"><div class="label">Titul před jménem</div><div class="value">${line(title)}</div></div>
+      <div class="row"><div class="label">Titul za jménem</div><div class="value">${line('')}</div></div>
+      <div class="row"><div class="label">Datum narození</div><div class="value">${line(d.birthDate)}</div></div>
+      <div class="row"><div class="label">Obec a stát místa narození</div><div class="value">${line(d.birthPlace)}</div></div>
+      <div class="row"><div class="label">Státní občanství</div><div class="value">${line(d.citizenship)}</div></div>
+      <div class="row"><div class="label">Pohlaví</div><div class="value">${mark(genderMale)} Muž&nbsp;&nbsp; ${mark(genderFemale)} Žena</div></div>
+      <div class="row"><div class="label">Telefon</div><div class="value">${line(phone)}</div></div>
+      <div class="row"><div class="label">E-mail</div><div class="value">${line(d.email)}</div></div>
+      <div class="row"><div class="label">Rodinný stav</div><div class="value">${line(d.maritalStatus)}</div></div>
+      <div class="row top-align-value"><div class="label">Jste / byl/a jste v posledních 12<br>měsících politicky exponovanou<br>osobou nebo jste blízkou osobou<br>politicky exponované osoby?</div><div class="value">${yn(d.pepStatus, 'NE')} Ne<br>${yn(d.pepStatus, 'ANO')} Ano (uveďte podrobnosti)</div></div>
     </div>
     <div>
-      <div class="row"><div class="label">Druh průkazu totožnosti</div><div class="value">${mark(this.clientHasSelectedOption(clientIndex, 'KLIENT', 'Druh průkazu totožnosti', 'Občanský průkaz'))} Občanský průkaz&nbsp;&nbsp; ${mark(this.clientHasSelectedOption(clientIndex, 'KLIENT', 'Druh průkazu totožnosti', 'Cestovní pas'))} Cestovní pas&nbsp;&nbsp; ${mark(this.clientHasSelectedOption(clientIndex, 'KLIENT', 'Druh průkazu totožnosti', 'Jiný'))} Jiný</div></div>
-      <div class="row"><div class="label">Číslo průkazu totožnosti</div><div class="value">${line(this.clientFieldValue(clientIndex, 'KLIENT', 'Číslo průkazu totožnosti'))}</div></div>
-      <div class="row"><div class="label">Datum vydání dokladu</div><div class="value">${line(this.clientFieldValueAny(clientIndex, 'KLIENT', ['Datum vydání dokladu', 'Datum vydání']))}</div></div>
-      <div class="row"><div class="label">Doba platnosti dokladu</div><div class="value">${line(this.clientFieldValueAny(clientIndex, 'KLIENT', ['Doba platnosti dokladu', 'Doba platnosti']))}</div></div>
-      <div class="row"><div class="label">Rodné číslo (není-li dat. nar.)</div><div class="value">${line(this.clientFieldValueAny(clientIndex, 'KLIENT', ['Rodné číslo (není-li datum narození)', 'Rodné číslo (není-li dat. nar.)', 'Rodné číslo']))}</div></div>
-      <div class="row"><div class="label">Trvalý nebo jiný pobyt</div><div class="value">${line(this.clientFieldValueAny(clientIndex, 'KLIENT', ['Trvalý nebo jiný pobyt', 'Trvalý nebo jíný pobyt', 'Trvalý pobyt']))}</div></div>
-      <div class="row"><div class="label">Skutečné místo pobytu (korespondenční adresa)</div><div class="value">${line(this.clientFieldValueAny(clientIndex, 'KLIENT', ['Korespondenční adresa (pokud je jiná než trvalý pobyt)', 'Skutečné místo pobytu (korespondenční adresa)', 'Skutečné místo pobytu']))}</div></div>
-      <div class="row"><div class="label">Orgán, který průkaz vydal</div><div class="value">${line(this.clientFieldValue(clientIndex, 'KLIENT', 'Orgán, který průkaz vydal'))}</div></div>
-      <div class="row"><div class="label">Stát, který průkaz vydal</div><div class="value">${line(this.clientFieldValue(clientIndex, 'KLIENT', 'Stát, který průkaz vydal'))}</div></div>
-      <div class="row"><div class="label">Zaměstnání / obor podnikání</div><div class="value">${line(this.clientFieldValueAny(clientIndex, 'KLIENT', ['Zaměstnání / obor podnikání', 'Zaměstnání']))}</div></div>
-      <div class="row top-align-value"><div class="label">Jste osoba, vůči níž ČR uplatňuje<br>mezinárodní sankce podle<br>zákona č. 69/2006 Sb. o<br>provádění mezinárodních sankcí</div><div class="value">${yn(yesNoSanctions, 'NE')} Ne<br>${yn(yesNoSanctions, 'ANO')} Ano (uveďte podrobnosti)</div></div>
+      <div class="row"><div class="label">Druh průkazu totožnosti</div><div class="value">${mark(idTypeObcansky)} Občanský průkaz&nbsp;&nbsp; ${mark(idTypePas)} Cestovní pas&nbsp;&nbsp; ${mark(idTypeJiny)} Jiný</div></div>
+      <div class="row"><div class="label">Číslo průkazu totožnosti</div><div class="value">${line(d.idNumber)}</div></div>
+      <div class="row"><div class="label">Datum vydání dokladu</div><div class="value">${line(d.idIssuedAt)}</div></div>
+      <div class="row"><div class="label">Doba platnosti dokladu</div><div class="value">${line(d.idValidUntil)}</div></div>
+      <div class="row"><div class="label">Rodné číslo</div><div class="value">${line(d.personalIdNumber)}</div></div>
+      <div class="row"><div class="label">Trvalý nebo jiný pobyt</div><div class="value">${line(d.permanentResidence)}</div></div>
+      <div class="row"><div class="label">Skutečné místo pobytu (korespondenční adresa)</div><div class="value">${line(d.correspondenceAddress)}</div></div>
+      <div class="row"><div class="label">Orgán, který průkaz vydal</div><div class="value">${line(d.idIssuedByAuthority)}</div></div>
+      <div class="row"><div class="label">Stát, který průkaz vydal</div><div class="value">${line(d.idIssuedByState)}</div></div>
+      <div class="row"><div class="label">Zaměstnání / obor podnikání</div><div class="value">${line(d.occupation)}</div></div>
+      <div class="row top-align-value"><div class="label">Jste osoba, vůči níž ČR uplatňuje<br>mezinárodní sankce podle<br>zákona č. 69/2006 Sb. o<br>provádění mezinárodních sankcí</div><div class="value">${yn(d.sanctionsApplied, 'NE')} Ne<br>${yn(d.sanctionsApplied, 'ANO')} Ano (uveďte podrobnosti)</div></div>
     </div>
   </div>
-  <div class="row represented-person-row"><div class="label">Pokud výše uvedená osoba jedná jako zástupce klienta - uveďte jméno a příjmení zastoupeného</div><div class="value">${line(representedPerson)}</div></div>
+  <div class="row represented-person-row"><div class="label">Pokud výše uvedená osoba jedná jako zástupce klienta - uveďte jméno a příjmení zastoupeného</div><div class="value">${line('')}</div></div>
 </div>
 
 <div class="sec ${isLegalPerson ? '' : 'dimmed'}">
   <h3>ÚDAJE O KLIENTOVI - PRÁVNICKÉ OSOBĚ / SVĚŘENECKÉM FONDU</h3>
   <div class="grid2">
     <div>
-      <div class="row"><div class="label">Obchodní firma nebo název, včetně odlišujícího dodatku nebo dalšího označení</div><div class="value">${line(this.clientFieldValue(clientIndex, 'KLIENT', 'Název právnické osoby'))}</div></div>
-      <div class="row"><div class="label">Adresa / sídlo</div><div class="value">${line(this.clientFieldValue(clientIndex, 'KLIENT', 'Sídlo'))}</div></div>
-      <div class="row"><div class="label">Skutečný majitel dle § 4 odst. 4 AML zákona</div><div class="value">${line(this.clientFieldValueAny(clientIndex, 'KLIENT', ['Skutečný majitel dle § 4 odst. 4 AML zákona', 'Skutečný majitel']))}</div></div>
+      <div class="row"><div class="label">Obchodní firma nebo název, včetně odlišujícího dodatku nebo dalšího označení</div><div class="value">${line(d.companyName)}</div></div>
+      <div class="row"><div class="label">Adresa / sídlo</div><div class="value">${line(d.companyAddress)}</div></div>
+      <div class="row"><div class="label">Skutečný majitel dle § 4 odst. 4 AML zákona</div><div class="value">${line(d.companyBeneficialOwner)}</div></div>
     </div>
     <div>
-      <div class="row"><div class="label">Identifikační číslo</div><div class="value">${line(this.clientFieldValue(clientIndex, 'KLIENT', 'IČO'))}</div></div>
-      <div class="row"><div class="label">Vlastnická a řídící struktura</div><div class="value">${line(this.clientFieldValue(clientIndex, 'KLIENT', 'Vlastnická a řídící struktura'))}</div></div>
-      <div class="row"><div class="label">Jméno a příjmení zastoupeného</div><div class="value">${line(this.clientFieldValue(clientIndex, 'KLIENT', 'Zastoupený'))}</div></div>
+      <div class="row"><div class="label">Identifikační číslo</div><div class="value">${line(d.companyIco)}</div></div>
+      <div class="row"><div class="label">Vlastnická a řídící struktura</div><div class="value">${line(d.companyOwnershipStructure)}</div></div>
+      <div class="row"><div class="label">Jméno a příjmení zastoupeného</div><div class="value">${line(d.companyRepresentedPersonName)}</div></div>
     </div>
   </div>
-  <div class="row"><div class="label">Zastoupení ...</div><div class="value">${mark(representedByBody)} členem statutárního orgánu&nbsp;&nbsp; ${mark(representedByEmployee)} zaměstnancem&nbsp;&nbsp; ${mark(representedByPowerOfAttorney)} na základě plné moci ze dne ${line(powerOfAttorneyDate)}</div></div>
+  <div class="row"><div class="label">Zastoupení ...</div><div class="value">${mark(repBody)} členem statutárního orgánu&nbsp;&nbsp; ${mark(repEmployee)} zaměstnancem&nbsp;&nbsp; ${mark(repPower)} na základě plné moci ze dne ${line(d.companyPowerOfAttorneyDate)}</div></div>
 </div>
 
 <div class="sec">
   <h3>SPOLEČNÉ ÚDAJE O REALITNÍ TRANSAKCI A PŮVODU FINANČNÍCH PROSTŘEDKŮ</h3>
-  <div class="row"><div class="label">Účel realitní transakce</div><div class="value">${line(purpose)}</div></div>
-  <div class="row"><div class="label">Prodávající: Nabytí nemovitosti</div><div class="value checks-grid-3">${acquisitionOptions.map((o) => `<span class="check-item">${mark(this.hasSelectedOptionAny('PŮVOD MAJETKU', [acquisitionLabel, 'Prodávající - Nabytí nemovitosti'], o) || this.hasSelectedOptionAny('PŮVOD PENĚŽNÍCH PROSTŘEDKŮ', [acquisitionLabel, 'Prodávající - Nabytí nemovitosti'], o))} ${this.escapeHtml(o)}</span>`).join('')}</div></div>
-  <div class="row"><div class="label">Průměrný měsíční příjem / v době nabytí majetku</div><div class="value checks-grid-6">${avgIncomeOptions.map((o) => `<span class="check-item">${mark(this.hasSelectedOptionAny('PŮVOD PENĚŽNÍCH PROSTŘEDKŮ', [avgIncomeLabel, 'Průměrný měsíční příjem / v době nabytí majetku'], o))} ${this.escapeHtml(o)}</span>`).join('')}</div></div>
-  <div class="row"><div class="label">Původ finančních prostředků / majetku</div><div class="value checks-grid-3">${fundsOptions.map((o) => `<span class="check-item">${mark(this.hasSelectedOptionAny('PŮVOD PENĚŽNÍCH PROSTŘEDKŮ', [fundsLabel, 'Původ peněžních prostředků / majetku'], o))} ${this.escapeHtml(o)}</span>`).join('')}</div></div>
-  <div class="row"><div class="label">Doklady k prokázání zdroje finančních prostředků / majetku</div><div class="value">${line(proofOfSource)}</div></div>
+  <div class="row"><div class="label">Účel realitní transakce</div><div class="value">${line(d.amlTransactionPurpose)}</div></div>
+  <div class="row"><div class="label">Prodávající: Nabytí nemovitosti</div><div class="value">${line(d.amlSellerAcquisitionPeriod)}</div></div>
+  <div class="row"><div class="label">Průměrný měsíční příjem / v době nabytí majetku</div><div class="value">${line(d.amlMonthlyIncomeBracket)}</div></div>
+  <div class="row"><div class="label">Původ finančních prostředků / majetku</div><div class="value">${line(funds)}</div></div>
+  <div class="row"><div class="label">Doklady k prokázání zdroje finančních prostředků / majetku</div><div class="value">${line('')}</div></div>
 </div>
 
 <div class="push-signatures-bottom">
@@ -4196,17 +5754,30 @@ ${Array.from({ length: this.clientCount() }, (_, clientIndex) => {
   <div class="place-date">V&nbsp;.............................................&nbsp;&nbsp;&nbsp;dne&nbsp;.............................................</div>
   <div class="signs">
     <div class="sign">Podpis klienta</div>
-    <div class="sign">Identifikaci provedla ${this.escapeHtml(this.clientFieldValue(clientIndex, 'KLIENT', 'Identifikaci provedla') || 'Petrášová Eliška')}</div>
+    <div class="sign">Identifikaci provedl ${this.escapeHtml(brokerName)}</div>
   </div>
 </div>
-</div>`;
-}).join('')}
+</div>`}
 </body></html>`;
+  }
+
+  protected generateAmlForm(): void {
+    const win = window.open('', '_blank', 'width=980,height=1200');
+    if (!win) {
+      window.alert('Nepodařilo se otevřít okno pro AML formulář. Zkontrolujte blokování vyskakovacích oken.');
+      return;
+    }
 
     win.document.open();
-    win.document.write(html);
+    win.document.write('<!doctype html><html lang="cs"><head><meta charset="utf-8"><title>AML</title></head><body>Generuji AML formulář...</body></html>');
     win.document.close();
-    setTimeout(() => win.print(), 250);
+
+    try {
+      const html = this.renderAmlFormHtml(this.newClientDraft(), this.buyerFooterName() || 'Petrášová Eliška');
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      setTimeout(() => win.print(), 250);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Neznámá chyba při generování AML.';
       win.document.open();
@@ -4214,6 +5785,80 @@ ${Array.from({ length: this.clientCount() }, (_, clientIndex) => {
       win.document.close();
       window.alert(`Nepodařilo se vygenerovat AML formulář: ${message}`);
     }
+  }
+
+  protected generateBlankAmlForm(): void {
+    const win = window.open('', '_blank', 'width=980,height=1200');
+    if (!win) {
+      window.alert('Nepodařilo se otevřít okno pro AML formulář. Zkontrolujte blokování vyskakovacích oken.');
+      return;
+    }
+
+    win.document.open();
+    win.document.write('<!doctype html><html lang="cs"><head><meta charset="utf-8"><title>AML</title></head><body>Generuji AML formulář...</body></html>');
+    win.document.close();
+
+    try {
+      const blankDraft: NewClientDraft = { ...this.createDefaultNewClientDraft(), phonePrefix: '', phone: '' };
+      const html = this.renderAmlFormHtml(blankDraft, '');
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      setTimeout(() => win.print(), 250);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Neznámá chyba při generování AML.';
+      win.document.open();
+      win.document.write(`<!doctype html><html lang="cs"><head><meta charset="utf-8"><title>AML chyba</title></head><body style="font-family: Arial, sans-serif; padding: 16px;"><h2>Nepodařilo se vygenerovat AML formulář.</h2><p>${this.escapeHtml(message)}</p></body></html>`);
+      win.document.close();
+      window.alert(`Nepodařilo se vygenerovat AML formulář: ${message}`);
+    }
+  }
+
+  protected printBlankNaborForm(): void {
+    const sections = this.filteredSections().filter((section) => this.sectionBelongsToWorkspace(section, 'properties'));
+    const html = this.renderBlankPropertyFormHtml(sections);
+    const win = window.open('', '_blank', 'width=1100,height=1200');
+    if (!win) {
+      window.alert('Nepodařilo se otevřít okno pro náběrový formulář. Zkontrolujte blokování vyskakovacích oken.');
+      return;
+    }
+
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    setTimeout(() => win.print(), 250);
+  }
+
+  protected printBlankHandoverProtocol(): void {
+    this.generateHandoverProtocol();
+  }
+
+  private renderBlankPropertyFormHtml(sections: Section[]): string {
+    const renderRows = (section: Section): string => section.items
+      .map((item) => item.label.trim())
+      .filter((label, index, labels) => label.length > 0 && labels.indexOf(label) === index)
+      .map((label) => `<div class="blank-row"><div class="blank-label">${this.escapeHtml(label)}</div><div class="blank-value"></div></div>`)
+      .join('');
+
+    return `<!doctype html>
+<html lang="cs"><head><meta charset="utf-8" /><title>Prázdný náběrový formulář</title>
+<style>
+@page { size: A4; margin: 12mm; }
+body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 11px; }
+.banner { background:#0c59a5; color:#fff; border-radius:6px; padding:10px 14px; font-weight:700; font-size:22px; margin-bottom:10px; }
+.sheet { display:grid; gap:10px; }
+.section { border:1px solid #cfdbe8; border-radius:8px; overflow:hidden; break-inside:avoid; page-break-inside:avoid; }
+.section-title { background:#edf4fb; color:#0c59a5; font-weight:700; padding:8px 10px; text-transform:uppercase; }
+.section-body { padding:8px 10px 10px; }
+.blank-row { display:grid; grid-template-columns:220px 1fr; gap:10px; align-items:center; margin:0 0 6px; }
+.blank-label { font-size:10px; line-height:1.2; }
+.blank-value { min-height:18px; border-bottom:1px solid #8ea2b5; }
+</style></head><body>
+<div class="banner">PRÁZDNÝ NÁBĚROVÝ FORMULÁŘ</div>
+<div class="sheet">
+${sections.map((section) => `<section class="section"><div class="section-title">${this.escapeHtml(section.name)}</div><div class="section-body">${renderRows(section)}</div></section>`).join('')}
+</div>
+</body></html>`;
   }
 
   protected generateHandoverProtocol(): void {
@@ -4299,6 +5944,11 @@ body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; 
           selectedService?: string;
           selectedOwnership?: string;
           clientCount?: number;
+          savedClientRecords?: SavedClientRecord[];
+          newClientDraft?: NewClientDraft;
+          activeSavedClientId?: string;
+          notes?: NoteCard[];
+          savedPropertyRecords?: SavedPropertyRecord[];
           states?: Array<{ itemId?: string; itemKey?: string; state: Partial<ItemState> & { selectedOptions?: string[] } }>;
         };
 
@@ -4306,6 +5956,16 @@ body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; 
         this.selectedPropertyType.set(payload.selectedPropertyType || '');
         this.selectedService.set(payload.selectedService || '');
         this.selectedOwnership.set(payload.selectedOwnership || '');
+        this.savedClientRecords.set(Array.isArray(payload.savedClientRecords)
+          ? payload.savedClientRecords.map((record) => ({
+            ...record,
+            draft: this.cloneNewClientDraft(record.draft)
+          }))
+          : []);
+        this.newClientDraft.set(payload.newClientDraft ? this.cloneNewClientDraft(payload.newClientDraft) : this.createDefaultNewClientDraft());
+        this.activeSavedClientId.set(payload.activeSavedClientId || '');
+        this.notes.set(Array.isArray(payload.notes) ? payload.notes : []);
+        this.savedPropertyRecords.set(Array.isArray(payload.savedPropertyRecords) ? payload.savedPropertyRecords : []);
         let highestClientIndex = 0;
 
         for (const entry of payload.states || []) {
@@ -4352,6 +6012,8 @@ body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; 
           : 1;
         this.clientCount.set(Math.min(10, Math.max(1, loadedClientCount, highestClientIndex + 1)));
         this.activeClientIndex.set(0);
+        this.activeWorkspace.set('clients');
+        this.clientWorkspaceMode.set('directory');
 
         this.bumpStateVersion();
       } catch (error) {
@@ -5537,6 +7199,40 @@ body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; 
     }
 
     return `${day}.${month}.${year}`;
+  }
+
+  private formatPhoneByPrefix(prefix: string, digits: string): string {
+    const cleaned = digits.slice(0, prefix === '+1' ? 10 : 12);
+    const groups = cleaned.match(/.{1,3}/g) || [];
+    return groups.join(' ');
+  }
+
+  private isValidFullDate(value: string): boolean {
+    if (!/^\d{2}\.\d{2}\.\d{4}$/.test(value)) {
+      return false;
+    }
+
+    const [dayText, monthText, yearText] = value.split('.');
+    const day = Number(dayText);
+    const month = Number(monthText);
+    const year = Number(yearText);
+    const date = new Date(year, month - 1, day);
+
+    return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+  }
+
+  private isValidFullShortDate(value: string): boolean {
+    if (!/^\d{1}\.\d{1}\.\d{4}$/.test(value)) {
+      return false;
+    }
+
+    const [dayText, monthText, yearText] = value.split('.');
+    const day = Number(dayText);
+    const month = Number(monthText);
+    const year = Number(yearText);
+    const date = new Date(year, month - 1, day);
+
+    return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
   }
 
   private displayTextValue(item: ChecklistItem, state: ItemState): string {
