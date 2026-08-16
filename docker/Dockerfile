@@ -3,7 +3,7 @@ FROM node:22-bookworm-slim AS build-env
 WORKDIR /web-app
 
 COPY web-app/package*.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 COPY web-app/ ./
 RUN npm run build -- --configuration production
