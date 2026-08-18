@@ -144,7 +144,7 @@ const COUNTRIES: string[] = [
   'PORTUGALSKO',
   'RAKOUSKO',
   'RUMUNSKO',
-  'RUSSKÁ FEDERACE',
+  'RUSKÁ FEDERACE',
   'RWANDA',
   'SAINT KITTS A NEVIS',
   'SAINT LUCIA',
@@ -213,7 +213,7 @@ const HIGH_RISK_COUNTRIES: string[] = [
   'NAMIBIE',
   'NEPÁL',
   'POBŘEŽÍ SLONOVINY',
-  'RUSSKÁ FEDERACE',
+  'RUSKÁ FEDERACE',
   'SYRSKÁ ARABSKÁ REPUBLIKA',
   'TRINIDAD A TOBAGO',
   'VANUATU',
@@ -227,11 +227,10 @@ const CLIENT_CHECKLIST_DEFINITIONS: Array<{ key: string; label: string; keywords
   { key: 'beneficialOwners', label: 'Evidence skutečných majitelů', keywords: ['skutečn', 'majitel'] },
   { key: 'trustFunds', label: 'Evidence svěřeneckých fondů', keywords: ['svěřeneck', 'fond'] },
   { key: 'executionRegistry', label: 'Exekuční rejstřík', subtitle: 'prověření exekucí', keywords: ['exekuč', 'exekuc'] },
-  { key: 'skCheck', label: 'Prověření exekucí i insolvencí i na SK', keywords: ['slovensk', 'na sk'] },
   { key: 'insolvencyRegistry', label: 'Insolvenční rejstřík', subtitle: 'prověření insolvencí', keywords: ['insolvenc'] },
   { key: 'highRiskCountry', label: 'Klient z vysoce rizikové země', keywords: ['rizikov'] },
   { key: 'sanctions', label: 'Mezinárodní sankce', keywords: ['sankc'] },
-  { key: 'acquisitionTitle', label: 'Nabývací titul', keywords: ['nabýzac', 'nabyt', 'titul'] },
+  { key: 'acquisitionTitle', label: 'Nabývací titul', subtitle: 'získání původu majetku', keywords: ['nabýzac', 'nabyt', 'titul'] },
   { key: 'signedAml', label: 'Podepsané AML', keywords: ['podepsan', 'aml'] },
   { key: 'invalidDocs', label: 'Neplatné doklady', subtitle: 'ověření platnosti dokladů', keywords: ['neplatn'] },
   { key: 'pep', label: 'PEP', subtitle: 'ověřením politicky exponované osoby', keywords: ['pep', 'politicky exponovan'] }
@@ -471,7 +470,7 @@ interface NewClientDraft {
   acceptedOptions: string[];
   deliveredDocuments: string[];
   actingAsRepresentativeFor: string;
-  clientDocuments: Array<{ name: string; type: string; url?: string }>;
+  clientDocuments: Array<{ name: string; type: string; url?: string; fileType?: string; dataBase64?: string }>;
 }
 
 interface AgentProfile {
@@ -1579,18 +1578,11 @@ export class App {
         'idIssuedByState'
       ];
 
-      if (riskFields.includes(field) && nextDraft.sanctionsApplied !== 'ANO') {
-        const riskValues = [
-          nextDraft.citizenship,
-          nextDraft.permanentResidence,
-          nextDraft.permanentResidenceState,
-          nextDraft.correspondenceAddress,
-          nextDraft.correspondenceAddressState,
-          nextDraft.idIssuedByState
-        ];
-
-        if (riskValues.some((item) => this.isHighRiskCountryValue(item))) {
+      if (riskFields.includes(field)) {
+        const riskSource = this.highRiskSourceDetail(nextDraft);
+        if (riskSource) {
           nextDraft.sanctionsApplied = 'ANO';
+          nextDraft.sanctionsDetails = riskSource;
         }
       }
 
@@ -1752,7 +1744,7 @@ export class App {
     return this.filteredDocumentTypeOptions().filter((type) => this.documentsForType(type).length > 0);
   }
 
-  protected documentsForType(type: string): Array<{ name: string; type: string; url?: string }> {
+  protected documentsForType(type: string): Array<{ name: string; type: string; url?: string; fileType?: string; dataBase64?: string }> {
     return (this.newClientDraft().clientDocuments || []).filter((doc) => (doc.type || '') === type);
   }
 
@@ -1778,12 +1770,18 @@ export class App {
       input.value = '';
       return;
     }
-    const name = file.name;
-    this.newClientDraft.update((draft) => ({
-      ...draft,
-      clientDocuments: [...(draft.clientDocuments || []), { name, type }]
-    }));
-    input.value = '';
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result || '');
+      const dataBase64 = result.includes(',') ? result.slice(result.indexOf(',') + 1) : '';
+      const name = file.name;
+      this.newClientDraft.update((draft) => ({
+        ...draft,
+        clientDocuments: [...(draft.clientDocuments || []), { name, type, fileType: file.type || 'application/octet-stream', dataBase64 }]
+      }));
+      input.value = '';
+    };
+    reader.readAsDataURL(file);
   }
 
   protected addNewClientDocumentLinkForType(type: string): void {
@@ -1798,7 +1796,28 @@ export class App {
     }));
   }
 
-  protected removeNewClientDocumentByRef(doc: { name: string; type: string; url?: string }): void {
+  protected openClientDocument(doc: { name: string; type: string; url?: string; fileType?: string; dataBase64?: string }): void {
+    if (doc.url) {
+      window.open(doc.url, '_blank', 'noopener');
+      return;
+    }
+    if (!doc.dataBase64) {
+      return;
+    }
+    const mime = doc.fileType || 'application/octet-stream';
+    const buffer = this.base64ToArrayBuffer(doc.dataBase64);
+    const blob = new Blob([buffer], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = doc.name || 'doklad';
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+  }
+
+  protected removeNewClientDocumentByRef(doc: { name: string; type: string; url?: string; fileType?: string; dataBase64?: string }): void {
     if (!window.confirm('opravdu chcete doklad smazat?')) {
       return;
     }
@@ -1897,6 +1916,20 @@ export class App {
       this.newClientDraft().idIssuedByState
     ];
     return fields.some((value) => this.isHighRiskCountryValue(value));
+  }
+
+  private highRiskSourceDetail(draft: NewClientDraft): string {
+    const sources: Array<{ label: string; value: string }> = [
+      { label: 'státní občanství', value: draft.citizenship },
+      { label: 'trvalý nebo jiný pobyt', value: draft.permanentResidence },
+      { label: 'stát trvalého nebo jiného pobytu', value: draft.permanentResidenceState },
+      { label: 'skutečné místo pobytu', value: draft.correspondenceAddress },
+      { label: 'stát skutečného místa pobytu', value: draft.correspondenceAddressState },
+      { label: 'stát, který průkaz vydal', value: draft.idIssuedByState }
+    ];
+
+    const source = sources.find((item) => this.isHighRiskCountryValue(item.value));
+    return source ? `${source.label} ${source.value.trim()}` : '';
   }
 
   private isHighRiskCountryValue(value: string): boolean {
