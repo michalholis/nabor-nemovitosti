@@ -372,6 +372,40 @@
   outline: none;
 }
 
+.sidebar-project-file {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.7rem 0.5rem;
+  font-size: 0.66rem;
+  color: #6b7d8f;
+}
+
+.project-file-status {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-file-status.set {
+  color: #1f6a41;
+  font-weight: 700;
+}
+
+.project-file-reset {
+  flex: 0 0 auto;
+  border: 1px solid #d7dee6;
+  background: #fff;
+  color: #8a4b53;
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.64rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .sidebar-calendar-head {
   margin-bottom: 0.55rem;
   color: #183751;
@@ -913,18 +947,16 @@
   font-size: 0.74rem;
   font-weight: 800;
   text-transform: uppercase;
+  line-height: 1.2;
 }
 
-.new-client-check-row {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  color: #4c6074;
-  font-size: 0.74rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  line-height: 1.2;
-  margin-bottom: 0;
+.new-client-title-check {
+  width: 0.78rem;
+  height: 0.78rem;
+  min-height: 0;
+  margin: 0 0.45rem 0 0;
+  vertical-align: middle;
+  accent-color: var(--client-accent);
 }
 
 .new-client-title-field-card {
@@ -943,22 +975,6 @@
   width: 100%;
 }
 
-.new-client-check-row input {
-  width: 1rem;
-  height: 1rem;
-  outline: none;
-  box-shadow: none;
-  accent-color: var(--client-accent);
-}
-
-.new-client-check-row input:focus,
-.new-client-check-row input:focus-visible,
-.new-client-check-row input:active,
-.new-client-check-row input:checked {
-  outline: none;
-  box-shadow: none;
-}
-
 .new-client-input {
   min-height: 2.6rem;
   border: 1px solid #d9e1ea;
@@ -971,6 +987,7 @@
   font-family: var(--font-main);
   font-weight: 400;
   line-height: 1.2;
+  text-align: left;
   color: #183751;
 }
 
@@ -1017,11 +1034,18 @@
   min-height: 2.6rem;
   resize: none;
   line-height: 1.4;
+  text-align: left;
+}
+
+.new-client-textarea:placeholder-shown,
+.new-client-textarea.single-line {
+  line-height: 2.6rem;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .auto-grow-textarea {
   overflow: hidden;
-  field-sizing: content;
 }
 
 .new-client-upload-trigger {
@@ -1103,14 +1127,14 @@
 
 .new-client-toggle-btn-ano.active {
   background: #dcfce7;
-  border-color: #16a34a;
-  color: #15803d;
+  border-color: #86efac;
+  color: #22c55e;
 }
 
 .new-client-toggle-btn-ne.active {
   background: #fee2e2;
-  border-color: #dc2626;
-  color: #b91c1c;
+  border-color: #fca5a5;
+  color: #f87171;
 }
 
 .muted-block {

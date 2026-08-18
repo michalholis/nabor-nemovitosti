@@ -170,6 +170,17 @@ interface NewClientDraft {
   clientDocuments: string[];
 }
 
+interface AgentProfile {
+  fullName: string;
+  phone: string;
+  email: string;
+  ico: string;
+  companyName: string;
+  address: string;
+  accountNumber: string;
+  web: string;
+}
+
 interface SavedClientRecord {
   id: string;
   createdAt: string;
@@ -391,6 +402,20 @@ export class App {
   private readonly activeSavedClientId = signal('');
   private readonly clientCount = signal(1);
   protected readonly savedPropertyRecords = signal<SavedPropertyRecord[]>([]);
+  protected readonly agentProfile = signal<AgentProfile>({
+    fullName: 'Petrášová Eliška',
+    phone: '',
+    email: '',
+    ico: '',
+    companyName: '',
+    address: '',
+    accountNumber: '',
+    web: ''
+  });
+  protected readonly agentSubItem = signal<'profile' | 'account'>('profile');
+  private readonly projectDirectoryHandle = signal<any>(null);
+  protected readonly projectDirectoryName = signal('');
+  protected readonly projectFileSupported = typeof window !== 'undefined' && typeof (window as any).showDirectoryPicker === 'function';
   private readonly activePropertyId = signal('');
   private readonly propertyDirectorySort = signal<{ key: PropertyDirectorySortKey; direction: 'asc' | 'desc' } | null>(null);
   private readonly propertyDirectoryView = signal<PropertyDirectoryView>('all');
@@ -882,10 +907,6 @@ export class App {
 
   protected newClientMaritalStatusOptions(): string[] {
     const gender = this.newClientDraft().gender;
-    const fromTable = this.maritalStatusOptionsFromTable(gender);
-    if (fromTable.length > 0) {
-      return fromTable;
-    }
 
     if (gender === 'Žena') {
       return ['svobodná', 'vdaná', 'rozvedená', 'ovdovělá'];
@@ -896,47 +917,6 @@ export class App {
     }
 
     return ['svobodný', 'ženatý', 'rozvedený', 'ovdovělý', 'svobodná', 'vdaná', 'rozvedená', 'ovdovělá'];
-  }
-
-  private maritalStatusOptionsFromTable(gender: string): string[] {
-    const section = this.sections().find((item) => this.normalize(item.name) === 'KLIENT - DOKLADY');
-    if (!section) {
-      return [];
-    }
-
-    const items = section.items.filter((item) => this.normalize(item.label) === 'RODINNY STAV');
-
-    if (gender === '') {
-      const all: string[] = [];
-      const seen = new Set<string>();
-      for (const item of items) {
-        for (const option of item.options) {
-          const trimmed = option.trim();
-          if (trimmed.length > 0 && !seen.has(trimmed)) {
-            seen.add(trimmed);
-            all.push(trimmed);
-          }
-        }
-      }
-      return all;
-    }
-
-    const normalizedGender = this.normalize(gender);
-    for (const item of items) {
-      const hiddenGender = this.maritalStatusHiddenGender(item.specialRule);
-      if (hiddenGender && hiddenGender === normalizedGender) {
-        continue;
-      }
-      if (item.options.length > 0) {
-        return item.options.map((option) => option.trim()).filter((option) => option.length > 0);
-      }
-    }
-    return [];
-  }
-
-  private maritalStatusHiddenGender(specialRule: string): string {
-    const match = specialRule?.match(/POHLAVÍ\s*=\s*([^\s=,]+)/i);
-    return match ? this.normalize(match[1]) : '';
   }
 
   protected newClientInterestLabel(value: NewClientDraft['clientInterest'] | ''): string {
@@ -975,53 +955,35 @@ export class App {
     return 'Zájemce';
   }
 
-  protected newClientInterestOptions(): Array<{ value: string; label: string }> {
-    const section = this.sections().find((item) => this.normalize(item.name) === 'KLIENT - ZÁKLADNÍ INFORMACE');
-    const field = section?.items.find((item) => this.normalize(item.label) === 'ZAJEM KLIENTA');
-    const options = field?.options || [];
-
-    return options.map((option) => ({
-      value: this.normalize(option)
-        .replace(/Á/g, 'A')
-        .replace(/É/g, 'E')
-        .replace(/Í/g, 'I')
-        .replace(/Ý/g, 'Y')
-        .replace(/Ů/g, 'U')
-        .replace(/Ě/g, 'E')
-        .replace(/Š/g, 'S')
-        .replace(/Č/g, 'C')
-        .replace(/Ř/g, 'R')
-        .replace(/Ž/g, 'Z')
-        .replace(/Ť/g, 'T')
-        .replace(/Ď/g, 'D')
-        .replace(/Ň/g, 'N')
-        .replace(/Ó/g, 'O')
-        .replace(/Ú/g, 'U')
-        .replace(/Ľ/g, 'L')
-        .replace(/Ŕ/g, 'R')
-        .toLocaleLowerCase('cs-CZ')
-        .replace(/and/g, '')
-        .replace(/[^a-z0-9]+/g, ''),
-      label: option.trim()
-    }));
-  }
-
   protected autosizeNewClientTextarea(event: Event): void {
     const element = event.target as HTMLTextAreaElement | null;
     if (!element) {
       return;
     }
 
-    element.style.height = 'auto';
-    element.style.height = `${element.scrollHeight}px`;
+    this.applyAutosizeToTextarea(element);
   }
 
   protected resizeAllNewClientTextareas(): void {
     const elements = document.querySelectorAll<HTMLTextAreaElement>('.auto-grow-textarea');
-    elements.forEach((element) => {
-      element.style.height = 'auto';
-      element.style.height = `${element.scrollHeight}px`;
-    });
+    elements.forEach((element) => this.applyAutosizeToTextarea(element));
+  }
+
+  private applyAutosizeToTextarea(element: HTMLTextAreaElement): void {
+    const computed = getComputedStyle(element);
+    const fontSize = parseFloat(computed.fontSize) || 14;
+    const baseLineHeight = fontSize * 1.4;
+    const paddingTop = parseFloat(computed.paddingTop) || 0;
+    const paddingBottom = parseFloat(computed.paddingBottom) || 0;
+    const previousMinHeight = element.style.minHeight;
+    element.style.minHeight = '0px';
+    element.style.height = '0px';
+    const contentHeight = element.scrollHeight;
+    element.style.height = `${contentHeight}px`;
+    element.style.minHeight = previousMinHeight;
+    const contentTextHeight = contentHeight - paddingTop - paddingBottom;
+    const isSingleLine = contentTextHeight <= baseLineHeight + 2;
+    element.classList.toggle('single-line', isSingleLine);
   }
 
   protected scheduleResizeNewClientTextareas(): void {
@@ -1029,42 +991,17 @@ export class App {
   }
 
   protected resolvedNewClientInterestOptions(): Array<{ value: NewClientDraft['clientInterest']; label: string }> {
-    const section = this.sections().find((item) => this.normalize(item.name) === 'KLIENT - ZÁKLADNÍ INFORMACE');
-    const field = section?.items.find((item) => this.normalize(item.label) === 'ZAJEM KLIENTA');
-    const options = field?.options || [];
-    const valueByLabel = new Map<string, NewClientDraft['clientInterest']>([
-      ['PRODAVAJICI', 'prodavajici'],
-      ['KUPUJICI', 'kupujici'],
-      ['ZAJEMCE', 'zajemce'],
-      ['POPTAVAJICI', 'poptavajici'],
-      ['PRONAJIMATEL', 'pronajimatel'],
-      ['ZASTUPCE', 'zastupce'],
-      ['DEVELOPER', 'developer'],
-      ['NAJEMCE', 'najemce'],
-      ['JINY', 'jiny']
-    ]);
-
-    const mapped = options
-      .map((option) => {
-        const label = option.trim();
-        const value = valueByLabel.get(this.normalize(label));
-        return value ? { value, label } : null;
-      })
-      .filter((option): option is { value: NewClientDraft['clientInterest']; label: string } => option !== null);
-
-    return mapped.length > 0
-      ? mapped
-      : [
-        { value: 'prodavajici', label: 'Prodávající' },
-        { value: 'kupujici', label: 'Kupující' },
-        { value: 'zajemce', label: 'Zájemce' },
-        { value: 'poptavajici', label: 'Poptávající' },
-        { value: 'pronajimatel', label: 'Pronajímatel' },
-        { value: 'zastupce', label: 'Zástupce' },
-        { value: 'developer', label: 'Developer' },
-        { value: 'najemce', label: 'Nájemce' },
-        { value: 'jiny', label: 'Jiný' }
-      ];
+    return [
+      { value: 'prodavajici', label: 'Prodávající' },
+      { value: 'kupujici', label: 'Kupující' },
+      { value: 'zajemce', label: 'Zájemce' },
+      { value: 'poptavajici', label: 'Poptávající' },
+      { value: 'pronajimatel', label: 'Pronajímatel' },
+      { value: 'zastupce', label: 'Zástupce' },
+      { value: 'developer', label: 'Developer' },
+      { value: 'najemce', label: 'Nájemce' },
+      { value: 'jiny', label: 'Jiný' }
+    ];
   }
 
   protected newClientPhonePrefixOptions(): Array<{ value: string; label: string }> {
@@ -1105,8 +1042,7 @@ export class App {
     value: string
   ): void {
     const digits = value.replace(/\D/g, '').slice(0, 8);
-    const parts = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 8)].filter(Boolean);
-    this.setNewClientDraftField(field, parts.join('.'));
+    this.setNewClientDraftField(field, this.formatSmartDate(digits));
   }
 
   protected sanitizeDateFieldInput(event: Event): void {
@@ -1251,7 +1187,23 @@ export class App {
       return;
     }
 
+    if (workspace.key === 'agent') {
+      this.agentSubItem.set(subItemKey === 'account' ? 'account' : 'profile');
+      this.activateWorkspace('agent');
+      return;
+    }
+
     this.activateWorkspace(workspace.key);
+  }
+
+  protected setAgentSubItem(item: 'profile' | 'account'): void {
+    this.agentSubItem.set(item);
+    this.activateWorkspace('agent');
+    this.scheduleResizeNewClientTextareas();
+  }
+
+  protected setAgentProfileField(field: keyof AgentProfile, value: string): void {
+    this.agentProfile.update((profile) => ({ ...profile, [field]: value }));
   }
 
   private closeSidebarOnMobile(): void {
@@ -1270,6 +1222,10 @@ export class App {
 
     if (workspace.key === 'clients') {
       return this.isWorkspaceActive('clients') && this.clientWorkspaceMode() === (subItemKey === 'new' ? 'new' : 'directory');
+    }
+
+    if (workspace.key === 'agent') {
+      return this.isWorkspaceActive('agent') && this.agentSubItem() === (subItemKey === 'account' ? 'account' : 'profile');
     }
 
     return false;
@@ -1316,6 +1272,11 @@ export class App {
     return this.newClientDraft()[field] === value;
   }
 
+  protected isNewClientDraftBuyerSide(): boolean {
+    const value = this.newClientDraft().clientInterest;
+    return value === 'kupujici' || value === 'zajemce' || value === 'poptavajici' || value === 'najemce';
+  }
+
   protected setNewClientActingMode(mode: NewClientDraft['actingMode']): void {
     this.setNewClientDraftField('actingMode', mode);
 
@@ -1329,6 +1290,7 @@ export class App {
 
   protected setActiveNewClientTab(tab: NewClientTabKey): void {
     this.activeNewClientTab.set(tab);
+    this.scheduleResizeNewClientTextareas();
   }
 
   protected isActiveNewClientTab(tab: NewClientTabKey): boolean {
@@ -1644,19 +1606,14 @@ export class App {
   }
 
   protected agentInitials(): string {
-    const fullName = this.fieldValueAny('MAKLÉŘ', ['Jméno (jména) a Příjmení', 'Jméno a příjmení']).trim();
-    if (!fullName) {
-      return '';
+    const name = this.agentProfile().fullName.trim();
+    if (!name) {
+      return 'PE';
     }
 
-    const parts = fullName.split(/\s+/).filter(Boolean);
-    if (parts.length === 0) {
-      return '';
-    }
-
-    const first = parts[0]?.charAt(0) || '';
-    const last = (parts.length > 1 ? parts[parts.length - 1] : parts[0])?.charAt(0) || '';
-    return `${first}${last}`.toLocaleUpperCase('cs-CZ');
+    const parts = name.split(/\s+/).filter(Boolean);
+    const initials = (parts[0]?.[0] || '') + (parts[1]?.[0] || '');
+    return (initials || 'PE').toUpperCase();
   }
 
   protected showPreviousCalendarMonth(): void {
@@ -2223,6 +2180,7 @@ export class App {
 
   constructor() {
     void this.loadData();
+    void this.initProjectFile();
   }
 
   protected loadData(): Promise<void> {
@@ -5555,6 +5513,17 @@ export class App {
 
   protected saveToXml(): void {
     this.syncActiveNewClientToRecords();
+    const xml = this.buildXmlString();
+
+    const dir = this.projectDirectoryHandle();
+    if (dir) {
+      void this.writeProjectXml(xml);
+    } else {
+      this.downloadXml(xml);
+    }
+  }
+
+  private buildXmlString(): string {
     const payload = {
       selectedPropertyType: this.selectedPropertyType(),
       selectedService: this.selectedService(),
@@ -5601,7 +5570,10 @@ export class App {
     };
 
     const payloadJson = JSON.stringify(payload);
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<remax-form version="1">\n  <payload>${this.escapeXml(payloadJson)}</payload>\n</remax-form>\n`;
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<remax-form version="1">\n  <payload>${this.escapeXml(payloadJson)}</payload>\n</remax-form>\n`;
+  }
+
+  private downloadXml(xml: string): void {
     const blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });
     const metaTitle = this.printReportMeta().trim();
     const baseName = metaTitle || this.printReportTitle();
@@ -5613,6 +5585,144 @@ export class App {
     link.download = filename;
     link.click();
     URL.revokeObjectURL(url);
+  }
+
+  private idbGet<T>(key: string): Promise<T | null> {
+    return new Promise((resolve) => {
+      try {
+        const request = indexedDB.open('nabor-nemovitosti', 1);
+        request.onupgradeneeded = () => request.result.createObjectStore('kv');
+        request.onsuccess = () => {
+          const store = request.result.transaction('kv', 'readonly').objectStore('kv');
+          const get = store.get(key);
+          get.onsuccess = () => resolve((get.result as T) ?? null);
+          get.onerror = () => resolve(null);
+        };
+        request.onerror = () => resolve(null);
+      } catch {
+        resolve(null);
+      }
+    });
+  }
+
+  private idbSet(key: string, value: unknown): Promise<void> {
+    return new Promise((resolve) => {
+      try {
+        const request = indexedDB.open('nabor-nemovitosti', 1);
+        request.onupgradeneeded = () => request.result.createObjectStore('kv');
+        request.onsuccess = () => {
+          const store = request.result.transaction('kv', 'readwrite').objectStore('kv');
+          const put = store.put(value, key);
+          put.onsuccess = () => resolve();
+          put.onerror = () => resolve();
+        };
+        request.onerror = () => resolve();
+      } catch {
+        resolve();
+      }
+    });
+  }
+
+  private async ensureDirectoryPermission(handle: any): Promise<boolean> {
+    try {
+      if (handle?.queryPermission) {
+        const current = await handle.queryPermission({ mode: 'readwrite' });
+        if (current === 'granted') {
+          return true;
+        }
+        if (current === 'denied') {
+          return false;
+        }
+      }
+
+      if (handle?.requestPermission) {
+        return (await handle.requestPermission({ mode: 'readwrite' })) === 'granted';
+      }
+
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  protected async chooseProjectDirectory(): Promise<void> {
+    try {
+      const picker = (window as any).showDirectoryPicker;
+      const handle = await picker({ mode: 'readwrite' });
+      if (!(await this.ensureDirectoryPermission(handle))) {
+        return;
+      }
+
+      this.projectDirectoryHandle.set(handle);
+      this.projectDirectoryName.set(handle.name || '');
+      await this.idbSet('projectDirectoryHandle', handle);
+      await this.loadProjectFile();
+      this.saveToXml();
+    } catch {
+      // uživatel zrušil výběr nebo není podpora
+    }
+  }
+
+  protected async resetProjectDirectory(): Promise<void> {
+    this.projectDirectoryHandle.set(null);
+    this.projectDirectoryName.set('');
+    await this.idbSet('projectDirectoryHandle', null);
+  }
+
+  protected async initProjectFile(): Promise<void> {
+    if (!this.projectFileSupported) {
+      return;
+    }
+
+    const handle = await this.idbGet<any>('projectDirectoryHandle');
+    if (!handle) {
+      return;
+    }
+
+    if (!(await this.ensureDirectoryPermission(handle))) {
+      return;
+    }
+
+    try {
+      this.projectDirectoryHandle.set(handle);
+      this.projectDirectoryName.set(handle.name || '');
+      await this.loadProjectFile();
+    } catch {
+      // chyba při načítání projektového souboru
+    }
+  }
+
+  private async loadProjectFile(): Promise<void> {
+    const dir = this.projectDirectoryHandle();
+    if (!dir) {
+      return;
+    }
+
+    try {
+      const fileHandle = await dir.getFileHandle('database.xml');
+      const file = await fileHandle.getFile();
+      const text = await file.text();
+      this.applyXmlPayload(text);
+      this.bumpStateVersion();
+    } catch {
+      // soubor database.xml zatím neexistuje
+    }
+  }
+
+  private async writeProjectXml(xml: string): Promise<void> {
+    const dir = this.projectDirectoryHandle();
+    if (!dir) {
+      return;
+    }
+
+    try {
+      const fileHandle = await dir.getFileHandle('database.xml', { create: true });
+      const writable = await fileHandle.createWritable();
+      await writable.write(xml);
+      await writable.close();
+    } catch {
+      // zápis se nezdařil
+    }
   }
 
   protected openXmlFilePicker(input: HTMLInputElement): void {
@@ -5927,94 +6037,10 @@ body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; 
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const xmlText = String(reader.result || '');
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(xmlText, 'application/xml');
-        if (doc.querySelector('parsererror')) {
-          throw new Error('Neplatný XML soubor.');
-        }
-
-        const payloadNode = doc.querySelector('remax-form > payload');
-        if (!payloadNode?.textContent) {
-          throw new Error('V XML chybí payload.');
-        }
-
-        const payload = JSON.parse(payloadNode.textContent) as {
-          selectedPropertyType?: string;
-          selectedService?: string;
-          selectedOwnership?: string;
-          clientCount?: number;
-          savedClientRecords?: SavedClientRecord[];
-          newClientDraft?: NewClientDraft;
-          activeSavedClientId?: string;
-          notes?: NoteCard[];
-          savedPropertyRecords?: SavedPropertyRecord[];
-          states?: Array<{ itemId?: string; itemKey?: string; state: Partial<ItemState> & { selectedOptions?: string[] } }>;
-        };
-
-        this.states.clear();
-        this.selectedPropertyType.set(payload.selectedPropertyType || '');
-        this.selectedService.set(payload.selectedService || '');
-        this.selectedOwnership.set(payload.selectedOwnership || '');
-        this.savedClientRecords.set(Array.isArray(payload.savedClientRecords)
-          ? payload.savedClientRecords.map((record) => ({
-            ...record,
-            draft: this.cloneNewClientDraft(record.draft)
-          }))
-          : []);
-        this.newClientDraft.set(payload.newClientDraft ? this.cloneNewClientDraft(payload.newClientDraft) : this.createDefaultNewClientDraft());
-        this.activeSavedClientId.set(payload.activeSavedClientId || '');
-        this.notes.set(Array.isArray(payload.notes) ? payload.notes : []);
-        this.savedPropertyRecords.set(Array.isArray(payload.savedPropertyRecords) ? payload.savedPropertyRecords : []);
-        let highestClientIndex = 0;
-
-        for (const entry of payload.states || []) {
-          const targetItemId = this.resolveLoadTargetItemId(entry?.itemId || '', entry?.itemKey || '');
-          if (!targetItemId) {
-            continue;
-          }
-
-          highestClientIndex = Math.max(highestClientIndex, this.clientIndexFromItemId(targetItemId));
-
-          const state = this.getState(targetItemId);
-          const loaded = entry.state || {};
-          state.selectedOptions = new Set(loaded.selectedOptions || []);
-          state.customOptionText = loaded.customOptionText || '';
-          state.customOptionDraft = loaded.customOptionDraft || '';
-          state.customOptionEditing = Boolean(loaded.customOptionEditing);
-          state.textValue = loaded.textValue || '';
-          state.dimensionFirst = loaded.dimensionFirst || '';
-          state.dimensionSecond = loaded.dimensionSecond || '';
-          state.dimensionThird = loaded.dimensionThird || '';
-          state.optionAmounts = loaded.optionAmounts || {};
-          state.optionTexts = loaded.optionTexts || {};
-          state.optionModes = loaded.optionModes || {};
-          state.optionUnits = loaded.optionUnits || {};
-          state.roomDimensions = loaded.roomDimensions || {};
-          state.roomAreas = loaded.roomAreas || {};
-          state.customInfrastructureRows = loaded.customInfrastructureRows || [];
-          state.customServiceRows = loaded.customServiceRows || [];
-          state.customMoneyRows = loaded.customMoneyRows || [];
-          state.customTextRows = loaded.customTextRows || [];
-          state.travelMode = loaded.travelMode || '';
-          state.customReconstructionRows = loaded.customReconstructionRows || [];
-          state.nearestStopRows = loaded.nearestStopRows || [];
-          state.checked = Boolean(loaded.checked);
-          state.yesNo = loaded.yesNo || null;
-          state.dateValue = loaded.dateValue || '';
-          state.uploadedFile = loaded.uploadedFile || null;
-          state.floorPlanPhotos = loaded.floorPlanPhotos || [];
-          state.customParcelRows = loaded.customParcelRows || [];
-        }
-
-        const loadedClientCount = typeof payload.clientCount === 'number' && Number.isFinite(payload.clientCount)
-          ? Math.floor(payload.clientCount || 1)
-          : 1;
-        this.clientCount.set(Math.min(10, Math.max(1, loadedClientCount, highestClientIndex + 1)));
+        this.applyXmlPayload(String(reader.result || ''));
         this.activeClientIndex.set(0);
         this.activeWorkspace.set('clients');
         this.clientWorkspaceMode.set('directory');
-
         this.bumpStateVersion();
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Nepodařilo se načíst XML.';
@@ -6025,6 +6051,96 @@ body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; 
     };
 
     reader.readAsText(file, 'utf-8');
+  }
+
+  private applyXmlPayload(xmlText: string): void {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xmlText, 'application/xml');
+    if (doc.querySelector('parsererror')) {
+      throw new Error('Neplatný XML soubor.');
+    }
+
+    const payloadNode = doc.querySelector('remax-form > payload');
+    if (!payloadNode?.textContent) {
+      throw new Error('V XML chybí payload.');
+    }
+
+    const payload = JSON.parse(payloadNode.textContent) as {
+      selectedPropertyType?: string;
+      selectedService?: string;
+      selectedOwnership?: string;
+      clientCount?: number;
+      savedClientRecords?: SavedClientRecord[];
+      newClientDraft?: NewClientDraft;
+      activeSavedClientId?: string;
+      notes?: NoteCard[];
+      savedPropertyRecords?: SavedPropertyRecord[];
+      agentProfile?: Partial<AgentProfile>;
+      states?: Array<{ itemId?: string; itemKey?: string; state: Partial<ItemState> & { selectedOptions?: string[] } }>;
+    };
+
+    this.states.clear();
+    this.selectedPropertyType.set(payload.selectedPropertyType || '');
+    this.selectedService.set(payload.selectedService || '');
+    this.selectedOwnership.set(payload.selectedOwnership || '');
+    this.savedClientRecords.set(Array.isArray(payload.savedClientRecords)
+      ? payload.savedClientRecords.map((record) => ({
+        ...record,
+        draft: this.cloneNewClientDraft(record.draft)
+      }))
+      : []);
+    this.newClientDraft.set(payload.newClientDraft ? this.cloneNewClientDraft(payload.newClientDraft) : this.createDefaultNewClientDraft());
+    this.activeSavedClientId.set(payload.activeSavedClientId || '');
+    this.notes.set(Array.isArray(payload.notes) ? payload.notes : []);
+    this.savedPropertyRecords.set(Array.isArray(payload.savedPropertyRecords) ? payload.savedPropertyRecords : []);
+    if (payload.agentProfile) {
+      this.agentProfile.set({ ...this.agentProfile(), ...payload.agentProfile });
+    }
+    let highestClientIndex = 0;
+
+    for (const entry of payload.states || []) {
+      const targetItemId = this.resolveLoadTargetItemId(entry?.itemId || '', entry?.itemKey || '');
+      if (!targetItemId) {
+        continue;
+      }
+
+      highestClientIndex = Math.max(highestClientIndex, this.clientIndexFromItemId(targetItemId));
+
+      const state = this.getState(targetItemId);
+      const loaded = entry.state || {};
+      state.selectedOptions = new Set(loaded.selectedOptions || []);
+      state.customOptionText = loaded.customOptionText || '';
+      state.customOptionDraft = loaded.customOptionDraft || '';
+      state.customOptionEditing = Boolean(loaded.customOptionEditing);
+      state.textValue = loaded.textValue || '';
+      state.dimensionFirst = loaded.dimensionFirst || '';
+      state.dimensionSecond = loaded.dimensionSecond || '';
+      state.dimensionThird = loaded.dimensionThird || '';
+      state.optionAmounts = loaded.optionAmounts || {};
+      state.optionTexts = loaded.optionTexts || {};
+      state.optionModes = loaded.optionModes || {};
+      state.optionUnits = loaded.optionUnits || {};
+      state.roomDimensions = loaded.roomDimensions || {};
+      state.roomAreas = loaded.roomAreas || {};
+      state.customInfrastructureRows = loaded.customInfrastructureRows || [];
+      state.customServiceRows = loaded.customServiceRows || [];
+      state.customMoneyRows = loaded.customMoneyRows || [];
+      state.customTextRows = loaded.customTextRows || [];
+      state.travelMode = loaded.travelMode || '';
+      state.customReconstructionRows = loaded.customReconstructionRows || [];
+      state.nearestStopRows = loaded.nearestStopRows || [];
+      state.checked = Boolean(loaded.checked);
+      state.yesNo = loaded.yesNo || null;
+      state.dateValue = loaded.dateValue || '';
+      state.uploadedFile = loaded.uploadedFile || null;
+      state.floorPlanPhotos = loaded.floorPlanPhotos || [];
+      state.customParcelRows = loaded.customParcelRows || [];
+    }
+
+    const loadedClientCount = typeof payload.clientCount === 'number' && Number.isFinite(payload.clientCount)
+      ? Math.floor(payload.clientCount || 1)
+      : 1;
+    this.clientCount.set(Math.min(10, Math.max(1, loadedClientCount, highestClientIndex + 1)));
   }
 
   protected sectionPrintValues(section: Section): string[] {
@@ -6246,15 +6362,15 @@ body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; 
   }
 
   protected buyerFooterName(): string {
-    return this.fieldValueAny('MAKLÉŘ', ['Jméno (jména) a Příjmení', 'Jméno a příjmení']).trim();
+    return this.agentProfile().fullName || 'Petrášová Eliška';
   }
 
   protected buyerFooterPhone(): string {
-    return this.fieldValueAny('MAKLÉŘ', ['Telefon', 'Kontaktní telefon']).trim();
+    return '';
   }
 
   protected buyerFooterEmail(): string {
-    return this.fieldValueAny('MAKLÉŘ', ['E-mail', 'Email']).trim();
+    return '';
   }
 
   protected buyerMainPhotoSrc(): string {
@@ -6302,7 +6418,8 @@ body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; 
   private amlDocumentTitle(): string {
     const service = this.selectedService().trim();
     const property = this.declinedPropertyType(this.selectedPropertyType().trim());
-    const clientName = this.fieldValueAny('KLIENT', ['Jméno (jména) a Příjmení', 'Jméno a příjmení', 'Jméno (jména)'])
+    const draft = this.newClientDraft();
+    const clientName = (draft.clientType === 'pravnicka' ? draft.companyName : draft.fullName)
       .trim()
       .toLocaleUpperCase('cs');
 
@@ -7186,19 +7303,49 @@ body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; 
 
   private formatDateInput(value: string): string {
     const digits = value.replace(/\D/g, '').slice(0, 8);
-    const day = digits.slice(0, 2);
-    const month = digits.slice(2, 4);
-    const year = digits.slice(4, 8);
+    return this.formatSmartDate(digits);
+  }
 
-    if (digits.length <= 2) {
-      return day;
+  private formatSmartDate(digits: string): string {
+    if (!digits) {
+      return '';
     }
 
-    if (digits.length <= 4) {
-      return `${day}.${month}`;
+    let rest = digits.slice(0, 8);
+    let day = '';
+    let month = '';
+    let year = '';
+
+    if (rest.length > 0) {
+      const two = rest.slice(0, 2);
+      if (two.length === 2 && Number(two) > 31) {
+        day = rest.slice(0, 1);
+      } else {
+        day = two;
+      }
+      rest = rest.slice(day.length);
     }
 
-    return `${day}.${month}.${year}`;
+    if (rest.length > 0) {
+      const two = rest.slice(0, 2);
+      if (two.length === 2 && Number(two) > 12) {
+        month = rest.slice(0, 1);
+      } else {
+        month = two;
+      }
+      rest = rest.slice(month.length);
+    }
+
+    year = rest.slice(0, 4);
+
+    let result = day;
+    if (month) {
+      result += '.' + month;
+    }
+    if (year) {
+      result += '.' + year;
+    }
+    return result;
   }
 
   private formatPhoneByPrefix(prefix: string, digits: string): string {
@@ -7208,7 +7355,7 @@ body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; 
   }
 
   private isValidFullDate(value: string): boolean {
-    if (!/^\d{2}\.\d{2}\.\d{4}$/.test(value)) {
+    if (!/^\d{1,2}\.\d{1,2}\.\d{4}$/.test(value)) {
       return false;
     }
 

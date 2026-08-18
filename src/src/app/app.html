@@ -63,7 +63,25 @@
         >
           <svg class="xml-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 19l-6-6h3V5h6v8h3l-6 6z"/></svg>
         </button>
+        <button
+          type="button"
+          class="sidebar-xml-btn"
+          *ngIf="projectFileSupported"
+          (click)="$event.stopPropagation(); chooseProjectDirectory()"
+          aria-label="Složka projektu"
+          title="Složka projektu (database.xml)"
+        >
+          <svg class="xml-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h240l80 80h400q33 0 56.5 23.5T960-640v400q0 33-23.5 56.5T880-160H160Zm0-80h720v-400H447l-80-80H160v480Z"/></svg>
+        </button>
         <input #headerXmlFileInput type="file" accept=".xml,application/xml,text/xml" (click)="$event.stopPropagation()" (change)="loadFromXmlFile($event)" hidden />
+      </div>
+
+      <div class="sidebar-project-file no-print" *ngIf="projectFileSupported">
+        <span class="project-file-status" [class.set]="projectDirectoryName()">
+          <ng-container *ngIf="projectDirectoryName(); else noFolder">{{ projectDirectoryName() }} → database.xml</ng-container>
+          <ng-template #noFolder>Složka projektu nenastavena</ng-template>
+        </span>
+        <button type="button" class="project-file-reset" *ngIf="projectDirectoryName()" (click)="resetProjectDirectory()">Zrušit</button>
       </div>
 
       <div class="sidebar-calendar compact" *ngIf="!sidebarExpanded()">
@@ -83,7 +101,7 @@
           </button>
           <button type="button" class="page-header-title-btn" (click)="openActiveWorkspaceHome()"><svg *ngIf="isWorkspaceActive('clients')" class="clients-page-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="#1f1f1f" aria-hidden="true"><path d="M381-481q-41-41-41-99t41-99q41-41 99-41t99 41q41 41 41 99t-41 99q-41 41-99 41t-99-41Zm141.5-56.5Q540-555 540-580t-17.5-42.5Q505-640 480-640t-42.5 17.5Q420-605 420-580t17.5 42.5Q455-520 480-520t42.5-17.5ZM480-60 120-280v-400l360-220 360 220v400L480-60Zm0-93 147-91q-34-18-71.5-27t-75.5-9q-38 0-75.5 9T333-244l147 91Zm224-189Q704-575 704-500t-52.5-127.5Q600-680 560-680t-100 40q-29 29-39 70.5T396-500q0 69 49.5 121.5T520-358q29-29 40-70.5t-1.5-92.5Q561-561 510-612q-51-51-110-51-59 0-109 50-50 50-50 109.5T300-480q0 60 50 110t110 50q60 0 109.5-50.5T680-480q0-56-43-98-43-42-100-42-57 0-99 42-42 57-42 99 0 58 42 100 58 0 99 0 41 0 72-23 31-23 72-72v120q-17 0-32-6.5T520-560q-18 0-30-12t-12-30v-16h-80v16q0 17-12 30-12 13-30 13-19.5 0-35-13.5T310-320q-1-19-1-39.5t1-39.5l1-5 115 115q1 1 1 1V-500l-1-1-115-115 1-1 1-39.5 0-19.5 1-39.5l1-5 115 115q1 1 1 1V-740Z"/></svg> {{ activeWorkspaceLabel() }}</button>
         </div>
-        <div class="page-header-actions client-header-clients-layout" *ngIf="!loading() && !error() && isWorkspaceActive('clients')">
+        <div class="page-header-actions client-header-clients-layout" *ngIf="isWorkspaceActive('clients')">
           <div class="client-accent-switch">
             <button type="button" class="client-accent-dot pink" [class.active]="isClientAccentTheme('pink')" (click)="setClientAccentTheme('pink')" aria-label="Růžová barva"></button>
             <button type="button" class="client-accent-dot gray" [class.active]="isClientAccentTheme('gray')" (click)="setClientAccentTheme('gray')" aria-label="Šedá barva"></button>
@@ -92,8 +110,8 @@
         </div>
       </header>
 
-      <p class="status" *ngIf="loading()">Načítám data...</p>
-      <p class="status error" *ngIf="error()">{{ error() }}</p>
+      <p class="status" *ngIf="loading() && !isWorkspaceActive('clients')">Načítám data...</p>
+      <p class="status error" *ngIf="error() && !isWorkspaceActive('clients')">{{ error() }}</p>
 
       <h2 class="print-only print-report-title" [class.unfilled-report-title]="isUnfilledPrintMode()" [class.property-report-title]="isPropertyPrintMode()" *ngIf="!loading() && !error()">{{ printReportTitle() }}</h2>
       <div class="print-only buyer-main-photo" *ngIf="isBuyerPrintMode() && buyerMainPhotoSrc()">
@@ -982,7 +1000,7 @@
       </ng-container>
 
       <ng-container *ngIf="!showFormsWorkspace()">
-        <section class="workspace-panel no-print clients-directory-panel" *ngIf="!loading() && !error() && isWorkspaceActive('clients') && isClientWorkspaceMode('new')">
+        <section class="workspace-panel no-print clients-directory-panel" *ngIf="isWorkspaceActive('clients') && isClientWorkspaceMode('new')">
           <section class="client-directory-card new-client-page-card">
             <div class="client-directory-head">
               <div class="client-directory-head-text">
@@ -1000,8 +1018,8 @@
               <button type="button" class="new-client-tab" [class.active]="isActiveNewClientTab('basic')" (click)="setActiveNewClientTab('basic')">ZÁKLADNÍ INFORMACE</button>
               <button type="button" class="new-client-tab" [class.active]="isActiveNewClientTab('documents')" (click)="setActiveNewClientTab('documents')">IDENTIFIKACE</button>
               <button type="button" class="new-client-tab" [class.active]="isActiveNewClientTab('aml')" (click)="setActiveNewClientTab('aml')">AML</button>
-              <button type="button" class="new-client-tab" [class.active]="isActiveNewClientTab('docs')" (click)="setActiveNewClientTab('docs')">DOKLADY</button>
               <button type="button" class="new-client-tab" *ngIf="isNewClientDraftValue('clientType', 'pravnicka')" [class.active]="isActiveNewClientTab('company')" (click)="setActiveNewClientTab('company')">FIRMA</button>
+              <button type="button" class="new-client-tab" [class.active]="isActiveNewClientTab('docs')" (click)="setActiveNewClientTab('docs')">DOKLADY</button>
             </div>
 
             <div class="new-client-layout">
@@ -1031,10 +1049,10 @@
                   </article>
 
                   <article class="new-client-field-card">
-                    <label class="new-client-check-row">
-                      <input type="checkbox" [ngModel]="newClientDraft().hasTitle" (ngModelChange)="setNewClientDraftField('hasTitle', $event)" />
-                      <span>Titul před jménem nebo za jménem</span>
-                    </label>
+                    <div class="new-client-label">
+                      <input type="checkbox" class="new-client-title-check" [ngModel]="newClientDraft().hasTitle" (ngModelChange)="setNewClientDraftField('hasTitle', $event)" />
+                      Titul před jménem nebo za jménem
+                    </div>
                       <input *ngIf="newClientDraft().hasTitle" type="text" class="new-client-input" [ngModel]="newClientDraft().titleText" (ngModelChange)="setNewClientDraftField('titleText', $event)" placeholder="Vyplňte tituly oddělené čárkou" />
                   </article>
 
@@ -1045,7 +1063,7 @@
 
                   <article class="new-client-field-card">
                     <div class="new-client-label">Datum narození</div>
-                    <input type="text" class="new-client-input" [ngModel]="newClientDraft().birthDate" (input)="sanitizeDateFieldInput($event)" (ngModelChange)="setNewClientDraftDateField('birthDate', $event)" (blur)="validateNewClientDraftDateFieldOnBlur('birthDate')" placeholder="dd.mm.rrrr" inputmode="numeric" maxlength="10" pattern="\d{2}\.\d{2}\.\d{4}" />
+                    <input type="text" class="new-client-input" [ngModel]="newClientDraft().birthDate" (input)="sanitizeDateFieldInput($event)" (ngModelChange)="setNewClientDraftDateField('birthDate', $event)" (blur)="validateNewClientDraftDateFieldOnBlur('birthDate')" placeholder="dd.mm.rrrr" inputmode="numeric" maxlength="10" pattern="\d{1,2}\.\d{1,2}\.\d{4}" />
                   </article>
 
                   <article class="new-client-field-card">
@@ -1116,12 +1134,12 @@
 
                   <article class="new-client-field-card">
                     <div class="new-client-label">Datum vydání dokladu</div>
-                    <input type="text" class="new-client-input" [ngModel]="newClientDraft().idIssuedAt" (input)="sanitizeDateFieldInput($event)" (ngModelChange)="setNewClientDraftDateField('idIssuedAt', $event)" (blur)="validateNewClientDraftDateFieldOnBlur('idIssuedAt')" placeholder="dd.mm.rrrr" inputmode="numeric" maxlength="10" pattern="\d{2}\.\d{2}\.\d{4}" />
+                    <input type="text" class="new-client-input" [ngModel]="newClientDraft().idIssuedAt" (input)="sanitizeDateFieldInput($event)" (ngModelChange)="setNewClientDraftDateField('idIssuedAt', $event)" (blur)="validateNewClientDraftDateFieldOnBlur('idIssuedAt')" placeholder="dd.mm.rrrr" inputmode="numeric" maxlength="10" pattern="\d{1,2}\.\d{1,2}\.\d{4}" />
                   </article>
 
                   <article class="new-client-field-card">
                     <div class="new-client-label">Doba platnosti dokladu</div>
-                    <input type="text" class="new-client-input" [ngModel]="newClientDraft().idValidUntil" (input)="sanitizeDateFieldInput($event)" (ngModelChange)="setNewClientDraftDateField('idValidUntil', $event)" (blur)="validateNewClientDraftDateFieldOnBlur('idValidUntil')" placeholder="dd.mm.rrrr" inputmode="numeric" maxlength="10" pattern="\d{2}\.\d{2}\.\d{4}" />
+                    <input type="text" class="new-client-input" [ngModel]="newClientDraft().idValidUntil" (input)="sanitizeDateFieldInput($event)" (ngModelChange)="setNewClientDraftDateField('idValidUntil', $event)" (blur)="validateNewClientDraftDateFieldOnBlur('idValidUntil')" placeholder="dd.mm.rrrr" inputmode="numeric" maxlength="10" pattern="\d{1,2}\.\d{1,2}\.\d{4}" />
                   </article>
 
                   <article class="new-client-field-card">
@@ -1136,12 +1154,12 @@
 
                   <article class="new-client-field-card">
                     <div class="new-client-label">Trvalý nebo jiný pobyt</div>
-                    <textarea class="new-client-input new-client-textarea auto-grow-textarea" [ngModel]="newClientDraft().permanentResidence" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientDraftField('permanentResidence', $event)" placeholder="trvalý pobyt z dokladu"></textarea>
+                    <textarea class="new-client-input new-client-textarea auto-grow-textarea" rows="1" [ngModel]="newClientDraft().permanentResidence" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientDraftField('permanentResidence', $event)" placeholder="trvalý pobyt z dokladu"></textarea>
                   </article>
 
                   <article class="new-client-field-card">
                     <div class="new-client-label">Skutečné místo pobytu (korespondenční adresa)</div>
-                    <textarea class="new-client-input new-client-textarea auto-grow-textarea" [ngModel]="newClientDraft().correspondenceAddress" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientDraftField('correspondenceAddress', $event)" placeholder="korespondenční adresa"></textarea>
+                    <textarea class="new-client-input new-client-textarea auto-grow-textarea" rows="1" [ngModel]="newClientDraft().correspondenceAddress" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientDraftField('correspondenceAddress', $event)" placeholder="korespondenční adresa"></textarea>
                   </article>
 
                   <article class="new-client-field-card">
@@ -1189,17 +1207,17 @@
 
                   <article class="new-client-field-card">
                     <div class="new-client-label">Sídlo společnosti</div>
-                    <textarea class="new-client-input new-client-textarea" [ngModel]="newClientDraft().companyAddress" (ngModelChange)="setNewClientDraftField('companyAddress', $event)" placeholder="sídlo společnosti"></textarea>
+                    <textarea class="new-client-input new-client-textarea auto-grow-textarea" rows="1" [ngModel]="newClientDraft().companyAddress" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientDraftField('companyAddress', $event)" placeholder="sídlo společnosti"></textarea>
                   </article>
 
                   <article class="new-client-field-card">
                     <div class="new-client-label">Skutečný majitel dle § 4 odst. 4 AML zákona</div>
-                    <textarea class="new-client-input new-client-textarea" [ngModel]="newClientDraft().companyBeneficialOwner" (ngModelChange)="setNewClientDraftField('companyBeneficialOwner', $event)" placeholder="dle evidence skutečných majitelů je majitelem..." ></textarea>
+                    <textarea class="new-client-input new-client-textarea auto-grow-textarea" rows="1" [ngModel]="newClientDraft().companyBeneficialOwner" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientDraftField('companyBeneficialOwner', $event)" placeholder="dle evidence skutečných majitelů je majitelem..." ></textarea>
                   </article>
 
                   <article class="new-client-field-card">
                     <div class="new-client-label">Vlastnická a řídící struktura</div>
-                    <textarea class="new-client-input new-client-textarea" [ngModel]="newClientDraft().companyOwnershipStructure" (ngModelChange)="setNewClientDraftField('companyOwnershipStructure', $event)"></textarea>
+                    <textarea class="new-client-input new-client-textarea auto-grow-textarea" rows="1" [ngModel]="newClientDraft().companyOwnershipStructure" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientDraftField('companyOwnershipStructure', $event)"></textarea>
                   </article>
 
                   <article class="new-client-field-card">
@@ -1229,14 +1247,14 @@
                   <article class="new-client-field-card new-client-field-card-full">
                     <div class="new-client-label">Jste osoba, vůči níž ČR uplatňuje mezinárodní sankce podle zákona č. 69/2006 Sb. o provádění mezinárodních sankcí</div>
                     <div class="new-client-toggle-row">
-                      <button type="button" class="new-client-toggle-btn" [class.active]="isNewClientDraftValue('sanctionsApplied', 'ANO')" (click)="toggleNewClientDraftYesNo('sanctionsApplied', 'ANO')">Ano</button>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="isNewClientDraftValue('sanctionsApplied', 'NE')" (click)="toggleNewClientDraftYesNo('sanctionsApplied', 'NE')">Ne</button>
+                      <button type="button" class="new-client-toggle-btn" [class.active]="isNewClientDraftValue('sanctionsApplied', 'ANO')" (click)="toggleNewClientDraftYesNo('sanctionsApplied', 'ANO')">ANO</button>
+                      <button type="button" class="new-client-toggle-btn" [class.active]="isNewClientDraftValue('sanctionsApplied', 'NE')" (click)="toggleNewClientDraftYesNo('sanctionsApplied', 'NE')">NE</button>
                     </div>
                   </article>
 
                   <article class="new-client-field-card new-client-field-card-full" *ngIf="isNewClientDraftValue('sanctionsApplied', 'ANO')">
                     <div class="new-client-label">Pokud ano, uveďte podrobnosti</div>
-                    <textarea class="new-client-input new-client-textarea" [ngModel]="newClientDraft().sanctionsDetails" (ngModelChange)="setNewClientDraftField('sanctionsDetails', $event)" placeholder="uveďte podrobnosti"></textarea>
+                    <textarea class="new-client-input new-client-textarea auto-grow-textarea" rows="1" [ngModel]="newClientDraft().sanctionsDetails" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientDraftField('sanctionsDetails', $event)" placeholder="uveďte podrobnosti"></textarea>
                   </article>
 
                   <article class="new-client-field-card new-client-field-card-full">
@@ -1249,17 +1267,12 @@
 
                   <article class="new-client-field-card new-client-field-card-full" *ngIf="isNewClientDraftValue('pepStatus', 'ANO')">
                     <div class="new-client-label">Pokud ano, uveďte podrobnosti</div>
-                    <textarea class="new-client-input new-client-textarea" [ngModel]="newClientDraft().pepDetails" (ngModelChange)="setNewClientDraftField('pepDetails', $event)" placeholder="uveďte podrobnosti"></textarea>
+                    <textarea class="new-client-input new-client-textarea auto-grow-textarea" rows="1" [ngModel]="newClientDraft().pepDetails" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientDraftField('pepDetails', $event)" placeholder="uveďte podrobnosti"></textarea>
                   </article>
 
                   <article class="new-client-field-card">
                     <div class="new-client-label">Bankovní spojení</div>
                     <input type="text" class="new-client-input" [ngModel]="newClientDraft().bankAccount" (ngModelChange)="setNewClientDraftField('bankAccount', $event)" placeholder="bankovní spojení" />
-                  </article>
-
-                  <article class="new-client-field-card">
-                    <div class="new-client-label">Délka vlastnictví nemovitosti</div>
-                    <input type="text" class="new-client-input" [ngModel]="newClientDraft().propertyOwnershipLength" (ngModelChange)="setNewClientDraftField('propertyOwnershipLength', $event)" placeholder="Např.: 5 let" />
                   </article>
 
                   <article class="new-client-field-card new-client-field-card-full">
@@ -1278,10 +1291,10 @@
 
                   <article class="new-client-field-card new-client-field-card-full">
                     <div class="new-client-label">Účel realitní transakce</div>
-                    <textarea class="new-client-input new-client-textarea auto-grow-textarea" [ngModel]="newClientDraft().amlTransactionPurpose" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientDraftField('amlTransactionPurpose', $event)" placeholder="(hodnota &lt;Druh služby&gt; mezera hodnota &lt;Druh nemovitosti&gt; ve skloňované podobě a malým počátečním písmenem mezera adresa &lt;hodnota adresy&gt;)" ></textarea>
+                    <textarea class="new-client-input new-client-textarea auto-grow-textarea" rows="1" [ngModel]="newClientDraft().amlTransactionPurpose" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientDraftField('amlTransactionPurpose', $event)" placeholder="(hodnota &lt;Druh služby&gt; mezera hodnota &lt;Druh nemovitosti&gt; ve skloňované podobě a malým počátečním písmenem mezera adresa &lt;hodnota adresy&gt;)" ></textarea>
                   </article>
 
-                  <article class="new-client-field-card new-client-field-card-full">
+                  <article class="new-client-field-card new-client-field-card-full" *ngIf="!isNewClientDraftBuyerSide()">
                     <div class="new-client-label">Prodávající: Nabytí nemovitosti</div>
                     <div class="new-client-toggle-row">
                       <button type="button" class="new-client-toggle-btn" [class.active]="isNewClientDraftValue('amlSellerAcquisitionPeriod', 'před méně než 5 lety')" (click)="toggleNewClientDraftChoice('amlSellerAcquisitionPeriod', 'před méně než 5 lety', '')">před méně než 5 lety</button>
@@ -1320,54 +1333,54 @@
                     </div>
                   </article>
 
-                  <article class="new-client-field-card new-client-field-card-full">
+                  <article class="new-client-field-card new-client-field-card-full" *ngIf="hasNewClientDraftListValue('amlSourceOfFunds', 'Prodej majetku')">
                     <div class="new-client-label">Doklady k prokázání zdroje finančních prostředků / majetku - Prodej majetku</div>
                     <input type="text" class="new-client-input" [ngModel]="newClientDraft().amlProofSale.join(', ')" (ngModelChange)="setNewClientDraftField('amlProofSale', $event ? [$event] : [])" placeholder="Smlouva o prodeji" />
                   </article>
 
-                  <article class="new-client-field-card new-client-field-card-full">
+                  <article class="new-client-field-card new-client-field-card-full" *ngIf="hasNewClientDraftListValue('amlSourceOfFunds', 'Dědictví')">
                     <div class="new-client-label">Doklady k prokázání zdroje finančních prostředků / majetku - Dědictví</div>
                     <input type="text" class="new-client-input" [ngModel]="newClientDraft().amlProofInheritance.join(', ')" (ngModelChange)="setNewClientDraftField('amlProofInheritance', $event ? [$event] : [])" placeholder="Doklad o dědickém vypořádání" />
                   </article>
 
-                  <article class="new-client-field-card new-client-field-card-full">
+                  <article class="new-client-field-card new-client-field-card-full" *ngIf="hasNewClientDraftListValue('amlSourceOfFunds', 'Dar')">
                     <div class="new-client-label">Doklady k prokázání zdroje finančních prostředků / majetku - Dar</div>
                     <input type="text" class="new-client-input" [ngModel]="newClientDraft().amlProofGift.join(', ')" (ngModelChange)="setNewClientDraftField('amlProofGift', $event ? [$event] : [])" placeholder="Smlouva o daru, Identifikace dárce, Doložení původu peněz dárce, Bankovní výpis o převodu daru" />
                   </article>
 
-                  <article class="new-client-field-card new-client-field-card-full">
+                  <article class="new-client-field-card new-client-field-card-full" *ngIf="hasNewClientDraftListValue('amlSourceOfFunds', 'Půjčka')">
                     <div class="new-client-label">Doklady k prokázání zdroje finančních prostředků / majetku - Půjčka</div>
                     <input type="text" class="new-client-input" [ngModel]="newClientDraft().amlProofLoan.join(', ')" (ngModelChange)="setNewClientDraftField('amlProofLoan', $event ? [$event] : [])" placeholder="Smlouva o půjčce, Identifikace půjčujícího, Doložení původu peněz půjčujícího, Bankovní výpis o převodu půjčky, Čestné prohlášení" />
                   </article>
 
-                  <article class="new-client-field-card new-client-field-card-full">
+                  <article class="new-client-field-card new-client-field-card-full" *ngIf="hasNewClientDraftListValue('amlSourceOfFunds', 'Úspory')">
                     <div class="new-client-label">Doklady k prokázání zdroje finančních prostředků / majetku - Úspory</div>
                     <input type="text" class="new-client-input" [ngModel]="newClientDraft().amlProofSavings.join(', ')" (ngModelChange)="setNewClientDraftField('amlProofSavings', $event ? [$event] : [])" placeholder="Historické bankovní výpisy, Spořicí účet, Termínované vklady, Investiční účty, Příjmy ze zaměstnání, Dlouhodobé spoření, Prodej investic" />
                   </article>
 
-                  <article class="new-client-field-card new-client-field-card-full">
+                  <article class="new-client-field-card new-client-field-card-full" *ngIf="hasNewClientDraftListValue('amlSourceOfFunds', 'Zaměstnání')">
                     <div class="new-client-label">Doklady k prokázání zdroje finančních prostředků / majetku - Zaměstnání</div>
                     <input type="text" class="new-client-input" [ngModel]="newClientDraft().amlProofEmployment.join(', ')" (ngModelChange)="setNewClientDraftField('amlProofEmployment', $event ? [$event] : [])" placeholder="Pracovní smlouva, Potvrzení o příjmu, Výplatní pásky, Daňová přiznání, Bankovní výpisy s příchozí mzdou" />
                   </article>
 
-                  <article class="new-client-field-card new-client-field-card-full">
+                  <article class="new-client-field-card new-client-field-card-full" *ngIf="hasNewClientDraftListValue('amlSourceOfFunds', 'Podnikání')">
                     <div class="new-client-label">Doklady k prokázání zdroje finančních prostředků / majetku - Podnikání</div>
                     <input type="text" class="new-client-input" [ngModel]="newClientDraft().amlProofBusiness.join(', ')" (ngModelChange)="setNewClientDraftField('amlProofBusiness', $event ? [$event] : [])" placeholder="Daňová přiznání, Účetní závěrky, Faktury / smlouvy, Výpisy z podnikatelského účtu, Potvrzení o dividendách, Přehled obratu společnosti, Daňové přiznání fyzických osob, Přehledy pro OSSZ/ZP, Bankovní pohyby" />
                   </article>
 
-                  <article class="new-client-field-card new-client-field-card-full">
+                  <article class="new-client-field-card new-client-field-card-full" *ngIf="hasNewClientDraftListValue('amlSourceOfFunds', 'Bankovní úvěr')">
                     <div class="new-client-label">Doklady k prokázání zdroje finančních prostředků / majetku - Bankovní úvěr</div>
                     <input type="text" class="new-client-input" [ngModel]="newClientDraft().amlProofBankLoan.join(', ')" (ngModelChange)="setNewClientDraftField('amlProofBankLoan', $event ? [$event] : [])" placeholder="Úvěrová smlouva, Potvrzení banky o čerpání, Výpis z účtu s připsáním úvěru" />
                   </article>
 
-                  <article class="new-client-field-card new-client-field-card-full">
+                  <article class="new-client-field-card new-client-field-card-full" *ngIf="hasNewClientDraftListValue('amlSourceOfFunds', 'Jiné (definujte)')">
                     <div class="new-client-label">Doklady k prokázání zdroje finančních prostředků / majetku - Jiné (definujte)</div>
                     <input type="text" class="new-client-input" [ngModel]="newClientDraft().amlProofOther.join(', ')" (ngModelChange)="setNewClientDraftField('amlProofOther', $event ? [$event] : [])" placeholder="definujte" />
                   </article>
 
                     <article class="new-client-field-card new-client-field-card-full">
                        <div class="new-client-label">Pokud výše uvedená osoba jedná jako zástupce klienta</div>
-                       <textarea class="new-client-input new-client-textarea auto-grow-textarea" [ngModel]="newClientDraft().actingAsRepresentativeFor" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientDraftField('actingAsRepresentativeFor', $event)" placeholder="Uveďte údaje o zastoupení klienta"></textarea>
+                        <textarea class="new-client-input new-client-textarea auto-grow-textarea" rows="1" [ngModel]="newClientDraft().actingAsRepresentativeFor" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientDraftField('actingAsRepresentativeFor', $event)" placeholder="Uveďte údaje o zastoupení klienta"></textarea>
                      </article>
                   </div>
                 </section>
@@ -1423,7 +1436,7 @@
           </section>
         </section>
 
-        <section class="workspace-panel no-print clients-directory-panel" *ngIf="!loading() && !error() && isWorkspaceActive('clients') && isClientWorkspaceMode('directory')">
+        <section class="workspace-panel no-print clients-directory-panel" *ngIf="isWorkspaceActive('clients') && isClientWorkspaceMode('directory')">
           <div class="client-summary-grid">
             <article class="client-stat-card" [class.selected]="isClientDirectoryView('active')" (click)="setClientDirectoryView('active')">
               <div class="client-stat-icon">
