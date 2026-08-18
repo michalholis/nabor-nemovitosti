@@ -221,11 +221,11 @@ const HIGH_RISK_COUNTRIES: string[] = [
   'VIETNAM'
 ];
 
-const CLIENT_CHECKLIST_DEFINITIONS: Array<{ key: string; label: string; keywords: string[]; subtitle?: string }> = [
+const CLIENT_CHECKLIST_DEFINITIONS: Array<{ key: string; label: string; keywords: string[]; subtitle?: string; legalEntityOnly?: boolean }> = [
   { key: 'idDocument', label: 'Občanský průkaz', subtitle: 'nebo jiný doklad totožnosti', keywords: ['občan', 'průkaz', 'pas', 'totožnost'] },
-  { key: 'ares', label: 'Ares', subtitle: 'údaje o podnikatelském subjektu', keywords: ['ares'] },
-  { key: 'beneficialOwners', label: 'Evidence skutečných majitelů', keywords: ['skutečn', 'majitel'] },
-  { key: 'trustFunds', label: 'Evidence svěřeneckých fondů', keywords: ['svěřeneck', 'fond'] },
+  { key: 'ares', label: 'Ares', subtitle: 'údaje o podnikatelském subjektu', keywords: ['ares'], legalEntityOnly: true },
+  { key: 'beneficialOwners', label: 'Evidence skutečných majitelů', keywords: ['skutečn', 'majitel'], legalEntityOnly: true },
+  { key: 'trustFunds', label: 'Evidence svěřeneckých fondů', keywords: ['svěřeneck', 'fond'], legalEntityOnly: true },
   { key: 'executionRegistry', label: 'Exekuční rejstřík', subtitle: 'prověření exekucí', keywords: ['exekuč', 'exekuc'] },
   { key: 'insolvencyRegistry', label: 'Insolvenční rejstřík', subtitle: 'prověření insolvencí', keywords: ['insolvenc'] },
   { key: 'highRiskCountry', label: 'Klient z vysoce rizikové země', keywords: ['rizikov'] },
@@ -1864,6 +1864,7 @@ export class App {
 
   protected clientChecklistItems(): Array<{ key: string; label: string; subtitle?: string; satisfied: boolean }> {
     const docNames = (this.newClientDraft().clientDocuments || []).map((doc) => this.normalize(doc.type || doc.name));
+    const isLegalEntity = this.newClientDraft().clientType === 'pravnicka';
     return CLIENT_CHECKLIST_DEFINITIONS.map((def) => ({
       key: def.key,
       label: def.label,
@@ -1872,7 +1873,13 @@ export class App {
         const normalizedKeyword = this.normalize(keyword);
         return docNames.some((name) => name.includes(normalizedKeyword));
       })
-    })).sort((a, b) => {
+    })).filter((item) => {
+      const definition = CLIENT_CHECKLIST_DEFINITIONS.find((def) => def.key === item.key);
+      if (item.key === 'highRiskCountry' && !this.isHighRiskClient()) {
+        return false;
+      }
+      return !definition?.legalEntityOnly || isLegalEntity;
+    }).sort((a, b) => {
       if (a.satisfied !== b.satisfied) {
         return a.satisfied ? -1 : 1;
       }
@@ -1890,11 +1897,11 @@ export class App {
   }
 
   protected clientChecklistTotalCount(): number {
-    return CLIENT_CHECKLIST_DEFINITIONS.length;
+    return this.clientChecklistItems().length;
   }
 
   protected clientChecklistProgressPercent(): number {
-    const total = CLIENT_CHECKLIST_DEFINITIONS.length;
+    const total = this.clientChecklistTotalCount();
     if (total === 0) {
       return 0;
     }
@@ -6112,6 +6119,7 @@ export class App {
   }
 
   private readonly idbKey = 'nabor-nemovitosti-state';
+  private readonly publicDatabaseXmlUrl = '/data/database.xml';
 
   private idbGet<T>(key: string): Promise<T | null> {
     return new Promise((resolve) => {
@@ -6154,7 +6162,7 @@ export class App {
   }
 
   private async loadState(): Promise<void> {
-    const xml = await this.idbGet<string>(this.idbKey);
+    const xml = (await this.idbGet<string>(this.idbKey)) || await this.loadPublicDatabaseXml();
     if (typeof xml === 'string' && xml.trim()) {
       try {
         this.applyXmlPayload(xml);
@@ -6162,6 +6170,19 @@ export class App {
       } catch {
         // poškozený stav uložený v prohlížeči
       }
+    }
+  }
+
+  private async loadPublicDatabaseXml(): Promise<string | null> {
+    try {
+      const response = await fetch(this.publicDatabaseXmlUrl, { cache: 'no-store' });
+      if (!response.ok) {
+        return null;
+      }
+      const xml = await response.text();
+      return xml.trim() ? xml : null;
+    } catch {
+      return null;
     }
   }
 

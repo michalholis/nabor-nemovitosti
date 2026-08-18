@@ -92,9 +92,12 @@
 }
 
 .app-shell.client-editor-open .app-main {
-  min-height: 0;
-  grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
-  overflow: hidden;
+  min-height: auto;
+  grid-template-rows: auto auto auto auto auto auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: 0;
+  box-sizing: border-box;
 }
 
 .page-header {
@@ -234,8 +237,8 @@
   column-span: all;
   position: relative;
   display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  gap: 100px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 30px;
   margin: 0 0 0.8rem;
   break-inside: avoid;
   page-break-inside: avoid;
@@ -245,12 +248,8 @@
 
 .new-client-doc-top-card {
   margin: 0;
-  width: auto;
+  width: 100%;
   overflow: visible;
-}
-
-.new-client-doc-top-row > .new-client-doc-top-card:first-child {
-  justify-self: start;
 }
 
 .new-client-doc-search-card {
@@ -269,7 +268,7 @@
   border-radius: 999px;
   padding: 0.35rem 0.9rem;
   font-size: 0.76rem;
-  font-weight: 800;
+  font-weight: 400;
   cursor: pointer;
 }
 
@@ -307,17 +306,20 @@
   position: sticky;
   top: 0.7rem;
   align-self: stretch;
-  display: grid;
-  grid-template-rows: auto 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 0.8rem;
   width: 4.6rem;
-  padding: 0.7rem 0.55rem;
+  padding: 0.7rem 0.55rem 10px;
   border-radius: 0;
+  height: calc(100dvh - 1.4rem);
   min-height: calc(100dvh - 1.4rem);
+  box-sizing: border-box;
   background: #fff;
   border: 1px solid #d9e1ea;
   box-shadow: 0 12px 26px rgb(44 75 101 / 10%);
   transition: width 180ms ease;
+  overflow: hidden;
 }
 
 .app-sidebar.expanded {
@@ -351,6 +353,10 @@
   display: grid;
   gap: 0.45rem;
   align-content: start;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .sidebar-link-row {
@@ -361,7 +367,8 @@
 }
 
 .sidebar-calendar {
-  align-self: end;
+  align-self: auto;
+  flex: 0 0 auto;
   padding: 0.8rem 0.55rem 0.35rem;
   border-top: 1px solid #e3ebf2;
 }
@@ -378,6 +385,7 @@
   justify-items: center;
   gap: 0.2rem;
   padding-bottom: 0.6rem;
+  flex: 0 0 auto;
 }
 
 .sidebar-xml-actions {
@@ -386,6 +394,7 @@
   justify-content: center;
   gap: 0.25rem;
   padding: 0.55rem 0.2rem 0.35rem;
+  flex: 0 0 auto;
 }
 
 .sidebar-xml-btn {
@@ -496,6 +505,53 @@
   text-transform: capitalize;
 }
 
+.sidebar-calendar-mobile-summary {
+  display: grid;
+  justify-items: center;
+  gap: 0.12rem;
+  margin-top: auto;
+  padding: 0.2rem 0.1rem 0.35rem;
+  flex: 0 0 auto;
+}
+
+.sidebar-calendar-mobile-label {
+  color: #8393a3;
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.sidebar-calendar-mobile-day {
+  color: #183751;
+  font-size: 1.2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.sidebar-calendar-mobile-weekday {
+  color: #8393a3;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1.1;
+  text-transform: capitalize;
+  text-align: center;
+}
+
+.app-sidebar.expanded .sidebar-calendar-mobile-summary {
+  justify-items: start;
+  padding: 0.35rem 0.2rem 0.45rem;
+}
+
+.app-sidebar.expanded .sidebar-calendar-mobile-label,
+.app-sidebar.expanded .sidebar-calendar-mobile-weekday {
+  font-size: 0.72rem;
+}
+
+.app-sidebar.expanded .sidebar-calendar-mobile-day {
+  font-size: 1.35rem;
+}
+
 .sidebar-link {
   display: grid;
   grid-template-columns: 2.5rem minmax(0, 1fr);
@@ -576,6 +632,9 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
+  padding: 1rem 1rem 5px;
+  box-sizing: border-box;
+  margin-bottom: 0;
 }
 
 .client-form-section-card {
@@ -807,10 +866,10 @@
   border-radius: 1rem;
   background: #fff;
   box-shadow: 0 14px 26px rgb(44 75 101 / 8%);
-  padding: 1rem 1.1rem 1.4rem;
-  display: grid;
-  grid-template-rows: auto auto auto;
-  gap: 0.9rem;
+  padding: 1rem 1.1rem 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
 .app-shell.client-editor-open .client-directory-card,
@@ -819,8 +878,19 @@
   min-height: max-content;
 }
 
+.app-shell.client-editor-open .client-directory-card {
+  margin: 0;
+}
+
+.app-shell.client-editor-open .client-directory-card {
+  margin-bottom: 0;
+}
+
+.app-shell.client-editor-open .workspace-panel.clients-directory-panel {
+  padding-bottom: 5px;
+}
+
 .new-client-page-card {
-  grid-template-rows: auto auto auto;
   align-content: start;
   min-height: max-content;
 }
@@ -849,7 +919,7 @@
 
 .new-client-layout {
   display: grid;
-  gap: 1rem;
+  gap: 0;
   align-content: start;
   padding-bottom: 10px;
 }
@@ -859,8 +929,8 @@
   grid-template-columns: 1fr;
   gap: 0.45rem;
   align-items: stretch;
-  margin-top: 7px;
-  padding-bottom: 10px;
+  margin-top: 10px;
+  padding-bottom: 7px;
 }
 
 .new-client-linked-card {
@@ -877,6 +947,7 @@
   border-radius: 1rem;
   background: #fbfcfd;
   padding: 1rem;
+  margin-bottom: 10px;
 }
 
 .new-client-block-head {
@@ -896,6 +967,22 @@
   display: block;
   column-count: 2;
   column-gap: 0.8rem;
+}
+
+.new-client-aml-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.new-client-aml-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.new-client-aml-column .new-client-field-card {
+  margin: 0;
 }
 
 .new-client-grid.two-up + .new-client-grid.two-up {
@@ -1119,6 +1206,26 @@
   box-sizing: border-box;
 }
 
+.new-client-doc-upload-picker .new-client-select,
+.new-client-doc-upload-picker .new-client-select.placeholder-active {
+  font-family: var(--font-main);
+  font-size: 0.88rem;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.new-client-doc-upload-picker .new-client-select.placeholder-active {
+  color: transparent !important;
+}
+
+.new-client-doc-upload-placeholder-input {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
 .new-client-select {
   appearance: none;
   font: 400 0.88rem/1.2 var(--font-main);
@@ -1269,68 +1376,47 @@
 }
 
 .new-client-doc-upload-inline {
-  position: relative;
   display: flex;
   align-items: flex-start;
   flex-direction: row;
   gap: 0.45rem;
   margin-bottom: 0.7rem;
   flex-wrap: wrap;
-}
-
-.new-client-doc-upload-picker-slot {
-  position: relative;
-  width: 50px;
-  min-width: 50px;
-  height: 50px;
-  min-height: 50px;
-  flex: 0 0 50px;
-}
-
-.new-client-doc-upload-plus {
-  width: 2.6rem;
-  min-width: 2.6rem;
-  height: 2.6rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  border: 1px solid #d9e1ea;
-  border-radius: 0.75rem;
-  background: #fff;
-  color: #183751;
-  font-size: 1.15rem;
-  font-weight: 800;
-  cursor: pointer;
+  width: 100%;
 }
 
 .new-client-doc-upload-picker {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 5;
   display: flex;
   align-items: center;
   gap: 0.45rem;
-  flex-wrap: wrap;
-  width: max-content;
-  min-width: min(38rem, calc(100vw - 5rem));
-  min-height: 50px;
-  padding: 0.55rem;
-  border: 1px solid #d9e1ea;
-  border-radius: 0.75rem;
-  background: #fff;
-  box-shadow: 0 14px 26px rgb(44 75 101 / 10%);
+  flex-wrap: nowrap;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .new-client-doc-upload-picker .new-client-select-wrap {
-  flex: 1 1 18rem;
+  flex: 0 1 calc(100% - 4.35rem);
   min-width: 0;
+  width: calc(100% - 4.35rem);
+  max-width: calc(100% - 4.35rem);
 }
 
 .new-client-doc-upload-picker-actions {
   display: flex;
+  flex: 0 0 3.9rem;
   gap: 0.15rem;
+  justify-content: flex-end;
+}
+
+.new-client-doc-upload-picker-actions .new-client-doclist-icon-btn {
+  width: 1.8rem;
+  min-width: 1.8rem;
+  height: 1.8rem;
 }
 
 .new-client-doclist {
@@ -1676,7 +1762,7 @@
 }
 
 .new-client-checklist-progress {
-  font-size: 0.74rem;
+  font-size: 0.98rem;
   font-weight: 800;
   letter-spacing: 0.03em;
   text-transform: uppercase;
@@ -1698,9 +1784,9 @@
 }
 
 .new-client-checklist-progress-count-label {
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: lowercase;
+  font-size: 0.98rem;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 .new-client-checklist-bar {
@@ -1756,13 +1842,51 @@
   border-radius: 999px;
   padding: 0.38rem 0.65rem;
   font-size: 0.76rem;
-  font-weight: 800;
+  font-weight: 400;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2rem;
+  line-height: 1.15;
+  text-align: center;
+  box-sizing: border-box;
 }
 
 .new-client-toggle-btn.active {
   background: var(--client-accent-bg);
   border-color: var(--client-accent);
   color: var(--client-accent-ink);
+}
+
+.new-client-delivered-docs-card .new-client-toggle-btn {
+  font-weight: 400;
+}
+
+.new-client-delivered-docs-card .new-client-toggle-btn.active {
+  font-weight: 400;
+}
+
+.new-client-aml-light-buttons-card .new-client-toggle-btn,
+.new-client-aml-light-buttons-card .new-client-toggle-btn.active {
+  font-weight: 400;
+}
+
+.new-client-aml-block .new-client-toggle-btn,
+.new-client-aml-block .new-client-toggle-btn.active {
+  font-weight: 400;
+}
+
+.new-client-purpose-textarea::placeholder {
+  line-height: 1.05;
+}
+
+.new-client-purpose-textarea.single-line {
+  display: flex;
+  align-items: center;
+}
+
+.new-client-purpose-textarea.single-line::placeholder {
+  line-height: 2rem;
 }
 
 .new-client-toggle-btn-ano.active {
@@ -1792,7 +1916,7 @@
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  align-items: center;
+  align-items: flex-start;
 }
 
 .client-directory-head-text {
@@ -1803,18 +1927,25 @@
 .new-client-head-actions {
   display: flex;
   gap: 0.6rem;
-  align-items: center;
+  align-items: flex-start;
   flex-wrap: wrap;
 }
 
 .new-client-head-btn {
-  border: 1px solid #d6e2ef;
-  background: #fff;
-  color: #183751;
-  border-radius: 999px;
-  padding: 0.45rem 0.9rem;
+  border: 0;
+  background: transparent;
+  color: #c8ced6;
+  border-radius: 0;
+  padding: 0;
   font-size: 0.78rem;
-  font-weight: 800;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.new-client-head-btn:hover,
+.new-client-head-btn:focus-visible {
+  color: #000;
+  outline: none;
 }
 
 .new-client-head-btn.primary {
@@ -1827,8 +1958,9 @@
   margin: 0;
   padding: 0;
   background: transparent;
-  color: #c9ced4;
-  font-size: 0.85rem;
+  color: #c8ced6;
+  font-size: 0.78rem;
+  font-weight: 500;
 }
 
 .new-client-title-name {
@@ -2001,6 +2133,10 @@
   .new-client-doc-top-row {
     grid-template-columns: minmax(0, 1fr);
     gap: 0.8rem;
+  }
+
+  .new-client-aml-columns {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -4857,9 +4993,15 @@ input.minimum-rent-input {
     top: 0;
     left: 0;
     z-index: 50;
-    width: min(18rem, 84vw);
+    width: min(15rem, 82vw);
     height: 100dvh;
     min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem 0.45rem 0.75rem;
+    gap: 0.45rem;
+    overflow: hidden;
+    overflow-x: hidden;
     transform: translateX(-110%);
     transition: transform 320ms ease;
   }
@@ -4873,19 +5015,120 @@ input.minimum-rent-input {
   }
 
   .sidebar-nav {
+    display: grid;
     grid-template-columns: 1fr;
+    gap: 0.22rem;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 0.1rem;
   }
 
   .sidebar-calendar,
   .sidebar-calendar.compact,
   .sidebar-calendar-inline {
-    align-self: auto;
-    padding-top: 0;
-    border-top: 0;
+    display: none;
+  }
+
+  .sidebar-calendar-mobile-summary {
+    display: grid;
+    justify-items: center;
+    gap: 0.05rem;
+    padding: 0 0.1rem 0.05rem;
+    flex: 0 0 auto;
+    min-height: 2rem;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: -0.22rem;
+  }
+
+  .sidebar-calendar-mobile-label {
+    color: #8393a3;
+    font-size: 0.48rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .sidebar-calendar-mobile-day {
+    color: #183751;
+    font-size: 0.86rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .sidebar-calendar-mobile-weekday {
+    color: #8393a3;
+    font-size: 0.46rem;
+    font-weight: 700;
+    line-height: 1;
+    text-transform: capitalize;
+    white-space: normal;
+    text-align: center;
+    max-width: 100%;
   }
 
   .sidebar-link {
-    grid-template-columns: 2.3rem minmax(0, 1fr);
+    grid-template-columns: 1.9rem minmax(0, 1fr);
+    min-height: 2rem;
+    padding: 0.22rem 0.3rem;
+  }
+
+  .sidebar-link-icon {
+    width: 1.55rem;
+    height: 1.55rem;
+  }
+
+  .sidebar-link-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .sidebar-link-label {
+    font-size: 0.74rem;
+    letter-spacing: 0.03em;
+  }
+
+  .sidebar-xml-actions {
+    gap: 0.18rem;
+    padding: 0.3rem 0.1rem 0.15rem;
+    flex: 0 0 auto;
+  }
+
+  .sidebar-xml-btn {
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 0.45rem;
+  }
+
+  .sidebar-xml-btn .xml-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .sidebar-toggle {
+    width: 1.9rem;
+    height: 1.9rem;
+  }
+
+  .new-client-doc-upload-picker .new-client-select-wrap {
+    flex: 0 1 calc(100% - 4rem);
+    width: calc(100% - 4rem);
+    min-width: 0;
+    max-width: calc(100% - 4rem);
+  }
+
+  .new-client-doc-upload-picker-actions {
+    gap: 0.1rem;
+  }
+
+  .new-client-doclist-icon-btn {
+    padding: 0.12rem;
+  }
+
+  .new-client-doclist-icon-btn svg {
+    width: 16px;
+    height: 16px;
   }
 
   .mobile-sidebar-trigger {
