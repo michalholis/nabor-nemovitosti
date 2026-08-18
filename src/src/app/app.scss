@@ -13,7 +13,7 @@
   --blue: #2c80c9;
   --line: #d9e1ea;
   --client-accent: #e85197;
-  --client-accent-bg: #f6c7dc;
+  --client-accent-bg: #fdebf3;
   --client-accent-ink: #8c2f59;
   font-family: var(--font-main);
   font-size: 22px;
@@ -22,20 +22,26 @@
 
 .client-accent-pink {
   --client-accent: #ff4f9a;
-  --client-accent-bg: #ffe0ec;
+  --client-accent-bg: #fff0f6;
   --client-accent-ink: #9a1f5a;
 }
 
 .client-accent-gray {
   --client-accent: #1976d2;
-  --client-accent-bg: #e4f1ff;
+  --client-accent-bg: #eff6ff;
   --client-accent-ink: #135ca3;
 }
 
 .client-accent-emerald {
   --client-accent: #118c6a;
-  --client-accent-bg: #ddf4ec;
+  --client-accent-bg: #edf9f4;
   --client-accent-ink: #0f6b53;
+}
+
+.client-accent-yellow {
+  --client-accent: #d6a21c;
+  --client-accent-bg: #fff8ea;
+  --client-accent-ink: #8f6511;
 }
 
 :host *,
@@ -52,7 +58,7 @@
 
 .app-shell {
   height: 100dvh;
-  background: radial-gradient(circle at top, color-mix(in srgb, var(--client-accent) 18%, #edf5ff) 0%, color-mix(in srgb, var(--client-accent) 18%, var(--bg)) 45%);
+  background: radial-gradient(circle at top, color-mix(in srgb, var(--client-accent) 10%, #f7f9fc) 0%, color-mix(in srgb, var(--client-accent) 8%, var(--bg)) 48%);
   padding: 0.7rem;
   overflow: hidden;
 }
@@ -152,6 +158,10 @@
 
 .client-accent-dot.emerald {
   background: #118c6a;
+}
+
+.client-accent-dot.yellow {
+  background: #e0b12d;
 }
 
 .page-header-actions {
@@ -372,39 +382,6 @@
   outline: none;
 }
 
-.sidebar-project-file {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0 0.7rem 0.5rem;
-  font-size: 0.66rem;
-  color: #6b7d8f;
-}
-
-.project-file-status {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.project-file-status.set {
-  color: #1f6a41;
-  font-weight: 700;
-}
-
-.project-file-reset {
-  flex: 0 0 auto;
-  border: 1px solid #d7dee6;
-  background: #fff;
-  color: #8a4b53;
-  border-radius: 999px;
-  padding: 0.1rem 0.5rem;
-  font-size: 0.64rem;
-  font-weight: 700;
-  cursor: pointer;
-}
 
 .sidebar-calendar-head {
   margin-bottom: 0.55rem;
@@ -878,44 +855,55 @@
   column-span: all;
 }
 
-.new-client-docs-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
+.new-client-docs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+  gap: 0.6rem;
   margin-bottom: 0.6rem;
 }
 
-.new-client-doc-row {
+.new-client-doc-tile {
+  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
-  background: #f3f7fb;
-  border: 1px solid #dce6ef;
-  border-radius: 0.6rem;
-  padding: 0.4rem 0.6rem;
+  gap: 0.35rem;
+  padding: 0.7rem 0.4rem 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.55rem;
+  background: #fff;
 }
 
-.new-client-doc-icon {
+.new-client-doc-tile-remove {
+  position: absolute;
+  top: 0.15rem;
+  right: 0.25rem;
+  border: 0;
+  background: transparent;
+  color: #b42318;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.1rem;
+}
+
+.new-client-doc-tile-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #4c6074;
-  flex: 0 0 auto;
+  color: #0c59a5;
 }
 
-.new-client-doc-name {
-  font-size: 0.82rem;
-  color: #183751;
-}
-
-.new-client-doc-remove {
-  margin-left: auto;
-  border: 0;
-  background: transparent;
-  color: #b3424a;
-  font-size: 0.9rem;
-  cursor: pointer;
-  line-height: 1;
+.new-client-doc-tile-type {
+  width: 100%;
+  font-size: 0.68rem;
+  line-height: 1.2;
+  padding: 0.2rem 0.25rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.3rem;
+  background: #f8fafc;
+  color: #1f2937;
+  text-align: center;
 }
 
 .new-client-docs-empty {
@@ -994,6 +982,58 @@
 .new-client-input::placeholder {
   color: #a8b6c5;
   opacity: 1;
+}
+
+.uppercase-input {
+  text-transform: uppercase;
+}
+
+.new-client-field-card--spaced {
+  margin-bottom: 2.5rem;
+}
+
+.new-client-field-card--top-spaced {
+  margin-top: 1.1rem;
+}
+
+.citizenship-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
+}
+
+.citizenship-suggestion {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid #dce6ef;
+  background: #f3f7fb;
+  border-radius: 0.6rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.82rem;
+  color: #183751;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font-family: var(--font-main);
+}
+
+.citizenship-suggestion:hover {
+  background: #e8f0f7;
+}
+
+.citizenship-suggestion-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.citizenship-suggestion-check {
+  flex: 0 0 auto;
+  color: #9fb1c2;
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1;
 }
 
 .new-client-select-wrap {
@@ -1086,6 +1126,492 @@
 
 .new-client-upload-trigger-text {
   font-size: 0.88rem;
+}
+
+.new-client-checklist {
+  display: flex;
+  flex-direction: column;
+}
+
+.new-client-risk-warning {
+  position: relative;
+  display: inline-block;
+  margin-left: 0.6rem;
+  vertical-align: middle;
+  cursor: help;
+}
+
+.new-client-risk-bang {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  background: #d92d20;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.new-client-risk-tooltip {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: 140%;
+  z-index: 30;
+  width: max-content;
+  max-width: 18rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.4rem;
+  background: #d92d20;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.78rem;
+  line-height: 1.3;
+  text-transform: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.new-client-risk-warning:hover .new-client-risk-tooltip,
+.new-client-risk-warning:focus-within .new-client-risk-tooltip {
+  display: block;
+}
+
+.new-client-doc-type {
+  flex: 1 1 12rem;
+  min-width: 10rem;
+  font-size: 0.82rem;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.4rem;
+  background: #fff;
+  color: #1f2937;
+}
+
+.new-client-doc-upload-block {
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px dashed #cbd5e1;
+}
+
+.new-client-doc-upload-heading {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #0c59a5;
+  margin-bottom: 0.4rem;
+}
+
+.new-client-doc-upload-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-bottom: 0.7rem;
+}
+
+.new-client-doc-upload-plus {
+  width: 2.6rem;
+  min-width: 2.6rem;
+  height: 2.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 1px solid #d9e1ea;
+  border-radius: 0.75rem;
+  background: #fff;
+  color: #183751;
+  font-size: 1.15rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.new-client-doc-upload-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.new-client-doc-upload-picker .new-client-select-wrap {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.new-client-doc-upload-picker-actions {
+  display: flex;
+  gap: 0.15rem;
+}
+
+.new-client-doclist {
+  display: flex;
+  flex-direction: column;
+}
+
+.new-client-doclist-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.28rem 0.15rem;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.new-client-doclist-row:last-child {
+  border-bottom: 0;
+}
+
+.new-client-doclist-row.has-docs {
+  background: #f7fbf8;
+}
+
+.new-client-doclist-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.04rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.new-client-doclist-name {
+  font-size: 0.86rem;
+  color: #1f2937;
+  line-height: 1.2;
+}
+
+.new-client-doclist-sub {
+  font-size: 0.73rem;
+  line-height: 1.15;
+  color: #6b7280;
+}
+
+.new-client-doclist-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.18rem;
+}
+
+.new-client-doclist-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.74rem;
+  background: #eef2f6;
+  border-radius: 4px;
+  padding: 0.04rem 0.3rem;
+  max-width: 100%;
+}
+
+.new-client-doclist-file a {
+  color: #0c59a5;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.new-client-doclist-file a:hover {
+  text-decoration: underline;
+}
+
+.new-client-doclist-file-remove {
+  border: 0;
+  background: transparent;
+  color: #b42318;
+  cursor: pointer;
+  font-size: 0.78rem;
+  line-height: 1;
+  padding: 0;
+}
+
+.new-client-doclist-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.15rem;
+}
+
+.new-client-doclist-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: #0c59a5;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0.2rem;
+}
+
+.new-client-doclist-icon-btn:hover {
+  background: #e8f0fa;
+}
+
+.new-client-doclist-icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: transparent;
+}
+
+.new-client-doclist-empty {
+  font-size: 0.85rem;
+  color: #6b7280;
+  padding: 0.6rem 0.2rem;
+}
+
+.new-client-doclist-uploaded {
+  gap: 0.35rem;
+}
+
+.new-client-doclist-group {
+  border: 1px solid #edf1f5;
+  border-radius: 0.75rem;
+  background: #fff;
+}
+
+.new-client-doclist-group-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.55rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.86rem;
+  color: #1f2937;
+}
+
+.new-client-doclist-group-title {
+  min-width: 0;
+}
+
+.new-client-doclist-group-count {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #6b7280;
+}
+
+.new-client-doclist-group-files {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0 0.75rem 0.65rem;
+}
+
+.new-client-doclist-file-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: #4b5563;
+}
+
+.new-client-doclist-file-row a {
+  color: #0c59a5;
+  text-decoration: none;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.new-client-doclist-file-row a:hover {
+  text-decoration: underline;
+}
+
+.new-client-hidden-file {
+  display: none;
+}
+
+.new-client-checklist-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.4rem 0.2rem;
+  border-bottom: 1px solid #eef2f6;
+  background: transparent;
+  cursor: pointer;
+}
+
+.new-client-checklist-item:hover {
+  background: #f5f8fb;
+}
+
+.new-client-checklist-item:last-child {
+  border-bottom: 0;
+}
+
+.new-client-checklist-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.new-client-checklist-item.satisfied {
+  background: var(--client-accent-bg);
+}
+
+.new-client-checklist-item.satisfied .new-client-check-bang,
+.new-client-checklist-item.satisfied .new-client-checklist-text {
+  color: var(--client-accent-ink);
+}
+
+.new-client-checklist-label {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  cursor: pointer;
+}
+
+.new-client-checklist-box {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: 0;
+  accent-color: var(--client-accent);
+  outline: none;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.new-client-checklist-box:focus,
+.new-client-checklist-box:focus-visible,
+.new-client-checklist-box:active {
+  outline: none;
+  box-shadow: none;
+}
+
+.new-client-checklist-item:not(.satisfied) .new-client-checklist-box {
+  accent-color: #b8c2cc;
+}
+
+.new-client-checklist-text {
+  font-size: 0.92rem;
+  color: #1f2937;
+}
+
+.new-client-checklist-text-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
+.new-client-checklist-subtitle {
+  font-size: 0.74rem;
+  line-height: 1.15;
+  color: #6b7280;
+}
+
+.new-client-checklist-doc-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0.4rem;
+  color: var(--client-accent);
+}
+
+.new-client-checklist-status {
+  font-size: 0.78rem;
+  color: #b42318;
+  padding-left: 1.7rem;
+}
+
+.new-client-checklist-hint {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0.1rem 0.25rem;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.new-client-checklist-arrow {
+  font-size: 0.9rem;
+  line-height: 1;
+  color: #0c59a5;
+  font-weight: 700;
+}
+
+.new-client-checklist-hint-text {
+  font-size: 0.68rem;
+  line-height: 1.1;
+  color: #6b7280;
+}
+
+.new-client-checklist-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-bottom: 0.6rem;
+}
+
+.new-client-checklist-progress-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.new-client-checklist-progress {
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #4c6074;
+}
+
+.new-client-checklist-progress-count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.22rem;
+  color: #4c6074;
+  white-space: nowrap;
+}
+
+.new-client-checklist-progress-count-value {
+  font-size: 0.98rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.new-client-checklist-progress-count-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: lowercase;
+}
+
+.new-client-checklist-bar {
+  height: 0.5rem;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+  margin-top: 0.2rem;
+}
+
+.new-client-checklist-bar-fill {
+  height: 100%;
+  background: var(--client-accent);
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
+
+.new-client-hidden-file {
+  display: none;
+}
+
+.new-client-checklist-empty {
+  font-size: 0.8rem;
+  color: #8aa0b3;
+  padding: 0.4rem 0.2rem;
 }
 
 .new-client-upload-note {
@@ -1187,13 +1713,13 @@
   margin: 0;
   padding: 0;
   background: transparent;
-  color: #4c6074;
+  color: #c9ced4;
   font-size: 0.85rem;
 }
 
 .new-client-title-name {
   display: block;
-  margin-top: 0.1875rem;
+  margin-top: calc(0.1875rem + 10px);
   margin-bottom: 0.125rem;
   color: #2f87d0;
   font-size: 1.4rem;
@@ -1337,6 +1863,23 @@
   .client-stat-label,
   .client-stat-value {
     transform: translateX(-10px);
+  }
+
+  .clients-directory-panel .client-stat-icon,
+  .clients-directory-panel .client-create-plus {
+    display: none;
+  }
+
+  .clients-directory-panel .client-stat-card {
+    grid-template-columns: 1fr;
+    padding: 0.9rem 0.85rem;
+  }
+
+  .clients-directory-panel .client-stat-content,
+  .clients-directory-panel .client-stat-label,
+  .clients-directory-panel .client-stat-value {
+    transform: none;
+    margin-left: 0;
   }
 }
 

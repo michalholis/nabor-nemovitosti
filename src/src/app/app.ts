@@ -4,12 +4,314 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 type YesNo = 'ANO' | 'NE' | null;
-type ClientAccentTheme = 'pink' | 'gray' | 'emerald';
+type ClientAccentTheme = 'pink' | 'gray' | 'emerald' | 'yellow';
 
 type WorkspaceKey = 'dashboard' | 'clients' | 'properties' | 'floorPlans' | 'documents' | 'coldCalls' | 'agent' | 'calendar' | 'notes';
 type PropertyWorkspaceMode = 'new' | 'mine' | 'directory';
 type ClientWorkspaceMode = 'directory' | 'new';
-type NewClientTabKey = 'basic' | 'documents' | 'company' | 'aml' | 'docs';
+type NewClientTabKey = 'basic' | 'documents' | 'company' | 'aml' | 'docs' | 'checklist';
+
+const COUNTRIES: string[] = [
+  'AFGHÁNISTÁN',
+  'ALBÁNSKO',
+  'ALŽÍRSKO',
+  'ANDORRA',
+  'ANGOLA',
+  'ANTIGUA A BARBUDA',
+  'ARGENTINA',
+  'ARMÉNIE',
+  'AUSTRÁLIE',
+  'AZERBÁJDŽÁN',
+  'BAHAMY',
+  'BAHRAJN',
+  'BANGLADÉŠ',
+  'BARBADOS',
+  'BĚLORUSKO',
+  'BELGIE',
+  'BELIZE',
+  'BENIN',
+  'BHÚTÁN',
+  'BOLÍVIE',
+  'BOSNA A HERCEGOVINA',
+  'BOTSWANA',
+  'BRAZÍLIE',
+  'BRUNEI',
+  'BULHARSKO',
+  'BURKINA FASO',
+  'BURUNDI',
+  'ČAD',
+  'ČERNÁ HORA',
+  'ČESKÁ REPUBLIKA',
+  'ČÍNA',
+  'DÁNSKO',
+  'DEMOKRATICKÁ REPUBLIKA KONGO',
+  'DOMINIKA',
+  'DOMINIKÁNSKÁ REPUBLIKA',
+  'DŽIBUTSKO',
+  'EGYPT',
+  'EKVÁDOR',
+  'ERITREA',
+  'ESTONSKO',
+  'ESVATINI',
+  'ETIOPIE',
+  'FIDŽI',
+  'FILIPÍNY',
+  'FINSKO',
+  'FRANCIE',
+  'GABON',
+  'GAMBIE',
+  'GHANA',
+  'GRENADA',
+  'GRUZIE',
+  'GUATEMALA',
+  'GUINEA',
+  'GUINEA-BISSAU',
+  'CHORVATSKO',
+  'INDIE',
+  'INDONÉSIE',
+  'IRÁK',
+  'ÍRÁN',
+  'IRSKO',
+  'ISLAND',
+  'ISRAEL',
+  'ITÁLIE',
+  'JAMAJKA',
+  'JAPONSKO',
+  'JEMEN',
+  'JIŽNÍ AFRICKÁ REPUBLIKA',
+  'JIŽNÍ KOREA',
+  'JIŽNÍ SÚDÁN',
+  'JORDÁNSKO',
+  'KAMBODŽA',
+  'KAMERUN',
+  'KANADA',
+  'KAPVERDY',
+  'KATAR',
+  'KAZACHSTÁN',
+  'KEŇA',
+  'KIRIBATI',
+  'KOLUMBIE',
+  'KOMORY',
+  'KONGO',
+  'KOSTARIKA',
+  'KUBA',
+  'KUVAJT',
+  'KYPR',
+  'KYRGYZSTÁN',
+  'LAOS',
+  'LESOTO',
+  'LIBANON',
+  'LIBERIE',
+  'LIBYE',
+  'LICHTENŠTEJNSKO',
+  'LITVA',
+  'LUCEMBURSKO',
+  'MADAGASKAR',
+  'MAĎARSKO',
+  'MALAJSIE',
+  'MALAWI',
+  'MALDIVY',
+  'MALI',
+  'MALTA',
+  'MAROKO',
+  'MARŠALOVY OSTROVY',
+  'MAURITÁNIE',
+  'MAURICIUS',
+  'MEXIKO',
+  'MIKRONÉSIE',
+  'MOLDAVSKO',
+  'MONAKO',
+  'MONGOLSKO',
+  'MOSAMBIK',
+  'MYANMAR',
+  'NAMIBIE',
+  'NAURU',
+  'NEPÁL',
+  'NĚMECKO',
+  'NIGER',
+  'NIGERIE',
+  'NIZOZEMSKO',
+  'NORSKO',
+  'NOVÝ ZÉLAND',
+  'OMÁN',
+  'PAKISTÁN',
+  'PANAMA',
+  'PAPUA-NOVÁ GUINEA',
+  'PARAGUAY',
+  'PERU',
+  'POBŘEŽÍ SLONOVINY',
+  'POLSKO',
+  'PORTUGALSKO',
+  'RAKOUSKO',
+  'RUMUNSKO',
+  'RUSSKÁ FEDERACE',
+  'RWANDA',
+  'SAINT KITTS A NEVIS',
+  'SAINT LUCIA',
+  'SAINT VINCENT A GRENADINY',
+  'SAMOA',
+  'SAN MARINO',
+  'SÃO TOMÉ A PRINCIPE',
+  'SAÚDSKÁ ARÁBIE',
+  'SENEGAL',
+  'SEVERNÍ KOREA',
+  'SEVERNÍ MAKEDONIE',
+  'SEYCHELLY',
+  'SIERRA LEONE',
+  'SINGAPUR',
+  'SLOVENSKÁ REPUBLIKA',
+  'SLOVINSKO',
+  'SOMÁLSKO',
+  'SPOJENÉ ARABSKÉ EMIRÁTY',
+  'SPOJENÉ STÁTY AMERICKÉ',
+  'SRBSKO',
+  'SÚDÁN',
+  'SURINAM',
+  'ŠPANĚLSKO',
+  'ŠVÉDSKO',
+  'ŠVÝCARSKO',
+  'SÝRIE',
+  'SYRSKÁ ARABSKÁ REPUBLIKA',
+  'TADŽIKISTÁN',
+  'THAJSKO',
+  'TOGO',
+  'TRINIDAD A TOBAGO',
+  'TURECKO',
+  'TURKMENISTÁN',
+  'TUVALU',
+  'UGANDA',
+  'UKRAJINA',
+  'URUGUAY',
+  'UZBEKISTÁN',
+  'VANUATU',
+  'VATIKÁN',
+  'VELKÁ BRITÁNIE',
+  'VENEZUELA',
+  'VIETNAM',
+  'ZAMBIE',
+  'ZIMBABWE'
+];
+
+const HIGH_RISK_COUNTRIES: string[] = [
+  'AFGHÁNISTÁN',
+  'ALŽÍRSKO',
+  'ANGOLA',
+  'BOLÍVIE',
+  'BRITSKÉ PANENSKÉ OSTROVY',
+  'DEMOKRATICKÁ REPUBLIKA KONGO',
+  'HAITI',
+  'ÍRÁN',
+  'JEMEN',
+  'JIŽNÍ SÚDÁN',
+  'KAMERUN',
+  'KEŇA',
+  'KLDR',
+  'LAOS',
+  'LIBANON',
+  'MONAKO',
+  'MYANMAR',
+  'NAMIBIE',
+  'NEPÁL',
+  'POBŘEŽÍ SLONOVINY',
+  'RUSSKÁ FEDERACE',
+  'SYRSKÁ ARABSKÁ REPUBLIKA',
+  'TRINIDAD A TOBAGO',
+  'VANUATU',
+  'VENEZUELA',
+  'VIETNAM'
+];
+
+const CLIENT_CHECKLIST_DEFINITIONS: Array<{ key: string; label: string; keywords: string[]; subtitle?: string }> = [
+  { key: 'idDocument', label: 'Občanský průkaz', subtitle: 'nebo jiný doklad totožnosti', keywords: ['občan', 'průkaz', 'pas', 'totožnost'] },
+  { key: 'ares', label: 'Ares', subtitle: 'údaje o podnikatelském subjektu', keywords: ['ares'] },
+  { key: 'beneficialOwners', label: 'Evidence skutečných majitelů', keywords: ['skutečn', 'majitel'] },
+  { key: 'trustFunds', label: 'Evidence svěřeneckých fondů', keywords: ['svěřeneck', 'fond'] },
+  { key: 'executionRegistry', label: 'Exekuční rejstřík', subtitle: 'prověření exekucí', keywords: ['exekuč', 'exekuc'] },
+  { key: 'skCheck', label: 'Prověření exekucí i insolvencí i na SK', keywords: ['slovensk', 'na sk'] },
+  { key: 'insolvencyRegistry', label: 'Insolvenční rejstřík', subtitle: 'prověření insolvencí', keywords: ['insolvenc'] },
+  { key: 'highRiskCountry', label: 'Klient z vysoce rizikové země', keywords: ['rizikov'] },
+  { key: 'sanctions', label: 'Mezinárodní sankce', keywords: ['sankc'] },
+  { key: 'acquisitionTitle', label: 'Nabývací titul', keywords: ['nabýzac', 'nabyt', 'titul'] },
+  { key: 'signedAml', label: 'Podepsané AML', keywords: ['podepsan', 'aml'] },
+  { key: 'invalidDocs', label: 'Neplatné doklady', subtitle: 'ověření platnosti dokladů', keywords: ['neplatn'] },
+  { key: 'pep', label: 'PEP', subtitle: 'ověřením politicky exponované osoby', keywords: ['pep', 'politicky exponovan'] }
+];
+
+const DOCUMENT_TYPE_OPTIONS: string[] = [
+  'Občanský průkaz nebo jiný doklad totožnosti',
+  'Ares',
+  'Evidence skutečných majitelů',
+  'Evidence svěřeneckých fondů',
+  'Exekuční rejstřík',
+  'Prověření exekucí i insolvencí i na SK',
+  'Insolvenční rejstřík',
+  'Klient z vysoce rizikové země',
+  'Mezinárodní sankce',
+  'Nabývací titul',
+  'Podepsané AML',
+  'Neplatné doklady',
+  'PEP (politicky exponovaná osoba)',
+  'AML podepsané',
+  'jiný doklad',
+  'Cenové mapy',
+  'Katastrální mapy',
+  'LV',
+  'Náběrový formulář',
+  'Občanský průkaz - prodávající',
+  'AML - prodávající',
+  'Protokoly o prohlídce',
+  'Tiskové karty',
+  'Zprostředkovatelská smlouva',
+  'Čestné prohlášení',
+  'Občanský průkaz - kupující',
+  'AML - kupující',
+  'Rezervační smlouva',
+  'Smlouva o budoucí kupní smlouvě',
+  'Kupní smlouva',
+  'Nájemní smlouva',
+  'Návrh na vklad',
+  'Smlouva o úschově',
+  'Zástavní smlouva',
+  'Předavací protokol',
+  'Souhlas s GDPR',
+  'Půdorys',
+  'Faktury',
+  'Lustrace',
+  'Ceníky',
+  'Mapa lokality',
+  'Harmonogram',
+  'Standardy',
+  'Smlouvy a financování',
+  'Dokumenty k nemovitosti',
+  'Uzavřené smlouvy',
+  'Marketing',
+  'Ostatní',
+  'AML formulář',
+  'Scan smlouvy',
+  'Soubory z aukce',
+  'Nezařazeno'
+];
+
+const DOCUMENT_TYPE_SUBTITLES: Record<string, string> = {
+  'Neplatné doklady': 'ověření platnosti dokladů',
+  'PEP (politicky exponovaná osoba)': 'ověřením politicky exponované osoby'
+};
+
+const CHECKLIST_KEY_TO_DOC_TYPE: Record<string, string> = {
+  idDocument: 'Občanský průkaz nebo jiný doklad totožnosti',
+  ares: 'Ares',
+  beneficialOwners: 'Evidence skutečných majitelů',
+  trustFunds: 'Evidence svěřeneckých fondů',
+  executionRegistry: 'Exekuční rejstřík',
+  skCheck: 'Prověření exekucí i insolvencí i na SK',
+  insolvencyRegistry: 'Insolvenční rejstřík',
+  highRiskCountry: 'Klient z vysoce rizikové země',
+  sanctions: 'Mezinárodní sankce',
+  acquisitionTitle: 'Nabývací titul',
+  signedAml: 'Podepsané AML',
+  invalidDocs: 'Neplatné doklady',
+  pep: 'PEP (politicky exponovaná osoba)'
+};
 
 interface UploadedAsset {
   name: string;
@@ -130,7 +432,9 @@ interface NewClientDraft {
   idIssuedByAuthority: string;
   idIssuedByState: string;
   permanentResidence: string;
+  permanentResidenceState: string;
   correspondenceAddress: string;
+  correspondenceAddressState: string;
   maritalStatus: string;
   maritalStatusOnId: YesNo;
   idUploadVisible: boolean;
@@ -167,7 +471,7 @@ interface NewClientDraft {
   acceptedOptions: string[];
   deliveredDocuments: string[];
   actingAsRepresentativeFor: string;
-  clientDocuments: string[];
+  clientDocuments: Array<{ name: string; type: string; url?: string }>;
 }
 
 interface AgentProfile {
@@ -413,9 +717,6 @@ export class App {
     web: ''
   });
   protected readonly agentSubItem = signal<'profile' | 'account'>('profile');
-  private readonly projectDirectoryHandle = signal<any>(null);
-  protected readonly projectDirectoryName = signal('');
-  protected readonly projectFileSupported = typeof window !== 'undefined' && typeof (window as any).showDirectoryPicker === 'function';
   private readonly activePropertyId = signal('');
   private readonly propertyDirectorySort = signal<{ key: PropertyDirectorySortKey; direction: 'asc' | 'desc' } | null>(null);
   private readonly propertyDirectoryView = signal<PropertyDirectoryView>('all');
@@ -528,6 +829,8 @@ export class App {
     return this.workspaceItems.find((item) => item.key === active)?.label || '';
   });
   protected readonly clientAccentTheme = signal<ClientAccentTheme>('pink');
+  protected readonly todayNameday = signal('');
+  protected readonly todayNamedayTooltip = computed(() => this.todayNameday() ? `Svátek: ${this.todayNameday()}` : null);
   protected readonly clientDirectorySort = signal<{ key: ClientDirectorySortKey; direction: 'asc' | 'desc' } | null>(null);
   protected readonly previewClientRecordId = signal('');
   protected readonly clientDirectoryView = signal<ClientDirectoryView>('all');
@@ -1265,7 +1568,34 @@ export class App {
       this.activeNewClientTab.set('documents');
     }
 
-    this.newClientDraft.update((draft) => ({ ...draft, [field]: value }));
+    this.newClientDraft.update((draft) => {
+      const nextDraft = { ...draft, [field]: value } as NewClientDraft;
+      const riskFields: Array<keyof NewClientDraft> = [
+        'citizenship',
+        'permanentResidence',
+        'permanentResidenceState',
+        'correspondenceAddress',
+        'correspondenceAddressState',
+        'idIssuedByState'
+      ];
+
+      if (riskFields.includes(field) && nextDraft.sanctionsApplied !== 'ANO') {
+        const riskValues = [
+          nextDraft.citizenship,
+          nextDraft.permanentResidence,
+          nextDraft.permanentResidenceState,
+          nextDraft.correspondenceAddress,
+          nextDraft.correspondenceAddressState,
+          nextDraft.idIssuedByState
+        ];
+
+        if (riskValues.some((item) => this.isHighRiskCountryValue(item))) {
+          nextDraft.sanctionsApplied = 'ANO';
+        }
+      }
+
+      return nextDraft;
+    });
   }
 
   protected isNewClientDraftValue<K extends keyof NewClientDraft>(field: K, value: NewClientDraft[K]): boolean {
@@ -1299,6 +1629,10 @@ export class App {
 
   protected readonly newClientDraftDocInput = signal('');
   protected readonly clientDocSearch = signal('');
+  protected readonly clientChecklistSearch = signal('');
+  protected readonly pendingDocType = signal<string | null>(null);
+  protected readonly newClientUploadPickerOpen = signal(false);
+  protected readonly newClientUploadSelectedType = signal('');
 
   protected setNewClientDraftDocInput(value: string): void {
     this.newClientDraftDocInput.set(value);
@@ -1308,12 +1642,36 @@ export class App {
     this.clientDocSearch.set(value);
   }
 
-  protected filteredClientDocuments(): { index: number; name: string }[] {
+  protected setClientChecklistSearch(value: string): void {
+    this.clientChecklistSearch.set(value);
+  }
+
+  protected toggleNewClientUploadPicker(): void {
+    this.newClientUploadPickerOpen.update((open) => !open);
+    if (this.newClientUploadPickerOpen()) {
+      return;
+    }
+    this.newClientUploadSelectedType.set('');
+  }
+
+  protected setNewClientUploadSelectedType(value: string): void {
+    this.newClientUploadSelectedType.set(value);
+  }
+
+  protected filteredClientDocuments(): { index: number; name: string; type: string }[] {
     const query = this.clientDocSearch().trim().toLowerCase();
     const docs = this.newClientDraft().clientDocuments || [];
     return docs
-      .map((name, index) => ({ index, name }))
-      .filter((doc) => !query || doc.name.toLowerCase().includes(query));
+      .map((doc, index) => ({ index, name: doc.name, type: doc.type }))
+      .filter((doc) => !query || doc.name.toLowerCase().includes(query) || doc.type.toLowerCase().includes(query));
+  }
+
+  protected clientDocumentTypeOptions(): string[] {
+    return [...DOCUMENT_TYPE_OPTIONS].sort((a, b) => a.localeCompare(b, 'cs'));
+  }
+
+  protected uploadDocumentTypeOptions(): string[] {
+    return this.clientDocumentTypeOptions().filter((type) => type !== 'Podepsané AML');
   }
 
   protected addNewClientDocument(): void {
@@ -1324,19 +1682,129 @@ export class App {
 
     this.newClientDraft.update((draft) => ({
       ...draft,
-      clientDocuments: [...(draft.clientDocuments || []), value]
+      clientDocuments: [...(draft.clientDocuments || []), { name: value, type: '' }]
     }));
     this.newClientDraftDocInput.set('');
   }
 
+  protected addNewClientDocumentFile(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files && input.files[0];
+    if (!file) {
+      return;
+    }
+    const name = file.name;
+    this.newClientDraft.update((draft) => ({
+      ...draft,
+      clientDocuments: [...(draft.clientDocuments || []), { name, type: '' }]
+    }));
+    input.value = '';
+  }
+
+  protected setNewClientDocumentType(index: number, type: string): void {
+    this.newClientDraft.update((draft) => ({
+      ...draft,
+      clientDocuments: (draft.clientDocuments || []).map((doc, i) => (i === index ? { ...doc, type } : doc))
+    }));
+  }
+
   protected removeNewClientDocument(index: number): void {
-    const name = this.newClientDraft().clientDocuments?.[index] || 'tento doklad';
+    const name = this.newClientDraft().clientDocuments?.[index]?.name || 'tento doklad';
     if (!window.confirm(`Opravdu chcete smazat doklad „${name}"?`)) {
       return;
     }
     this.newClientDraft.update((draft) => ({
       ...draft,
       clientDocuments: (draft.clientDocuments || []).filter((_, i) => i !== index)
+    }));
+  }
+
+  protected documentTypeSubtitle(type: string): string {
+    return DOCUMENT_TYPE_SUBTITLES[type] || '';
+  }
+
+  protected documentTypeLabel(type: string): string {
+    if (type === 'PEP (politicky exponovaná osoba)') {
+      return 'PEP';
+    }
+    return type;
+  }
+
+  protected checklistItemDocType(key: string): string {
+    return CHECKLIST_KEY_TO_DOC_TYPE[key] || '';
+  }
+
+  protected filteredDocumentTypeOptions(): string[] {
+    const query = (this.clientDocSearch() || '').toLowerCase();
+    return this.clientDocumentTypeOptions()
+      .filter((type) => !query || type.toLowerCase().includes(query))
+      .sort((a, b) => {
+        const aHasDocs = this.documentsForType(a).length > 0;
+        const bHasDocs = this.documentsForType(b).length > 0;
+        if (aHasDocs !== bHasDocs) {
+          return aHasDocs ? -1 : 1;
+        }
+        return this.documentTypeLabel(a).localeCompare(this.documentTypeLabel(b), 'cs');
+      });
+  }
+
+  protected uploadedDocumentTypes(): string[] {
+    return this.filteredDocumentTypeOptions().filter((type) => this.documentsForType(type).length > 0);
+  }
+
+  protected documentsForType(type: string): Array<{ name: string; type: string; url?: string }> {
+    return (this.newClientDraft().clientDocuments || []).filter((doc) => (doc.type || '') === type);
+  }
+
+  protected triggerUploadForType(type: string, fileInput: HTMLInputElement): void {
+    this.pendingDocType.set(type);
+    fileInput.click();
+  }
+
+  protected triggerUploadForSelectedType(fileInput: HTMLInputElement): void {
+    const type = this.newClientUploadSelectedType();
+    if (!type) {
+      return;
+    }
+    this.triggerUploadForType(type, fileInput);
+  }
+
+  protected addNewClientDocumentFileForType(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files && input.files[0];
+    const type = this.pendingDocType();
+    this.pendingDocType.set(null);
+    if (!file || !type) {
+      input.value = '';
+      return;
+    }
+    const name = file.name;
+    this.newClientDraft.update((draft) => ({
+      ...draft,
+      clientDocuments: [...(draft.clientDocuments || []), { name, type }]
+    }));
+    input.value = '';
+  }
+
+  protected addNewClientDocumentLinkForType(type: string): void {
+    const url = window.prompt('Zadejte odkaz k dokladu:');
+    if (!url || !url.trim()) {
+      return;
+    }
+    const trimmed = url.trim();
+    this.newClientDraft.update((draft) => ({
+      ...draft,
+      clientDocuments: [...(draft.clientDocuments || []), { name: trimmed, type, url: trimmed }]
+    }));
+  }
+
+  protected removeNewClientDocumentByRef(doc: { name: string; type: string; url?: string }): void {
+    if (!window.confirm('opravdu chcete doklad smazat?')) {
+      return;
+    }
+    this.newClientDraft.update((draft) => ({
+      ...draft,
+      clientDocuments: (draft.clientDocuments || []).filter((x) => x !== doc)
     }));
   }
 
@@ -1364,6 +1832,84 @@ export class App {
     this.setNewClientDraftField(field, (this.newClientDraft()[field] === value ? emptyValue : value) as NewClientDraft[K]);
   }
 
+  protected countrySuggestionsFor(field: string): string[] {
+    const query = this.normalize(this.newClientDraft()[field as keyof NewClientDraft] as string).trim();
+    if (!query) {
+      return [];
+    }
+    return COUNTRIES.filter((country) => {
+      const normalized = this.normalize(country);
+      return normalized !== query && normalized.includes(query);
+    }).slice(0, 6);
+  }
+
+  protected clientChecklistItems(): Array<{ key: string; label: string; subtitle?: string; satisfied: boolean }> {
+    const docNames = (this.newClientDraft().clientDocuments || []).map((doc) => this.normalize(doc.type || doc.name));
+    return CLIENT_CHECKLIST_DEFINITIONS.map((def) => ({
+      key: def.key,
+      label: def.label,
+      subtitle: def.subtitle,
+      satisfied: def.keywords.some((keyword) => {
+        const normalizedKeyword = this.normalize(keyword);
+        return docNames.some((name) => name.includes(normalizedKeyword));
+      })
+    })).sort((a, b) => {
+      if (a.satisfied !== b.satisfied) {
+        return a.satisfied ? -1 : 1;
+      }
+      return a.label.localeCompare(b.label, 'cs');
+    });
+  }
+
+  protected filteredClientChecklistItems(): Array<{ key: string; label: string; subtitle?: string; satisfied: boolean }> {
+    const query = this.normalize(this.clientChecklistSearch());
+    return this.clientChecklistItems().filter((item) => !query || this.normalize(item.label).includes(query));
+  }
+
+  protected clientChecklistSatisfiedCount(): number {
+    return this.clientChecklistItems().filter((item) => item.satisfied).length;
+  }
+
+  protected clientChecklistTotalCount(): number {
+    return CLIENT_CHECKLIST_DEFINITIONS.length;
+  }
+
+  protected clientChecklistProgressPercent(): number {
+    const total = CLIENT_CHECKLIST_DEFINITIONS.length;
+    if (total === 0) {
+      return 0;
+    }
+    return Math.round((this.clientChecklistSatisfiedCount() / total) * 100);
+  }
+
+  protected isHighRiskField(field: string): boolean {
+    const value = this.newClientDraft()[field as keyof NewClientDraft] as string;
+    return this.isHighRiskCountryValue(value);
+  }
+
+  protected isHighRiskClient(): boolean {
+    const fields = [
+      this.newClientDraft().citizenship,
+      this.newClientDraft().permanentResidence,
+      this.newClientDraft().permanentResidenceState,
+      this.newClientDraft().correspondenceAddress,
+      this.newClientDraft().correspondenceAddressState,
+      this.newClientDraft().idIssuedByState
+    ];
+    return fields.some((value) => this.isHighRiskCountryValue(value));
+  }
+
+  private isHighRiskCountryValue(value: string): boolean {
+    const v = this.normalize(value || '');
+    if (!v) return false;
+    return HIGH_RISK_COUNTRIES.some((country) => {
+      const n = this.normalize(country);
+      if (n.length === 0) return false;
+      if (v.includes(n)) return true;
+      return v.length >= 4 && n.includes(v);
+    });
+  }
+
   private createDefaultNewClientDraft(): NewClientDraft {
     return {
       clientType: 'fyzicka',
@@ -1388,7 +1934,9 @@ export class App {
       idIssuedByAuthority: '',
       idIssuedByState: '',
       permanentResidence: '',
+      permanentResidenceState: '',
       correspondenceAddress: '',
+      correspondenceAddressState: '',
       maritalStatus: '',
       maritalStatusOnId: null,
       idUploadVisible: false,
@@ -1445,7 +1993,7 @@ export class App {
       amlProofBusiness: [...(draft.amlProofBusiness || [])],
       amlProofBankLoan: [...(draft.amlProofBankLoan || [])],
       amlProofOther: [...(draft.amlProofOther || [])],
-      clientDocuments: [...(draft.clientDocuments || [])]
+      clientDocuments: (draft.clientDocuments || []).map((doc) => (typeof doc === 'string' ? { name: doc, type: '' } : doc))
     };
   }
 
@@ -2180,7 +2728,20 @@ export class App {
 
   constructor() {
     void this.loadData();
-    void this.initProjectFile();
+    this.loadTodayNameday();
+  }
+
+  private loadTodayNameday(): void {
+    const today = new Date();
+    this.http.get<{ success: boolean; data?: Record<string, string> }>('https://nameday.abalin.net/api/V2/date', {
+      params: {
+        day: String(today.getDate()),
+        month: String(today.getMonth() + 1)
+      }
+    }).subscribe({
+      next: (response) => this.todayNameday.set(response?.data?.['cz'] || ''),
+      error: () => this.todayNameday.set('')
+    });
   }
 
   protected loadData(): Promise<void> {
@@ -2199,21 +2760,20 @@ export class App {
             next: (m2CsvText) => {
               const m2Rows = this.csvToObjects(m2CsvText);
               this.prepareRoomAreaRules(m2Rows);
-              this.loading.set(false);
-              resolve();
+              this.finishLoading(resolve);
             },
-            error: () => {
-              this.loading.set(false);
-              resolve();
-            }
+            error: () => this.finishLoading(resolve)
           });
         },
-        error: () => {
-          this.error.set('Nepodařilo se načíst data z Google tabulky.');
-          this.loading.set(false);
-          resolve();
-        }
+        error: () => this.finishLoading(resolve)
       });
+    });
+  }
+
+  private finishLoading(resolve: () => void): void {
+    void this.loadState().then(() => {
+      this.loading.set(false);
+      resolve();
     });
   }
 
@@ -5514,12 +6074,61 @@ export class App {
   protected saveToXml(): void {
     this.syncActiveNewClientToRecords();
     const xml = this.buildXmlString();
+    void this.saveState(xml);
+    this.downloadXml(xml);
+  }
 
-    const dir = this.projectDirectoryHandle();
-    if (dir) {
-      void this.writeProjectXml(xml);
-    } else {
-      this.downloadXml(xml);
+  private readonly idbKey = 'nabor-nemovitosti-state';
+
+  private idbGet<T>(key: string): Promise<T | null> {
+    return new Promise((resolve) => {
+      try {
+        const request = indexedDB.open('nabor-nemovitosti', 1);
+        request.onupgradeneeded = () => request.result.createObjectStore('kv');
+        request.onsuccess = () => {
+          const store = request.result.transaction('kv', 'readonly').objectStore('kv');
+          const get = store.get(key);
+          get.onsuccess = () => resolve((get.result as T) ?? null);
+          get.onerror = () => resolve(null);
+        };
+        request.onerror = () => resolve(null);
+      } catch {
+        resolve(null);
+      }
+    });
+  }
+
+  private idbSet(key: string, value: unknown): Promise<void> {
+    return new Promise((resolve) => {
+      try {
+        const request = indexedDB.open('nabor-nemovitosti', 1);
+        request.onupgradeneeded = () => request.result.createObjectStore('kv');
+        request.onsuccess = () => {
+          const store = request.result.transaction('kv', 'readwrite').objectStore('kv');
+          const put = store.put(value, key);
+          put.onsuccess = () => resolve();
+          put.onerror = () => resolve();
+        };
+        request.onerror = () => resolve();
+      } catch {
+        resolve();
+      }
+    });
+  }
+
+  private async saveState(xml: string): Promise<void> {
+    await this.idbSet(this.idbKey, xml);
+  }
+
+  private async loadState(): Promise<void> {
+    const xml = await this.idbGet<string>(this.idbKey);
+    if (typeof xml === 'string' && xml.trim()) {
+      try {
+        this.applyXmlPayload(xml);
+        this.bumpStateVersion();
+      } catch {
+        // poškozený stav uložený v prohlížeči
+      }
     }
   }
 
@@ -5576,9 +6185,7 @@ export class App {
 
   private downloadXml(xml: string): void {
     const blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });
-    const metaTitle = this.printReportMeta().trim();
-    const baseName = metaTitle || this.printReportTitle();
-    const filename = `${this.sanitizeFileName(baseName)}.xml`;
+    const filename = 'database.xml';
 
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -5586,144 +6193,6 @@ export class App {
     link.download = filename;
     link.click();
     URL.revokeObjectURL(url);
-  }
-
-  private idbGet<T>(key: string): Promise<T | null> {
-    return new Promise((resolve) => {
-      try {
-        const request = indexedDB.open('nabor-nemovitosti', 1);
-        request.onupgradeneeded = () => request.result.createObjectStore('kv');
-        request.onsuccess = () => {
-          const store = request.result.transaction('kv', 'readonly').objectStore('kv');
-          const get = store.get(key);
-          get.onsuccess = () => resolve((get.result as T) ?? null);
-          get.onerror = () => resolve(null);
-        };
-        request.onerror = () => resolve(null);
-      } catch {
-        resolve(null);
-      }
-    });
-  }
-
-  private idbSet(key: string, value: unknown): Promise<void> {
-    return new Promise((resolve) => {
-      try {
-        const request = indexedDB.open('nabor-nemovitosti', 1);
-        request.onupgradeneeded = () => request.result.createObjectStore('kv');
-        request.onsuccess = () => {
-          const store = request.result.transaction('kv', 'readwrite').objectStore('kv');
-          const put = store.put(value, key);
-          put.onsuccess = () => resolve();
-          put.onerror = () => resolve();
-        };
-        request.onerror = () => resolve();
-      } catch {
-        resolve();
-      }
-    });
-  }
-
-  private async ensureDirectoryPermission(handle: any): Promise<boolean> {
-    try {
-      if (handle?.queryPermission) {
-        const current = await handle.queryPermission({ mode: 'readwrite' });
-        if (current === 'granted') {
-          return true;
-        }
-        if (current === 'denied') {
-          return false;
-        }
-      }
-
-      if (handle?.requestPermission) {
-        return (await handle.requestPermission({ mode: 'readwrite' })) === 'granted';
-      }
-
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  protected async chooseProjectDirectory(): Promise<void> {
-    try {
-      const picker = (window as any).showDirectoryPicker;
-      const handle = await picker({ mode: 'readwrite' });
-      if (!(await this.ensureDirectoryPermission(handle))) {
-        return;
-      }
-
-      this.projectDirectoryHandle.set(handle);
-      this.projectDirectoryName.set(handle.name || '');
-      await this.idbSet('projectDirectoryHandle', handle);
-      await this.loadProjectFile();
-      this.saveToXml();
-    } catch {
-      // uživatel zrušil výběr nebo není podpora
-    }
-  }
-
-  protected async resetProjectDirectory(): Promise<void> {
-    this.projectDirectoryHandle.set(null);
-    this.projectDirectoryName.set('');
-    await this.idbSet('projectDirectoryHandle', null);
-  }
-
-  protected async initProjectFile(): Promise<void> {
-    if (!this.projectFileSupported) {
-      return;
-    }
-
-    const handle = await this.idbGet<any>('projectDirectoryHandle');
-    if (!handle) {
-      return;
-    }
-
-    if (!(await this.ensureDirectoryPermission(handle))) {
-      return;
-    }
-
-    try {
-      this.projectDirectoryHandle.set(handle);
-      this.projectDirectoryName.set(handle.name || '');
-      await this.loadProjectFile();
-    } catch {
-      // chyba při načítání projektového souboru
-    }
-  }
-
-  private async loadProjectFile(): Promise<void> {
-    const dir = this.projectDirectoryHandle();
-    if (!dir) {
-      return;
-    }
-
-    try {
-      const fileHandle = await dir.getFileHandle('database.xml');
-      const file = await fileHandle.getFile();
-      const text = await file.text();
-      this.applyXmlPayload(text);
-      this.bumpStateVersion();
-    } catch {
-      // soubor database.xml zatím neexistuje
-    }
-  }
-
-  private async writeProjectXml(xml: string): Promise<void> {
-    const dir = this.projectDirectoryHandle();
-    if (!dir) {
-      return;
-    }
-
-    try {
-      const fileHandle = await dir.getFileHandle('database.xml', { create: true });
-      const writable = await fileHandle.createWritable();
-      await writable.write(xml);
-      await writable.close();
-    } catch {
-      // zápis se nezdařil
-    }
   }
 
   protected openXmlFilePicker(input: HTMLInputElement): void {
@@ -6038,11 +6507,13 @@ body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; 
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        this.applyXmlPayload(String(reader.result || ''));
+        const text = String(reader.result || '');
+        this.applyXmlPayload(text);
         this.activeClientIndex.set(0);
         this.activeWorkspace.set('clients');
         this.clientWorkspaceMode.set('directory');
         this.bumpStateVersion();
+        void this.saveState(text);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Nepodařilo se načíst XML.';
         window.alert(message);
