@@ -5566,7 +5566,8 @@ export class App {
           floorPlanPhotos: state.floorPlanPhotos,
           customParcelRows: state.customParcelRows
         }
-      }))
+      })),
+      agentProfile: this.agentProfile()
     };
 
     const payloadJson = JSON.stringify(payload);
