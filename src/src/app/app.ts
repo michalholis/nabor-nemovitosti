@@ -9,7 +9,7 @@ type ClientAccentTheme = 'pink' | 'gray' | 'emerald' | 'yellow';
 type WorkspaceKey = 'dashboard' | 'clients' | 'properties' | 'floorPlans' | 'documents' | 'coldCalls' | 'agent' | 'calendar' | 'notes';
 type PropertyWorkspaceMode = 'new' | 'mine' | 'directory';
 type ClientWorkspaceMode = 'directory' | 'new';
-type NewClientTabKey = 'basic' | 'documents' | 'company' | 'aml' | 'docs' | 'checklist';
+type NewClientTabKey = 'basic' | 'documents' | 'company' | 'aml' | 'docs' | 'notes' | 'checklist';
 
 const COUNTRIES: string[] = [
   'AFGHÁNISTÁN',
@@ -34,6 +34,7 @@ const COUNTRIES: string[] = [
   'BOLÍVIE',
   'BOSNA A HERCEGOVINA',
   'BOTSWANA',
+  'BRITSKÉ PANENSKÉ OSTROVY',
   'BRAZÍLIE',
   'BRUNEI',
   'BULHARSKO',
@@ -66,6 +67,7 @@ const COUNTRIES: string[] = [
   'GUATEMALA',
   'GUINEA',
   'GUINEA-BISSAU',
+  'HAITI',
   'CHORVATSKO',
   'INDIE',
   'INDONÉSIE',
@@ -154,6 +156,7 @@ const COUNTRIES: string[] = [
   'SÃO TOMÉ A PRINCIPE',
   'SAÚDSKÁ ARÁBIE',
   'SENEGAL',
+  'KLDR',
   'SEVERNÍ KOREA',
   'SEVERNÍ MAKEDONIE',
   'SEYCHELLY',
@@ -229,11 +232,12 @@ const CLIENT_CHECKLIST_DEFINITIONS: Array<{ key: string; label: string; keywords
   { key: 'executionRegistry', label: 'Exekuční rejstřík', subtitle: 'prověření exekucí', keywords: ['exekuč', 'exekuc'] },
   { key: 'insolvencyRegistry', label: 'Insolvenční rejstřík', subtitle: 'prověření insolvencí', keywords: ['insolvenc'] },
   { key: 'highRiskCountry', label: 'Klient z vysoce rizikové země', keywords: ['rizikov'] },
-  { key: 'sanctions', label: 'Mezinárodní sankce', keywords: ['sankc'] },
+  { key: 'sanctions', label: 'Mezinárodní sankce', subtitle: 'prověření mezinárodních sankcí', keywords: ['sankc'] },
   { key: 'acquisitionTitle', label: 'Nabývací titul', subtitle: 'získání původu majetku', keywords: ['nabýzac', 'nabyt', 'titul'] },
-  { key: 'signedAml', label: 'Podepsané AML', keywords: ['podepsan', 'aml'] },
+  { key: 'signedAml', label: 'AML dotazník', subtitle: 'vyplněný a podepsaný aml dotazník', keywords: ['podepsan', 'aml'] },
   { key: 'invalidDocs', label: 'Neplatné doklady', subtitle: 'ověření platnosti dokladů', keywords: ['neplatn'] },
-  { key: 'pep', label: 'PEP', subtitle: 'ověřením politicky exponované osoby', keywords: ['pep', 'politicky exponovan'] }
+  { key: 'pep', label: 'PEP', subtitle: 'ověřením politicky exponované osoby', keywords: ['pep', 'politicky exponovan'] },
+  { key: 'gdpr', label: 'GDPR', subtitle: 'podpis souhlasu se zpracováním osobních údajů', keywords: ['gdpr'] }
 ];
 
 const DOCUMENT_TYPE_OPTIONS: string[] = [
@@ -250,7 +254,6 @@ const DOCUMENT_TYPE_OPTIONS: string[] = [
   'Podepsané AML',
   'Neplatné doklady',
   'PEP (politicky exponovaná osoba)',
-  'AML podepsané',
   'jiný doklad',
   'Cenové mapy',
   'Katastrální mapy',
@@ -272,6 +275,7 @@ const DOCUMENT_TYPE_OPTIONS: string[] = [
   'Smlouva o úschově',
   'Zástavní smlouva',
   'Předavací protokol',
+  'GDPR',
   'Souhlas s GDPR',
   'Půdorys',
   'Faktury',
@@ -296,6 +300,76 @@ const DOCUMENT_TYPE_SUBTITLES: Record<string, string> = {
   'PEP (politicky exponovaná osoba)': 'ověřením politicky exponované osoby'
 };
 
+const AML_SOURCE_OF_FUNDS_OPTIONS: string[] = [
+  'Prodej majetku',
+  'Dědictví',
+  'Dar',
+  'Půjčka',
+  'Úspory',
+  'Příjem ze zaměstnání',
+  'Příjem z podnikání',
+  'Celoživotní úspory',
+  'Bankovní úvěr',
+  'Jiné (definujte)'
+];
+
+const AML_MONTHLY_INCOME_OPTIONS: string[] = [
+  'do 250 tis. Kč',
+  'do 500 tis. Kč',
+  'do 1 mil. Kč',
+  'do 2 mil. Kč',
+  'do 3 mil. Kč',
+  'do 4 mil. Kč',
+  'do 5 mil. Kč',
+  'nad 5 mil. Kč'
+];
+
+const AML_DELIVERED_DOCUMENT_OPTIONS: string[] = [
+  'Klíče',
+  'PENB',
+  'Pasport',
+  'Projektová dokumentace',
+  'Rozpis služeb',
+  'Nájemní smlouva z družstva',
+  'Dokumentace k rekonstrukci',
+  'Příjem ze zaměstnání',
+  'Příjem z podnikání',
+  'Smlouva o prodeji',
+  'Doklad o dědickém vypořádání',
+  'Smlouva o daru',
+  'Identifikace dárce',
+  'Doložení původu peněz dárce',
+  'Bankovní výpis o převodu daru',
+  'Smlouva o půjčce',
+  'Identifikace půjčujícího',
+  'Doložení původu peněz půjčujícího',
+  'Bankovní výpis o převodu půjčky',
+  'Čestné prohlášení',
+  'Historické bankovní výpisy',
+  'Spořicí účet',
+  'Termínované vklady',
+  'Investiční účty',
+  'Příjmy ze zaměstnání',
+  'Dlouhodobé spoření',
+  'Prodej investic',
+  'Pracovní smlouva',
+  'Potvrzení o příjmu',
+  'Výplatní pásky',
+  'Daňová přiznání',
+  'Bankovní výpisy s příchozí mzdou',
+  'Účetní závěrky',
+  'Faktury / smlouvy',
+  'Výpisy z podnikatelského účtu',
+  'Potvrzení o dividendách',
+  'Přehled obratu společnosti',
+  'Daňové přiznání fyzických osob',
+  'Přehledy pro OSSZ/ZP',
+  'Bankovní pohyby',
+  'Úvěrová smlouva',
+  'Potvrzení banky o čerpání',
+  'Výpis z účtu s připsáním úvěru'
+];
+
 const CHECKLIST_KEY_TO_DOC_TYPE: Record<string, string> = {
   idDocument: 'Občanský průkaz nebo jiný doklad totožnosti',
   ares: 'Ares',
@@ -311,6 +385,13 @@ const CHECKLIST_KEY_TO_DOC_TYPE: Record<string, string> = {
   invalidDocs: 'Neplatné doklady',
   pep: 'PEP (politicky exponovaná osoba)'
 };
+
+const CLIENT_NOTE_COLOR_DEFINITIONS: Array<{ value: ClientNoteColor; label: string; hint: string; icon: string }> = [
+  { value: 'red', label: 'HOŘÍ', hint: 'akutní, řešit okamžitě', icon: '🟥' },
+  { value: 'orange', label: 'NUTNÉ', hint: 'vyřešit co nejdříve', icon: '🟧' },
+  { value: 'green', label: 'AKTUÁLNÍ', hint: 'standardní poznámka', icon: '🟩' },
+  { value: 'gray', label: 'NEAKTIVNÍ', hint: 'archiv, bez nutnosti jednat', icon: '✔' }
+];
 
 interface UploadedAsset {
   name: string;
@@ -389,6 +470,7 @@ interface ClientDirectoryEntry {
   createdAt: string;
   type: string;
   status: 'Aktivní' | 'Neaktivní';
+  notes: ClientNote[];
 }
 
 interface PropertyDirectoryEntry {
@@ -406,6 +488,16 @@ interface NoteCard {
   color: string;
   createdAt: string;
   expiresAt: string;
+}
+
+type ClientNoteColor = 'red' | 'orange' | 'green' | 'gray';
+
+interface ClientNote {
+  id: string;
+  text: string;
+  color: ClientNoteColor;
+  deadline: string;
+  createdAt: string;
 }
 
 interface NewClientDraft {
@@ -470,6 +562,7 @@ interface NewClientDraft {
   acceptedOptions: string[];
   deliveredDocuments: string[];
   actingAsRepresentativeFor: string;
+  clientNotes: ClientNote[];
   clientDocuments: Array<{ name: string; type: string; url?: string; fileType?: string; dataBase64?: string }>;
 }
 
@@ -642,7 +735,7 @@ export class App {
     {
       key: 'floorPlans',
       label: 'Půdorysy',
-      iconPath: 'M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h120v-160h160v160h280v-280H560v-160h160v-120H200v560Zm120-280v-160h160v160H320Zm240 80v-160h160v160H560ZM320-640Zm240 160Z',
+      iconPath: 'M208-120q-37 0-62.5-25.5T120-208v-548q0-29 27-40.5t47 8.5l90 90-54 54 28 28 54-54 104 104-54 54 28 28 54-54 104 104-54 54 28 28 54-54 104 104-54 54 28 28 54-54 80 80q20 20 8.5 47T756-120H208Zm32-120h332L240-572v332Z',
       subItems: []
     }
   ];
@@ -705,6 +798,7 @@ export class App {
   private readonly activeSavedClientId = signal('');
   private readonly clientCount = signal(1);
   protected readonly savedPropertyRecords = signal<SavedPropertyRecord[]>([]);
+  private readonly highRiskCountries = signal<string[]>(HIGH_RISK_COUNTRIES);
   protected readonly agentProfile = signal<AgentProfile>({
     fullName: 'Petrášová Eliška',
     phone: '',
@@ -832,6 +926,7 @@ export class App {
   protected readonly todayNamedayTooltip = computed(() => this.todayNameday() ? `Svátek: ${this.todayNameday()}` : null);
   protected readonly clientDirectorySort = signal<{ key: ClientDirectorySortKey; direction: 'asc' | 'desc' } | null>(null);
   protected readonly previewClientRecordId = signal('');
+  protected readonly previewClientNotesOnly = signal(false);
   protected readonly clientDirectoryView = signal<ClientDirectoryView>('all');
   protected readonly allClientDirectoryEntries = computed<ClientDirectoryEntry[]>(() =>
     this.savedClientRecords().map((record, index) => ({
@@ -841,7 +936,8 @@ export class App {
       email: record.draft.email.trim(),
       createdAt: record.createdAt,
       type: this.newClientInterestLabel(record.draft.clientInterest),
-      status: this.clientRecordStatus(record)
+      status: this.clientRecordStatus(record),
+      notes: this.activeClientNotesForDraft(record.draft)
     }))
   );
 
@@ -989,6 +1085,7 @@ export class App {
   protected readonly noteColors = ['#fff2a8', '#ffd6e7', '#d9f3ff', '#daf5d8', '#ece1ff'];
   protected readonly notes = signal<NoteCard[]>([]);
   protected readonly newClientDraft = signal<NewClientDraft>(this.createDefaultNewClientDraft());
+  protected readonly editingClientNoteId = signal('');
 
   private readonly clientSectionRenderGroups: Array<{ key: string; title: string; labels: string[] }> = [
     {
@@ -1277,12 +1374,9 @@ export class App {
     const baseLineHeight = fontSize * 1.4;
     const paddingTop = parseFloat(computed.paddingTop) || 0;
     const paddingBottom = parseFloat(computed.paddingBottom) || 0;
-    const previousMinHeight = element.style.minHeight;
-    element.style.minHeight = '0px';
-    element.style.height = '0px';
+    element.style.height = 'auto';
     const contentHeight = element.scrollHeight;
     element.style.height = `${contentHeight}px`;
-    element.style.minHeight = previousMinHeight;
     const contentTextHeight = contentHeight - paddingTop - paddingBottom;
     const isSingleLine = contentTextHeight <= baseLineHeight + 2;
     element.classList.toggle('single-line', isSingleLine);
@@ -1567,6 +1661,10 @@ export class App {
       this.activeNewClientTab.set('documents');
     }
 
+    if (field === 'fullName' && typeof value === 'string') {
+      value = this.capitalizeNameWords(value) as NewClientDraft[K];
+    }
+
     this.newClientDraft.update((draft) => {
       const nextDraft = { ...draft, [field]: value } as NewClientDraft;
       const riskFields: Array<keyof NewClientDraft> = [
@@ -1587,6 +1685,21 @@ export class App {
       }
 
       return nextDraft;
+    });
+  }
+
+  protected capitalizeNameWords(value: string): string {
+    return value.replace(/\p{L}+/gu, (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
+  }
+
+  protected insertAtSymbol(input: HTMLInputElement): void {
+    const current = this.newClientDraft().email ?? '';
+    const caret = input.selectionStart ?? current.length;
+    const next = current.slice(0, caret) + '@' + current.slice(caret);
+    this.setNewClientDraftField('email', next);
+    requestAnimationFrame(() => {
+      input.focus();
+      input.setSelectionRange(caret + 1, caret + 1);
     });
   }
 
@@ -1611,8 +1724,217 @@ export class App {
   }
 
   protected setActiveNewClientTab(tab: NewClientTabKey): void {
-    this.activeNewClientTab.set(tab);
+    this.activeNewClientTab.set(tab === 'checklist' ? 'docs' : tab);
     this.scheduleResizeNewClientTextareas();
+  }
+
+  protected mobileClientTabOrder(): NewClientTabKey[] {
+    return [
+      'basic',
+      'documents',
+      'aml',
+      'docs',
+      'notes',
+      ...(this.newClientDraft().clientType === 'pravnicka' ? (['company'] as NewClientTabKey[]) : [])
+    ];
+  }
+
+  protected canGoToPreviousClientTab(): boolean {
+    return this.mobileClientTabOrder().indexOf(this.activeNewClientTab()) > 0;
+  }
+
+  protected canGoToNextClientTab(): boolean {
+    const order = this.mobileClientTabOrder();
+    const index = order.indexOf(this.activeNewClientTab());
+    return index >= 0 && index < order.length - 1;
+  }
+
+  protected goToPreviousClientTab(): void {
+    const order = this.mobileClientTabOrder();
+    const index = order.indexOf(this.activeNewClientTab());
+    if (index > 0) {
+      this.setActiveNewClientTab(order[index - 1]);
+    }
+  }
+
+  protected goToNextClientTab(): void {
+    const order = this.mobileClientTabOrder();
+    const index = order.indexOf(this.activeNewClientTab());
+    if (index >= 0 && index < order.length - 1) {
+      this.setActiveNewClientTab(order[index + 1]);
+    }
+  }
+
+  protected clientNotesForDraft(draft: NewClientDraft): ClientNote[] {
+    return Array.isArray(draft.clientNotes) ? draft.clientNotes : [];
+  }
+
+  private noteDeadlineSortValue(deadline: string): number {
+    if (!deadline) {
+      return Number.MAX_SAFE_INTEGER;
+    }
+    const parts = deadline.split(/[.\-\/]/).map((part) => part.trim());
+    if (parts.length !== 3) {
+      return Number.MAX_SAFE_INTEGER;
+    }
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
+    let year = parseInt(parts[2], 10);
+    if (year < 100) {
+      year += 2000;
+    }
+    if (isNaN(day) || isNaN(month) || isNaN(year)) {
+      return Number.MAX_SAFE_INTEGER;
+    }
+    return new Date(year, month - 1, day).getTime();
+  }
+
+  protected sortedClientNotes(notes: ClientNote[]): ClientNote[] {
+    return [...notes].sort((a, b) => this.noteDeadlineSortValue(a.deadline) - this.noteDeadlineSortValue(b.deadline));
+  }
+
+  protected noteDeadlineRelative(deadline: string): string {
+    const sortValue = this.noteDeadlineSortValue(deadline);
+    if (sortValue === Number.MAX_SAFE_INTEGER) {
+      return '';
+    }
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const diffDays = Math.round((sortValue - today) / 86400000);
+    if (diffDays === 0) {
+      return 'dnes';
+    }
+    if (diffDays > 0) {
+      if (diffDays === 1) {
+        return 'zítra';
+      }
+      if (diffDays >= 2 && diffDays <= 4) {
+        return `za ${diffDays} dny`;
+      }
+      return `za ${diffDays} dnů`;
+    }
+    const pastDays = Math.abs(diffDays);
+    if (pastDays === 1) {
+      return 'včera';
+    }
+    if (pastDays >= 2 && pastDays <= 4) {
+      return `před ${pastDays} dny`;
+    }
+    return `před ${pastDays} dny`;
+  }
+
+  protected activeClientNotesForDraft(draft: NewClientDraft): ClientNote[] {
+    return this.sortedClientNotes(this.clientNotesForDraft(draft).filter((note) => note.color !== 'gray'));
+  }
+
+  protected newClientNotes(): ClientNote[] {
+    return this.sortedClientNotes(this.clientNotesForDraft(this.newClientDraft()));
+  }
+
+  protected activeClientNotes(): ClientNote[] {
+    return this.activeClientNotesForDraft(this.newClientDraft());
+  }
+
+  protected clientHasNotes(): boolean {
+    return this.activeClientNotesForDraft(this.newClientDraft()).length > 0;
+  }
+
+  protected clientHasNotesForDraft(draft: NewClientDraft): boolean {
+    return this.activeClientNotesForDraft(draft).length > 0;
+  }
+
+  protected editingClientNote(): ClientNote | null {
+    const id = this.editingClientNoteId();
+    if (!id) {
+      return null;
+    }
+    return this.newClientNotes().find((note) => note.id === id) || null;
+  }
+
+  protected addNewClientNote(): void {
+    const id = `note-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    this.newClientDraft.update((draft) => ({
+      ...draft,
+      clientNotes: [
+        ...draft.clientNotes,
+        { id, text: '', color: 'green', deadline: '', createdAt: new Date().toLocaleDateString('cs-CZ') }
+      ]
+    }));
+    this.editingClientNoteId.set(id);
+    this.scheduleResizeNewClientTextareas();
+  }
+
+  protected setNewClientNoteText(id: string, text: string): void {
+    this.newClientDraft.update((draft) => ({
+      ...draft,
+      clientNotes: draft.clientNotes.map((note) => (note.id === id ? { ...note, text } : note))
+    }));
+    this.scheduleResizeNewClientTextareas();
+  }
+
+  protected setNewClientNoteDeadline(id: string, deadline: string): void {
+    this.newClientDraft.update((draft) => ({
+      ...draft,
+      clientNotes: draft.clientNotes.map((note) => (note.id === id ? { ...note, deadline } : note))
+    }));
+  }
+
+  protected setNewClientNoteColor(id: string, color: ClientNoteColor): void {
+    this.newClientDraft.update((draft) => ({
+      ...draft,
+      clientNotes: draft.clientNotes.map((note) => (note.id === id ? { ...note, color } : note))
+    }));
+  }
+
+  protected closeNewClientNoteEditor(): void {
+    this.editingClientNoteId.set('');
+  }
+
+  protected editNewClientNote(id: string): void {
+    this.editingClientNoteId.set(id);
+    this.scheduleResizeNewClientTextareas();
+  }
+
+  protected removeNewClientNote(id: string): void {
+    this.newClientDraft.update((draft) => ({
+      ...draft,
+      clientNotes: draft.clientNotes.filter((note) => note.id !== id)
+    }));
+    if (this.editingClientNoteId() === id) {
+      this.editingClientNoteId.set('');
+    }
+  }
+
+  protected trackByNoteId(_: number, note: ClientNote): string {
+    return note.id;
+  }
+
+  protected noteColorLabel(color: ClientNoteColor): string {
+    const definition = CLIENT_NOTE_COLOR_DEFINITIONS.find((item) => item.value === color);
+    return definition ? definition.label : '';
+  }
+
+  protected noteColorHint(color: ClientNoteColor): string {
+    const definition = CLIENT_NOTE_COLOR_DEFINITIONS.find((item) => item.value === color);
+    return definition ? definition.hint : '';
+  }
+
+  protected noteColorIcon(color: ClientNoteColor): string {
+    const definition = CLIENT_NOTE_COLOR_DEFINITIONS.find((item) => item.value === color);
+    return definition ? definition.icon : '';
+  }
+
+  protected noteColorDefinitionForDraft(draft: NewClientDraft, index: number): { label: string; hint: string; icon: string } {
+    const notes = this.clientNotesForDraft(draft);
+    const note = notes[index];
+    if (!note) {
+      return { label: '', hint: '', icon: '' };
+    }
+    return {
+      label: this.noteColorLabel(note.color),
+      hint: this.noteColorHint(note.color),
+      icon: this.noteColorIcon(note.color)
+    };
   }
 
   protected isActiveNewClientTab(tab: NewClientTabKey): boolean {
@@ -1622,9 +1944,12 @@ export class App {
   protected readonly newClientDraftDocInput = signal('');
   protected readonly clientDocSearch = signal('');
   protected readonly clientChecklistSearch = signal('');
+  protected readonly amlDeliveredDocumentSearch = signal('');
   protected readonly pendingDocType = signal<string | null>(null);
   protected readonly newClientUploadPickerOpen = signal(false);
   protected readonly newClientUploadSelectedType = signal('');
+  protected readonly pendingClientDocuments = signal<Array<{ name: string; fileType: string; dataBase64: string; type: string }>>([]);
+  private readonly multiUploadOptionValue = '__multi_upload__';
 
   protected setNewClientDraftDocInput(value: string): void {
     this.newClientDraftDocInput.set(value);
@@ -1636,6 +1961,10 @@ export class App {
 
   protected setClientChecklistSearch(value: string): void {
     this.clientChecklistSearch.set(value);
+  }
+
+  protected setAmlDeliveredDocumentSearch(value: string): void {
+    this.amlDeliveredDocumentSearch.set(value);
   }
 
   protected toggleNewClientUploadPicker(): void {
@@ -1662,8 +1991,38 @@ export class App {
     return [...DOCUMENT_TYPE_OPTIONS].sort((a, b) => a.localeCompare(b, 'cs'));
   }
 
+  protected amlSourceOfFundsOptions(): string[] {
+    return AML_SOURCE_OF_FUNDS_OPTIONS;
+  }
+
+  protected amlMonthlyIncomeOptions(): string[] {
+    return AML_MONTHLY_INCOME_OPTIONS;
+  }
+
+  protected amlDeliveredDocumentOptions(): string[] {
+    return [...AML_DELIVERED_DOCUMENT_OPTIONS].sort((a, b) => a.localeCompare(b, 'cs'));
+  }
+
+  protected filteredAmlDeliveredDocumentOptions(): string[] {
+    const query = this.normalize(this.amlDeliveredDocumentSearch());
+    return this.amlDeliveredDocumentOptions().filter((option) => !query || this.normalize(option).includes(query));
+  }
+
   protected uploadDocumentTypeOptions(): string[] {
-    return this.clientDocumentTypeOptions().filter((type) => type !== 'Podepsané AML');
+    return [this.multiUploadOptionValue, ...this.clientDocumentTypeOptions().filter((type) => type !== 'Podepsané AML' && type !== 'AML formulář' && type !== 'AML podepsané' && type !== 'jiný doklad'), 'jiný doklad'];
+  }
+
+  protected uploadDocumentTypeOptionLabel(value: string): string {
+    return value === this.multiUploadOptionValue ? 'nahrát vícero souborů' : value;
+  }
+
+  protected handleNewClientUploadSelection(value: string, multiFileInput: HTMLInputElement): void {
+    if (value === this.multiUploadOptionValue) {
+      this.newClientUploadSelectedType.set('');
+      multiFileInput.click();
+      return;
+    }
+    this.newClientUploadSelectedType.set(value);
   }
 
   protected addNewClientDocument(): void {
@@ -1763,25 +2122,101 @@ export class App {
 
   protected addNewClientDocumentFileForType(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const file = input.files && input.files[0];
+    const files = Array.from(input.files || []);
     const type = this.pendingDocType();
     this.pendingDocType.set(null);
-    if (!file || !type) {
+    if (files.length === 0 || !type) {
       input.value = '';
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = String(reader.result || '');
-      const dataBase64 = result.includes(',') ? result.slice(result.indexOf(',') + 1) : '';
-      const name = file.name;
-      this.newClientDraft.update((draft) => ({
-        ...draft,
-        clientDocuments: [...(draft.clientDocuments || []), { name, type, fileType: file.type || 'application/octet-stream', dataBase64 }]
-      }));
+    files.forEach((file, fileIndex) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = String(reader.result || '');
+        const dataBase64 = result.includes(',') ? result.slice(result.indexOf(',') + 1) : '';
+        const name = file.name;
+        this.newClientDraft.update((draft) => ({
+          ...draft,
+          clientDocuments: [...(draft.clientDocuments || []), { name, type, fileType: file.type || 'application/octet-stream', dataBase64 }]
+        }));
+        if (fileIndex === files.length - 1) {
+          input.value = '';
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  protected addPendingClientDocuments(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files || []);
+    if (files.length === 0) {
       input.value = '';
-    };
-    reader.readAsDataURL(file);
+      return;
+    }
+    const nextDocs: Array<{ name: string; fileType: string; dataBase64: string; type: string }> = [];
+    files.forEach((file, index) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = String(reader.result || '');
+        const dataBase64 = result.includes(',') ? result.slice(result.indexOf(',') + 1) : '';
+        nextDocs.push({ name: file.name, fileType: file.type || 'application/octet-stream', dataBase64, type: this.inferDocumentTypeFromName(file.name) });
+        if (nextDocs.length === files.length) {
+          nextDocs.sort((a, b) => a.name.localeCompare(b.name, 'cs'));
+          this.pendingClientDocuments.set(nextDocs);
+          input.value = '';
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  protected setPendingClientDocumentType(index: number, type: string): void {
+    this.pendingClientDocuments.update((docs) => docs.map((doc, i) => i === index ? { ...doc, type } : doc));
+  }
+
+  protected commitPendingClientDocuments(): void {
+    const docs = this.pendingClientDocuments();
+    if (docs.length === 0) {
+      return;
+    }
+    this.newClientDraft.update((draft) => ({
+      ...draft,
+      clientDocuments: [...(draft.clientDocuments || []), ...docs]
+    }));
+    this.pendingClientDocuments.set([]);
+  }
+
+  protected clearPendingClientDocuments(): void {
+    this.pendingClientDocuments.set([]);
+  }
+
+  private inferDocumentTypeFromName(fileName: string): string {
+    const name = this.normalize(fileName);
+    if (!name) {
+      return '';
+    }
+
+    if (name.includes('ARES')) return 'Ares';
+    if (name.includes('PEP')) return 'PEP (politicky exponovaná osoba)';
+    if (name.includes('INSOLV')) return 'Insolvenční rejstřík';
+    if (name.includes('EXEK')) return 'Exekuční rejstřík';
+    if (name.includes('SKUTECN') && name.includes('MAJITEL')) return 'Evidence skutečných majitelů';
+    if (name.includes('SVERENECK')) return 'Evidence svěřeneckých fondů';
+    if (name.includes('NABYV')) return 'Nabývací titul';
+    if (name.includes('NEPLATN')) return 'Neplatné doklady';
+    if (name.includes('SANKC')) return 'Mezinárodní sankce';
+    if (name.includes('RIZIKOV')) return 'Klient z vysoce rizikové země';
+
+    if (name.includes('AML')) {
+      return this.isNewClientDraftBuyerSide() ? 'AML - kupující' : 'AML - prodávající';
+    }
+
+    if (name.includes('OBCAN') || name.includes('OBCANK') || name.includes('PRUKAZ') || name.includes('PAS')) {
+      return this.isNewClientDraftBuyerSide() ? 'Občanský průkaz - kupující' : 'Občanský průkaz - prodávající';
+    }
+
+    return '';
   }
 
   protected addNewClientDocumentLinkForType(type: string): void {
@@ -1817,6 +2252,75 @@ export class App {
     setTimeout(() => URL.revokeObjectURL(url), 30000);
   }
 
+  protected copyText(value: string): void {
+    const text = (value || '').trim();
+    if (!text) {
+      return;
+    }
+    void navigator.clipboard?.writeText(text);
+  }
+
+  protected previewClientCopyRows(draft: NewClientDraft): string[] {
+    return [
+      this.newClientInterestLabel(draft.clientInterest),
+      this.previewClientPrimaryName(draft),
+      draft.birthDate?.trim() || '',
+      this.displayNewClientPhone(draft),
+      draft.email?.trim() || ''
+    ].filter(Boolean);
+  }
+
+  protected previewClientPrimaryName(draft: NewClientDraft): string {
+    return draft.fullName?.trim() || draft.companyName?.trim() || '—';
+  }
+
+  protected previewClientSummaryLines(draft: NewClientDraft): string[] {
+    return [
+      this.displayNewClientPhone(draft),
+      draft.email?.trim() || ''
+    ].filter(Boolean);
+  }
+
+  protected previewClientBirthDateLabel(draft: NewClientDraft): string {
+    return draft.birthDate?.trim() ? `nar. ${draft.birthDate.trim()}` : '';
+  }
+
+  protected previewClientBirthDateValue(draft: NewClientDraft): string {
+    return draft.birthDate?.trim() || '';
+  }
+
+  protected previewClientDocumentsWithIndex(draft: NewClientDraft): Array<{ index: number; name: string; type: string; url?: string; fileType?: string; dataBase64?: string }> {
+    return (draft.clientDocuments || [])
+      .map((doc, index) => ({ index, ...doc }))
+      .sort((a, b) => this.documentTypeLabel(a.type || a.name).localeCompare(this.documentTypeLabel(b.type || b.name), 'cs'));
+  }
+
+  protected previewClientDocumentLabel(doc: { name: string; type: string }): string {
+    return doc.type?.trim() || doc.name;
+  }
+
+  protected clientDocumentIcon(doc: { name: string; fileType?: string }): string {
+    const name = (doc.name || '').toLowerCase();
+    const type = (doc.fileType || '').toLowerCase();
+    if (name.endsWith('.pdf') || type.includes('pdf')) return '📄';
+    if (name.endsWith('.doc') || name.endsWith('.docx') || type.includes('word')) return '📝';
+    if (name.endsWith('.txt') || type.includes('text')) return '📃';
+    if (name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.png') || type.includes('image')) return '🖼';
+    if (name.endsWith('.xls') || name.endsWith('.xlsx') || type.includes('sheet')) return '📊';
+    return '📎';
+  }
+
+  protected removeNewClientDocumentAtIndex(index: number): void {
+    const name = this.newClientDraft().clientDocuments?.[index]?.name || 'tento doklad';
+    if (!window.confirm('opravdu chcete doklad smazat?')) {
+      return;
+    }
+    this.newClientDraft.update((draft) => ({
+      ...draft,
+      clientDocuments: (draft.clientDocuments || []).filter((_, i) => i !== index)
+    }));
+  }
+
   protected removeNewClientDocumentByRef(doc: { name: string; type: string; url?: string; fileType?: string; dataBase64?: string }): void {
     if (!window.confirm('opravdu chcete doklad smazat?')) {
       return;
@@ -1841,10 +2345,17 @@ export class App {
   }
 
   protected toggleNewClientDraftYesNo(field: 'maritalStatusOnId' | 'sanctionsApplied' | 'pepStatus', value: 'ANO' | 'NE'): void {
-    this.newClientDraft.update((draft) => ({
-      ...draft,
-      [field]: draft[field] === value ? null : value
-    }));
+    this.newClientDraft.update((draft) => {
+      const next = { ...draft, [field]: draft[field] === value ? null : value } as NewClientDraft;
+      if (field === 'sanctionsApplied' && next[field] === 'ANO') {
+        next.sanctionsDetails = this.sanctionsDetailsForDraft(next);
+      }
+      return next;
+    });
+
+    if (field === 'sanctionsApplied' || field === 'pepStatus') {
+      this.scheduleResizeNewClientTextareas();
+    }
   }
 
   protected toggleNewClientDraftChoice<K extends keyof NewClientDraft>(field: K, value: NewClientDraft[K], emptyValue: NewClientDraft[K] | ''): void {
@@ -1862,9 +2373,9 @@ export class App {
     }).slice(0, 6);
   }
 
-  protected clientChecklistItems(): Array<{ key: string; label: string; subtitle?: string; satisfied: boolean }> {
-    const docNames = (this.newClientDraft().clientDocuments || []).map((doc) => this.normalize(doc.type || doc.name));
-    const isLegalEntity = this.newClientDraft().clientType === 'pravnicka';
+  private clientChecklistItemsForDraft(draft: NewClientDraft): Array<{ key: string; label: string; subtitle?: string; satisfied: boolean }> {
+    const docNames = (draft.clientDocuments || []).map((doc) => this.normalize(doc.type || doc.name));
+    const isLegalEntity = draft.clientType === 'pravnicka';
     return CLIENT_CHECKLIST_DEFINITIONS.map((def) => ({
       key: def.key,
       label: def.label,
@@ -1875,7 +2386,7 @@ export class App {
       })
     })).filter((item) => {
       const definition = CLIENT_CHECKLIST_DEFINITIONS.find((def) => def.key === item.key);
-      if (item.key === 'highRiskCountry' && !this.isHighRiskClient()) {
+      if (item.key === 'highRiskCountry' && !this.isHighRiskClientDraft(draft)) {
         return false;
       }
       return !definition?.legalEntityOnly || isLegalEntity;
@@ -1887,6 +2398,10 @@ export class App {
     });
   }
 
+  protected clientChecklistItems(): Array<{ key: string; label: string; subtitle?: string; satisfied: boolean }> {
+    return this.clientChecklistItemsForDraft(this.newClientDraft());
+  }
+
   protected filteredClientChecklistItems(): Array<{ key: string; label: string; subtitle?: string; satisfied: boolean }> {
     const query = this.normalize(this.clientChecklistSearch());
     return this.clientChecklistItems().filter((item) => !query || this.normalize(item.label).includes(query));
@@ -1896,8 +2411,16 @@ export class App {
     return this.clientChecklistItems().filter((item) => item.satisfied).length;
   }
 
+  protected previewClientChecklistSatisfiedCount(draft: NewClientDraft): number {
+    return this.clientChecklistItemsForDraft(draft).filter((item) => item.satisfied).length;
+  }
+
   protected clientChecklistTotalCount(): number {
     return this.clientChecklistItems().length;
+  }
+
+  protected previewClientChecklistTotalCount(draft: NewClientDraft): number {
+    return this.clientChecklistItemsForDraft(draft).length;
   }
 
   protected clientChecklistProgressPercent(): number {
@@ -1906,6 +2429,14 @@ export class App {
       return 0;
     }
     return Math.round((this.clientChecklistSatisfiedCount() / total) * 100);
+  }
+
+  protected previewClientChecklistProgressPercent(draft: NewClientDraft): number {
+    const total = this.previewClientChecklistTotalCount(draft);
+    if (total === 0) {
+      return 0;
+    }
+    return Math.round((this.previewClientChecklistSatisfiedCount(draft) / total) * 100);
   }
 
   protected isHighRiskField(field: string): boolean {
@@ -1925,24 +2456,44 @@ export class App {
     return fields.some((value) => this.isHighRiskCountryValue(value));
   }
 
-  private highRiskSourceDetail(draft: NewClientDraft): string {
-    const sources: Array<{ label: string; value: string }> = [
-      { label: 'státní občanství', value: draft.citizenship },
-      { label: 'trvalý nebo jiný pobyt', value: draft.permanentResidence },
-      { label: 'stát trvalého nebo jiného pobytu', value: draft.permanentResidenceState },
-      { label: 'skutečné místo pobytu', value: draft.correspondenceAddress },
-      { label: 'stát skutečného místa pobytu', value: draft.correspondenceAddressState },
-      { label: 'stát, který průkaz vydal', value: draft.idIssuedByState }
+  private isHighRiskClientDraft(draft: NewClientDraft): boolean {
+    const fields = [
+      draft.citizenship,
+      draft.permanentResidence,
+      draft.permanentResidenceState,
+      draft.correspondenceAddress,
+      draft.correspondenceAddressState,
+      draft.idIssuedByState
+    ];
+    return fields.some((value) => this.isHighRiskCountryValue(value));
+  }
+
+  protected previewClientDocuments(draft: NewClientDraft): Array<{ name: string; type: string; url?: string; fileType?: string; dataBase64?: string }> {
+    return [...(draft.clientDocuments || [])].sort((a, b) => (a.type || a.name).localeCompare(b.type || b.name, 'cs'));
+  }
+
+  private sanctionsDetailsForDraft(draft: NewClientDraft): string {
+    const rows: Array<{ label: string; value: string }> = [
+      { label: 'Státní občanství', value: draft.citizenship },
+      { label: 'Stát, který průkaz vydal', value: draft.idIssuedByState },
+      { label: 'Trvalý nebo jiný pobyt - stát', value: draft.permanentResidenceState },
+      { label: 'Skutečné místo pobytu (korespondenční adresa) - STÁT', value: draft.correspondenceAddressState }
     ];
 
-    const source = sources.find((item) => this.isHighRiskCountryValue(item.value));
-    return source ? `${source.label} ${source.value.trim()}` : '';
+    return rows
+      .filter((row) => (row.value || '').trim())
+      .map((row) => `${row.label}: ${row.value.trim()}`)
+      .join('\n');
+  }
+
+  private highRiskSourceDetail(draft: NewClientDraft): string {
+    return this.sanctionsDetailsForDraft(draft);
   }
 
   private isHighRiskCountryValue(value: string): boolean {
     const v = this.normalize(value || '');
     if (!v) return false;
-    return HIGH_RISK_COUNTRIES.some((country) => {
+    return this.highRiskCountries().some((country) => {
       const n = this.normalize(country);
       if (n.length === 0) return false;
       if (v.includes(n)) return true;
@@ -2013,11 +2564,13 @@ export class App {
       acceptedOptions: [],
       deliveredDocuments: [],
       actingAsRepresentativeFor: '',
+      clientNotes: [],
       clientDocuments: []
     };
   }
 
   private cloneNewClientDraft(draft: NewClientDraft): NewClientDraft {
+    const notes = this.normalizeClientNotes((draft as { clientNotes?: unknown }).clientNotes);
     return {
       ...this.createDefaultNewClientDraft(),
       ...draft,
@@ -2033,8 +2586,30 @@ export class App {
       amlProofBusiness: [...(draft.amlProofBusiness || [])],
       amlProofBankLoan: [...(draft.amlProofBankLoan || [])],
       amlProofOther: [...(draft.amlProofOther || [])],
+      clientNotes: notes,
       clientDocuments: (draft.clientDocuments || []).map((doc) => (typeof doc === 'string' ? { name: doc, type: '' } : doc))
     };
+  }
+
+  private normalizeClientNotes(raw: unknown): ClientNote[] {
+    if (Array.isArray(raw)) {
+      return raw
+        .filter((item) => typeof item === 'object' && item !== null && typeof (item as ClientNote).text === 'string')
+        .map((item) => {
+          const note = item as ClientNote;
+          return {
+            id: note.id || `note-${Math.random().toString(36).slice(2)}`,
+            text: note.text,
+            color: ['red', 'orange', 'green', 'gray'].includes(note.color) ? note.color : 'gray',
+            deadline: note.deadline || '',
+            createdAt: note.createdAt || ''
+          };
+        });
+    }
+    if (typeof raw === 'string' && raw.trim()) {
+      return [{ id: `note-${Math.random().toString(36).slice(2)}`, text: raw.trim(), color: 'gray', deadline: '', createdAt: '' }];
+    }
+    return [];
   }
 
   private snapshotNewClientDraft(): NewClientDraft {
@@ -2077,10 +2652,22 @@ export class App {
       return;
     }
 
+    this.previewClientNotesOnly.set(false);
+    this.previewClientRecordId.set(record.id);
+  }
+
+  protected openClientNotesPreviewEntry(index: number): void {
+    const record = this.savedClientRecords()[index];
+    if (!record) {
+      return;
+    }
+
+    this.previewClientNotesOnly.set(true);
     this.previewClientRecordId.set(record.id);
   }
 
   protected closeClientPreview(): void {
+    this.previewClientNotesOnly.set(false);
     this.previewClientRecordId.set('');
   }
 
@@ -2769,6 +3356,28 @@ export class App {
   constructor() {
     void this.loadData();
     this.loadTodayNameday();
+    void this.loadHighRiskCountries();
+  }
+
+  private async loadHighRiskCountries(): Promise<void> {
+    try {
+      const response = await fetch('/data/seznam-vysoce-rizikovych-zemi-eu-a-fatf.txt', { cache: 'no-store' });
+      if (!response.ok) {
+        return;
+      }
+      const text = await response.text();
+      const countries = text
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => line.toUpperCase())
+        .filter((value, index, array) => array.indexOf(value) === index);
+      if (countries.length > 0) {
+        this.highRiskCountries.set(countries);
+      }
+    } catch {
+      // fallback na interní seznam
+    }
   }
 
   private loadTodayNameday(): void {
@@ -6100,15 +6709,26 @@ export class App {
   }
 
   protected syncActiveNewClientToRecords(): void {
-    const activeId = this.activeSavedClientId();
-    if (!activeId) {
-      return;
-    }
-
     const draft = this.snapshotNewClientDraft();
-    this.savedClientRecords.update((records) =>
-      records.map((record) => (record.id === activeId ? { ...record, draft } : record))
-    );
+    const activeId = this.activeSavedClientId();
+
+    this.savedClientRecords.update((records) => {
+      if (activeId) {
+        return records.map((record) => (record.id === activeId ? { ...record, draft } : record));
+      }
+
+      if (this.clientWorkspaceMode() !== 'new') {
+        return records;
+      }
+
+      const id = `client-${Date.now()}`;
+      this.activeSavedClientId.set(id);
+      return [{
+        id,
+        createdAt: new Date().toLocaleDateString('cs-CZ'),
+        draft
+      }, ...records];
+    });
   }
 
   protected saveToXml(): void {
@@ -6253,6 +6873,20 @@ export class App {
     input.click();
   }
 
+  private amlProofDocumentsSummary(d: NewClientDraft): string {
+    return [
+      ...(d.amlProofSale || []),
+      ...(d.amlProofInheritance || []),
+      ...(d.amlProofGift || []),
+      ...(d.amlProofLoan || []),
+      ...(d.amlProofSavings || []),
+      ...(d.amlProofEmployment || []),
+      ...(d.amlProofBusiness || []),
+      ...(d.amlProofBankLoan || []),
+      ...(d.amlProofOther || [])
+    ].filter(Boolean).join(', ');
+  }
+
   private renderAmlFormHtml(d: NewClientDraft, brokerName: string): string {
     const isLegalPerson = d.clientType === 'pravnicka';
     const fullName = d.fullName || '';
@@ -6270,6 +6904,7 @@ export class App {
     const repEmployee = d.companyRepresentationType === 'zamestnancem';
     const repPower = d.companyRepresentationType === 'na-zaklade-plne-moci';
     const funds = (d.amlSourceOfFunds || []).join(', ');
+    const proofDocuments = this.amlProofDocumentsSummary(d);
 
     const mark = (active: boolean): string => (active ? '☒' : '☐');
     const line = (value: string): string => this.escapeHtml(value || '');
@@ -6338,7 +6973,7 @@ ${`<div class="aml aml-page">
       <div class="row"><div class="label">Telefon</div><div class="value">${line(phone)}</div></div>
       <div class="row"><div class="label">E-mail</div><div class="value">${line(d.email)}</div></div>
       <div class="row"><div class="label">Rodinný stav</div><div class="value">${line(d.maritalStatus)}</div></div>
-      <div class="row top-align-value"><div class="label">Jste / byl/a jste v posledních 12<br>měsících politicky exponovanou<br>osobou nebo jste blízkou osobou<br>politicky exponované osoby?</div><div class="value">${yn(d.pepStatus, 'NE')} Ne<br>${yn(d.pepStatus, 'ANO')} Ano (uveďte podrobnosti)</div></div>
+      <div class="row top-align-value"><div class="label">Jste / byl/a jste v posledních 12<br>měsících politicky exponovanou<br>osobou nebo jste blízkou osobou<br>politicky exponované osoby?</div><div class="value">${yn(d.pepStatus, 'NE')} Ne<br>${yn(d.pepStatus, 'ANO')} Ano (uveďte podrobnosti)${d.pepStatus === 'ANO' && d.pepDetails ? '<br>' + line(d.pepDetails) : ''}</div></div>
     </div>
     <div>
       <div class="row"><div class="label">Druh průkazu totožnosti</div><div class="value">${mark(idTypeObcansky)} Občanský průkaz&nbsp;&nbsp; ${mark(idTypePas)} Cestovní pas&nbsp;&nbsp; ${mark(idTypeJiny)} Jiný</div></div>
@@ -6351,7 +6986,7 @@ ${`<div class="aml aml-page">
       <div class="row"><div class="label">Orgán, který průkaz vydal</div><div class="value">${line(d.idIssuedByAuthority)}</div></div>
       <div class="row"><div class="label">Stát, který průkaz vydal</div><div class="value">${line(d.idIssuedByState)}</div></div>
       <div class="row"><div class="label">Zaměstnání / obor podnikání</div><div class="value">${line(d.occupation)}</div></div>
-      <div class="row top-align-value"><div class="label">Jste osoba, vůči níž ČR uplatňuje<br>mezinárodní sankce podle<br>zákona č. 69/2006 Sb. o<br>provádění mezinárodních sankcí</div><div class="value">${yn(d.sanctionsApplied, 'NE')} Ne<br>${yn(d.sanctionsApplied, 'ANO')} Ano (uveďte podrobnosti)</div></div>
+      <div class="row top-align-value"><div class="label">Jste osoba, vůči níž ČR uplatňuje<br>mezinárodní sankce podle<br>zákona č. 69/2006 Sb. o<br>provádění mezinárodních sankcí</div><div class="value">${yn(d.sanctionsApplied, 'NE')} Ne<br>${yn(d.sanctionsApplied, 'ANO')} Ano (uveďte podrobnosti)${d.sanctionsApplied === 'ANO' && d.sanctionsDetails ? '<br>' + line(d.sanctionsDetails) : ''}</div></div>
     </div>
   </div>
   <div class="row represented-person-row"><div class="label">Pokud výše uvedená osoba jedná jako zástupce klienta - uveďte jméno a příjmení zastoupeného</div><div class="value">${line('')}</div></div>
@@ -6380,7 +7015,7 @@ ${`<div class="aml aml-page">
   <div class="row"><div class="label">Prodávající: Nabytí nemovitosti</div><div class="value">${line(d.amlSellerAcquisitionPeriod)}</div></div>
   <div class="row"><div class="label">Průměrný měsíční příjem / v době nabytí majetku</div><div class="value">${line(d.amlMonthlyIncomeBracket)}</div></div>
   <div class="row"><div class="label">Původ finančních prostředků / majetku</div><div class="value">${line(funds)}</div></div>
-  <div class="row"><div class="label">Doklady k prokázání zdroje finančních prostředků / majetku</div><div class="value">${line('')}</div></div>
+  <div class="row"><div class="label">Doklady k prokázání zdroje finančních prostředků / majetku</div><div class="value">${line(proofDocuments)}</div></div>
 </div>
 
 <div class="push-signatures-bottom">

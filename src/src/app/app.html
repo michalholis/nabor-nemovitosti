@@ -987,8 +987,8 @@
               <button type="button" class="new-client-tab" [class.active]="isActiveNewClientTab('documents')" (click)="setActiveNewClientTab('documents')">IDENTIFIKACE</button>
               <button type="button" class="new-client-tab" [class.active]="isActiveNewClientTab('aml')" (click)="setActiveNewClientTab('aml')">AML</button>
               <button type="button" class="new-client-tab" *ngIf="isNewClientDraftValue('clientType', 'pravnicka')" [class.active]="isActiveNewClientTab('company')" (click)="setActiveNewClientTab('company')">FIRMA</button>
-              <button type="button" class="new-client-tab" [class.active]="isActiveNewClientTab('checklist')" (click)="setActiveNewClientTab('checklist')">ČEKLIST {{ clientChecklistSatisfiedCount() }}/{{ clientChecklistTotalCount() }}</button>
               <button type="button" class="new-client-tab" [class.active]="isActiveNewClientTab('docs')" (click)="setActiveNewClientTab('docs')">DOKLADY</button>
+              <button type="button" class="new-client-tab" [class.active]="isActiveNewClientTab('notes')" (click)="setActiveNewClientTab('notes')">POZNÁMKY</button>
             </div>
 
             <div class="new-client-layout">
@@ -1047,7 +1047,10 @@
 
                   <article class="new-client-field-card">
                     <div class="new-client-label">Email</div>
-                    <input type="text" class="new-client-input" [ngModel]="newClientDraft().email" (ngModelChange)="setNewClientDraftField('email', $event)" placeholder="e-mail" />
+                    <div class="new-client-email-row">
+                      <input #emailInput type="text" class="new-client-input new-client-email-input" [ngModel]="newClientDraft().email" (ngModelChange)="setNewClientDraftField('email', $event)" placeholder="e-mail" />
+                      <button type="button" class="new-client-at-cell" (click)="insertAtSymbol(emailInput)" aria-label="Vložit @">@</button>
+                    </div>
                   </article>
 
                 </div>
@@ -1144,12 +1147,12 @@
                   </article>
 
                   <article class="new-client-field-card">
-                    <div class="new-client-label">Trvalý nebo jiný pobyt<span class="new-client-risk-warning" *ngIf="isHighRiskField('permanentResidence') || isHighRiskField('permanentResidenceState')"><span class="new-client-risk-bang" tabindex="0" role="img" aria-label="Občan z vysoce rizikové země, nutnost provést zesílenou identifikaci">!</span><span class="new-client-risk-tooltip">Občan z vysoce rizikové země, nutnost provést zesílenou identifikaci</span></span></div>
+                    <div class="new-client-label">Trvalý nebo jiný pobyt<span class="new-client-risk-warning" *ngIf="isHighRiskField('permanentResidence')"><span class="new-client-risk-bang" tabindex="0" role="img" aria-label="Občan z vysoce rizikové země, nutnost provést zesílenou identifikaci">!</span><span class="new-client-risk-tooltip">Občan z vysoce rizikové země, nutnost provést zesílenou identifikaci</span></span></div>
                     <textarea class="new-client-input new-client-textarea auto-grow-textarea" rows="1" [ngModel]="newClientDraft().permanentResidence" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientDraftField('permanentResidence', $event)" placeholder="trvalý pobyt z dokladu"></textarea>
                   </article>
 
                   <article class="new-client-field-card">
-                    <div class="new-client-label">Trvalý nebo jiný pobyt - stát</div>
+                    <div class="new-client-label">Trvalý nebo jiný pobyt - stát<span class="new-client-risk-warning" *ngIf="isHighRiskField('permanentResidenceState')"><span class="new-client-risk-bang" tabindex="0" role="img" aria-label="Občan z vysoce rizikové země, nutnost provést zesílenou identifikaci">!</span><span class="new-client-risk-tooltip">Občan z vysoce rizikové země, nutnost provést zesílenou identifikaci</span></span></div>
                     <input type="text" class="new-client-input uppercase-input" [ngModel]="newClientDraft().permanentResidenceState" (ngModelChange)="setNewClientDraftField('permanentResidenceState', ($event || '').toUpperCase())" placeholder="Např.: ČESKÁ REPUBLIKA" />
                     <div class="citizenship-suggestions" *ngIf="countrySuggestionsFor('permanentResidenceState').length > 0">
                       <button
@@ -1260,7 +1263,15 @@
                 </div>
               </section>
 
-              <section class="new-client-block new-client-aml-block" *ngIf="isActiveNewClientTab('aml')">
+<section class="new-client-block new-client-aml-block" *ngIf="isActiveNewClientTab('aml')">
+                <div class="new-client-aml-risk-banner" *ngIf="isHighRiskClient()">
+                  <span class="new-client-aml-risk-banner-icon">!</span>
+                  <span>Občan z vysoce rizikové země, nutnost provést zesílenou identifikaci</span>
+                </div>
+                <div class="new-client-aml-risk-banner" *ngIf="isNewClientDraftValue('pepStatus', 'ANO')">
+                  <span class="new-client-aml-risk-banner-icon">!</span>
+                  <span>Politicky exponovaná osoba, nutnost provést zesílenou identifikaci</span>
+                </div>
                 <div class="new-client-aml-columns">
                   <div class="new-client-aml-column">
                   <article class="new-client-field-card new-client-field-card--spaced">
@@ -1271,12 +1282,12 @@
                   <article class="new-client-field-card new-client-field-card--top-spaced new-client-aml-light-buttons-card">
                     <div class="new-client-label">Jste osoba, vůči níž ČR uplatňuje mezinárodní sankce podle zákona č. 69/2006 Sb. o provádění mezinárodních sankcí</div>
                     <div class="new-client-toggle-row">
-                      <button type="button" class="new-client-toggle-btn" [class.active]="isNewClientDraftValue('sanctionsApplied', 'ANO')" (click)="toggleNewClientDraftYesNo('sanctionsApplied', 'ANO')">ANO</button>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="isNewClientDraftValue('sanctionsApplied', 'NE')" (click)="toggleNewClientDraftYesNo('sanctionsApplied', 'NE')">NE</button>
+                      <button type="button" class="new-client-toggle-btn new-client-aml-toggle-ano" [class.active]="isNewClientDraftValue('sanctionsApplied', 'ANO')" (click)="toggleNewClientDraftYesNo('sanctionsApplied', 'ANO')">ANO</button>
+                      <button type="button" class="new-client-toggle-btn new-client-aml-toggle-ne" [class.active]="isNewClientDraftValue('sanctionsApplied', 'NE')" (click)="toggleNewClientDraftYesNo('sanctionsApplied', 'NE')">NE</button>
                     </div>
                   </article>
 
-                  <article class="new-client-field-card" *ngIf="isNewClientDraftValue('sanctionsApplied', 'ANO')">
+<article class="new-client-field-card" *ngIf="isNewClientDraftValue('sanctionsApplied', 'ANO')">
                     <div class="new-client-label">Pokud ano, uveďte podrobnosti</div>
                     <textarea class="new-client-input new-client-textarea auto-grow-textarea" rows="1" [ngModel]="newClientDraft().sanctionsDetails" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientDraftField('sanctionsDetails', $event)" placeholder="uveďte podrobnosti"></textarea>
                   </article>
@@ -1284,8 +1295,8 @@
                   <article class="new-client-field-card">
                     <div class="new-client-label">Jste / byl/a jste v posledních 12 měsících politicky exponovanou osobou nebo jste blízkou osobou politicky exponované osoby?</div>
                     <div class="new-client-toggle-row">
-                      <button type="button" class="new-client-toggle-btn" [class.active]="isNewClientDraftValue('pepStatus', 'ANO')" (click)="toggleNewClientDraftYesNo('pepStatus', 'ANO')">ANO</button>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="isNewClientDraftValue('pepStatus', 'NE')" (click)="toggleNewClientDraftYesNo('pepStatus', 'NE')">NE</button>
+                      <button type="button" class="new-client-toggle-btn new-client-aml-toggle-ano" [class.active]="isNewClientDraftValue('pepStatus', 'ANO')" (click)="toggleNewClientDraftYesNo('pepStatus', 'ANO')">ANO</button>
+                      <button type="button" class="new-client-toggle-btn new-client-aml-toggle-ne" [class.active]="isNewClientDraftValue('pepStatus', 'NE')" (click)="toggleNewClientDraftYesNo('pepStatus', 'NE')">NE</button>
                     </div>
                   </article>
 
@@ -1299,27 +1310,8 @@
                     <input type="text" class="new-client-input" [ngModel]="newClientDraft().bankAccount" (ngModelChange)="setNewClientDraftField('bankAccount', $event)" placeholder="bankovní spojení" />
                   </article>
 
-                  <article class="new-client-field-card new-client-delivered-docs-card new-client-field-card--top-spaced">
-                    <div class="new-client-label">Dodané dokumenty</div>
-                    <div class="new-client-toggle-row">
-                      <button type="button" class="new-client-toggle-btn" [class.active]="hasNewClientDraftListValue('deliveredDocuments', 'Klíče')" (click)="toggleNewClientDraftListValue('deliveredDocuments', 'Klíče')">Klíče</button>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="hasNewClientDraftListValue('deliveredDocuments', 'PENB')" (click)="toggleNewClientDraftListValue('deliveredDocuments', 'PENB')">PENB</button>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="hasNewClientDraftListValue('deliveredDocuments', 'Pasport')" (click)="toggleNewClientDraftListValue('deliveredDocuments', 'Pasport')">Pasport</button>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="hasNewClientDraftListValue('deliveredDocuments', 'Projektová dokumentace')" (click)="toggleNewClientDraftListValue('deliveredDocuments', 'Projektová dokumentace')">Projektová dokumentace</button>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="hasNewClientDraftListValue('deliveredDocuments', 'Rozpis služeb')" (click)="toggleNewClientDraftListValue('deliveredDocuments', 'Rozpis služeb')">Rozpis služeb</button>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="hasNewClientDraftListValue('deliveredDocuments', 'Nájemní smlouva z družstva')" (click)="toggleNewClientDraftListValue('deliveredDocuments', 'Nájemní smlouva z družstva')">Nájemní smlouva z družstva</button>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="hasNewClientDraftListValue('deliveredDocuments', 'Dokumentace k rekonstrukci')" (click)="toggleNewClientDraftListValue('deliveredDocuments', 'Dokumentace k rekonstrukci')">Dokumentace k rekonstrukci</button>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="hasNewClientDraftListValue('deliveredDocuments', 'Doklad o dědickém vypořádání')" (click)="toggleNewClientDraftListValue('deliveredDocuments', 'Doklad o dědickém vypořádání')">Doklad o dědickém vypořádání</button>
-                    </div>
-                  </article>
-
                   </div>
                   <div class="new-client-aml-column">
-
-                  <article class="new-client-field-card">
-                    <div class="new-client-label">Účel realitní transakce</div>
-                    <textarea class="new-client-input new-client-textarea auto-grow-textarea new-client-purpose-textarea" rows="1" [ngModel]="newClientDraft().amlTransactionPurpose" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientDraftField('amlTransactionPurpose', $event)" placeholder="Prodej / Koupě nemovitosti - pozemku parc. č. 873/15 o evidované výměře 315 m2, druh pozemku zahrada, na němž je postavena a jehož je součástí stavba bez č.p./č.e., způsob využití jiná stavba, v části obce Havířov" ></textarea>
-                  </article>
 
                   <article class="new-client-field-card" *ngIf="!isNewClientDraftBuyerSide()">
                     <div class="new-client-label">Prodávající: Nabytí nemovitosti</div>
@@ -1333,30 +1325,15 @@
                   <article class="new-client-field-card">
                     <div class="new-client-label">Původ finančních prostředků / majetku</div>
                     <div class="new-client-toggle-row">
-                      <button type="button" class="new-client-toggle-btn" [class.active]="hasNewClientDraftListValue('amlSourceOfFunds', 'Prodej majetku')" (click)="toggleNewClientDraftListValue('amlSourceOfFunds', 'Prodej majetku')">Prodej majetku</button>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="hasNewClientDraftListValue('amlSourceOfFunds', 'Dědictví')" (click)="toggleNewClientDraftListValue('amlSourceOfFunds', 'Dědictví')">Dědictví</button>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="hasNewClientDraftListValue('amlSourceOfFunds', 'Dar')" (click)="toggleNewClientDraftListValue('amlSourceOfFunds', 'Dar')">Dar</button>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="hasNewClientDraftListValue('amlSourceOfFunds', 'Půjčka')" (click)="toggleNewClientDraftListValue('amlSourceOfFunds', 'Půjčka')">Půjčka</button>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="hasNewClientDraftListValue('amlSourceOfFunds', 'Úspory')" (click)="toggleNewClientDraftListValue('amlSourceOfFunds', 'Úspory')">Úspory</button>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="hasNewClientDraftListValue('amlSourceOfFunds', 'Zaměstnání')" (click)="toggleNewClientDraftListValue('amlSourceOfFunds', 'Zaměstnání')">Zaměstnání</button>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="hasNewClientDraftListValue('amlSourceOfFunds', 'Podnikání')" (click)="toggleNewClientDraftListValue('amlSourceOfFunds', 'Podnikání')">Podnikání</button>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="hasNewClientDraftListValue('amlSourceOfFunds', 'Bankovní úvěr')" (click)="toggleNewClientDraftListValue('amlSourceOfFunds', 'Bankovní úvěr')">Bankovní úvěr</button>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="hasNewClientDraftListValue('amlSourceOfFunds', 'Jiné (definujte)')" (click)="toggleNewClientDraftListValue('amlSourceOfFunds', 'Jiné (definujte)')">Jiné (definujte)</button>
+                      <button type="button" class="new-client-toggle-btn" *ngFor="let option of amlSourceOfFundsOptions(); trackBy: trackByValue" [class.active]="hasNewClientDraftListValue('amlSourceOfFunds', option)" (click)="toggleNewClientDraftListValue('amlSourceOfFunds', option)">{{ option }}</button>
                     </div>
-                    <input *ngIf="hasNewClientDraftListValue('amlSourceOfFunds', 'Jiné (definujte)')" type="text" class="new-client-input" [ngModel]="newClientDraft().amlOtherSourceDetails" (ngModelChange)="setNewClientDraftField('amlOtherSourceDetails', $event)" placeholder="definujte" />
+                    <input *ngIf="hasNewClientDraftListValue('amlSourceOfFunds', 'Jiné (definujte)')" type="text" class="new-client-input" [ngModel]="newClientDraft().amlOtherSourceDetails" (ngModelChange)="setNewClientDraftField('amlOtherSourceDetails', $event)" placeholder="Definujte jiný původ finančních prostředků / majetku" />
                   </article>
 
                   <article class="new-client-field-card">
                     <div class="new-client-label">Průměrný měsíční příjem (v době nabytí majetku)</div>
                     <div class="new-client-toggle-row">
-                      <button type="button" class="new-client-toggle-btn" [class.active]="isNewClientDraftValue('amlMonthlyIncomeBracket', 'do 250 tis. Kč')" (click)="toggleNewClientDraftChoice('amlMonthlyIncomeBracket', 'do 250 tis. Kč', '')">do 250 tis. Kč</button>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="isNewClientDraftValue('amlMonthlyIncomeBracket', 'do 500 tis. Kč')" (click)="toggleNewClientDraftChoice('amlMonthlyIncomeBracket', 'do 500 tis. Kč', '')">do 500 tis. Kč</button>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="isNewClientDraftValue('amlMonthlyIncomeBracket', 'do 1 mil. Kč')" (click)="toggleNewClientDraftChoice('amlMonthlyIncomeBracket', 'do 1 mil. Kč', '')">do 1 mil. Kč</button>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="isNewClientDraftValue('amlMonthlyIncomeBracket', 'do 2 mil. Kč')" (click)="toggleNewClientDraftChoice('amlMonthlyIncomeBracket', 'do 2 mil. Kč', '')">do 2 mil. Kč</button>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="isNewClientDraftValue('amlMonthlyIncomeBracket', 'do 3 mil. Kč')" (click)="toggleNewClientDraftChoice('amlMonthlyIncomeBracket', 'do 3 mil. Kč', '')">do 3 mil. Kč</button>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="isNewClientDraftValue('amlMonthlyIncomeBracket', 'do 4 mil. Kč')" (click)="toggleNewClientDraftChoice('amlMonthlyIncomeBracket', 'do 4 mil. Kč', '')">do 4 mil. Kč</button>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="isNewClientDraftValue('amlMonthlyIncomeBracket', 'do 5 mil. Kč')" (click)="toggleNewClientDraftChoice('amlMonthlyIncomeBracket', 'do 5 mil. Kč', '')">do 5 mil. Kč</button>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="isNewClientDraftValue('amlMonthlyIncomeBracket', 'nad 5 mil. Kč')" (click)="toggleNewClientDraftChoice('amlMonthlyIncomeBracket', 'nad 5 mil. Kč', '')">nad 5 mil. Kč</button>
+                      <button type="button" class="new-client-toggle-btn" *ngFor="let option of amlMonthlyIncomeOptions(); trackBy: trackByValue" [class.active]="isNewClientDraftValue('amlMonthlyIncomeBracket', option)" (click)="toggleNewClientDraftChoice('amlMonthlyIncomeBracket', option, '')">{{ option }}</button>
                     </div>
                   </article>
 
@@ -1405,66 +1382,78 @@
                     <input type="text" class="new-client-input" [ngModel]="newClientDraft().amlProofOther.join(', ')" (ngModelChange)="setNewClientDraftField('amlProofOther', $event ? [$event] : [])" placeholder="definujte" />
                   </article>
 
-                    <article class="new-client-field-card">
-                       <div class="new-client-label">Pokud výše uvedená osoba jedná jako zástupce klienta</div>
-                        <textarea class="new-client-input new-client-textarea auto-grow-textarea" rows="1" [ngModel]="newClientDraft().actingAsRepresentativeFor" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientDraftField('actingAsRepresentativeFor', $event)" placeholder="Uveďte údaje o zastoupení klienta"></textarea>
-                     </article>
+                  <article class="new-client-field-card">
+                    <div class="new-client-label">Účel realitní transakce</div>
+                    <textarea class="new-client-input new-client-textarea auto-grow-textarea new-client-purpose-textarea" rows="1" [ngModel]="newClientDraft().amlTransactionPurpose" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientDraftField('amlTransactionPurpose', $event)" placeholder="Prodej / Koupě nemovitosti - pozemku parc. č. 873/15 o evidované výměře 315 m2, druh pozemku zahrada, na němž je postavena a jehož je součástí stavba bez č.p./č.e., způsob využití jiná stavba, v části obce Havířov" ></textarea>
+                  </article>
+
+                  <article class="new-client-field-card new-client-delivered-docs-card new-client-field-card--top-spaced">
+                    <div class="new-client-label">Dodané dokumenty</div>
+                    <input type="text" class="new-client-input" [ngModel]="amlDeliveredDocumentSearch()" (ngModelChange)="setAmlDeliveredDocumentSearch($event)" placeholder="Hledat dodané dokumenty..." />
+                    <div class="new-client-toggle-row">
+                      <button type="button" class="new-client-toggle-btn" *ngFor="let option of filteredAmlDeliveredDocumentOptions(); trackBy: trackByValue" [class.active]="hasNewClientDraftListValue('deliveredDocuments', option)" (click)="toggleNewClientDraftListValue('deliveredDocuments', option)">{{ option }}</button>
+                    </div>
+                  </article>
+
+                  <article class="new-client-field-card">
+                     <div class="new-client-label">Pokud výše uvedená osoba jedná jako zástupce klienta</div>
+                      <textarea class="new-client-input new-client-textarea auto-grow-textarea" rows="1" [ngModel]="newClientDraft().actingAsRepresentativeFor" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientDraftField('actingAsRepresentativeFor', $event)" placeholder="Uveďte údaje o zastoupení klienta"></textarea>
+                   </article>
+
+                  <article class="new-client-field-card">
+                    <button type="button" class="new-client-aml-generate-btn new-client-aml-generate-btn-inline" (click)="generateAmlForm()">tisknout aml</button>
+                  </article>
+
                   </div>
                 </div>
               </section>
 
               <section class="new-client-block" *ngIf="isActiveNewClientTab('docs')">
+                <div class="new-client-docs-checklist-layout">
+                  <div class="new-client-docs-column">
                 <div class="new-client-grid two-up">
                   <div class="new-client-doc-top-row new-client-field-card-full">
                     <article class="new-client-field-card new-client-doc-top-card">
                       <div class="new-client-label">Nahrát doklady</div>
                       <div class="new-client-doc-upload-inline">
-                        <div class="new-client-doc-upload-picker">
-                          <div class="new-client-select-wrap">
-                            <input type="text" class="new-client-input new-client-doc-upload-placeholder-input" *ngIf="!newClientUploadSelectedType()" placeholder="+ druh dokladu" readonly tabindex="-1" aria-hidden="true" />
-                            <select class="new-client-input new-client-select new-client-doc-upload-select" [class.placeholder-active]="!newClientUploadSelectedType()" [ngModel]="newClientUploadSelectedType()" (ngModelChange)="setNewClientUploadSelectedType($event)">
-                              <option value=""></option>
-                              <option *ngFor="let opt of uploadDocumentTypeOptions(); trackBy: trackByValue" [value]="opt">{{ opt }}</option>
-                            </select>
-                          </div>
-                          <div class="new-client-doc-upload-picker-actions">
-                            <button type="button" class="new-client-doclist-icon-btn" title="Nahrát soubor" [disabled]="!newClientUploadSelectedType()" (click)="triggerUploadForSelectedType(docFileInput)">
-                              <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor"><path d="M440-200h80v-168l64 64 56-56-160-160-160 160 56 56 64-64v168ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Z"/></svg>
-                            </button>
-                            <button type="button" class="new-client-doclist-icon-btn" title="Připojit odkaz" [disabled]="!newClientUploadSelectedType()" (click)="addNewClientDocumentLinkForType(newClientUploadSelectedType())">
-                              <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor"><path d="M440-280H280q-83 0-141.5-58.5T80-480q0-83 58.5-141.5T280-680h160v80H280q-50 0-85 35t-35 85q0 50 35 85t85 35h160v80Zm80-160v-80h240v80H520ZM680-200H520v-80h160q50 0 85-35t35-85q0-50-35-85t-85-35H520v-80h160q83 0 141.5 58.5T880-480q0 83-58.5 141.5T680-280Z"/></svg>
-                            </button>
-                          </div>
-                        </div>
+                        <input #docMultiFileInput type="file" class="new-client-hidden-file" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" multiple (change)="addPendingClientDocuments($event)" />
+                        <button type="button" class="new-client-doc-upload-trigger-field" (click)="docMultiFileInput.click()">nahrát doklady</button>
                       </div>
-                      <input #docFileInput type="file" class="new-client-hidden-file" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" (change)="addNewClientDocumentFileForType($event)" />
-                    </article>
-
-                    <article class="new-client-field-card new-client-doc-top-card new-client-doc-search-card">
-                      <div class="new-client-label">Hledat doklady</div>
-                      <input type="text" class="new-client-input" [ngModel]="clientDocSearch()" (ngModelChange)="setClientDocSearch($event)" placeholder="Hledat doklady..." />
                     </article>
                   </div>
 
                   <article class="new-client-field-card new-client-field-card-full new-client-aml-light-buttons-card">
+                    <div class="new-client-doc-batch-editor" *ngIf="pendingClientDocuments().length > 0">
+                      <div class="new-client-label">Přiřadit druh dokladu k nahraným souborům</div>
+                      <div class="new-client-doclist-file-card" *ngFor="let doc of pendingClientDocuments(); let index = index; trackBy: trackByIndex">
+                        <span class="new-client-doclist-file-link">{{ doc.name }}</span>
+<div class="new-client-select-wrap new-client-doclist-type-wrap">
+                          <select class="new-client-input new-client-select" [class.placeholder-active]="!(doc.type || '')" [ngModel]="doc.type" (ngModelChange)="setPendingClientDocumentType(index, $event)">
+                            <option value="">VYBERTE TYP DOKLADU</option>
+                            <option *ngFor="let opt of clientDocumentTypeOptions(); trackBy: trackByValue" [value]="opt">{{ opt }}</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="new-client-toggle-row">
+                        <button type="button" class="new-client-aml-generate-btn" (click)="commitPendingClientDocuments()">OK</button>
+                        <button type="button" class="new-client-aml-generate-btn" (click)="clearPendingClientDocuments()">Zrušit</button>
+                      </div>
+                    </div>
                     <div class="new-client-label">Nahrané doklady</div>
                     <div class="new-client-doclist new-client-doclist-uploaded">
-                      <details class="new-client-doclist-group" *ngFor="let type of uploadedDocumentTypes(); trackBy: trackByValue">
-                        <summary class="new-client-doclist-group-summary">
-                          <span class="new-client-doclist-group-title-wrap">
-                            <span class="new-client-doclist-group-check" aria-hidden="true">✓</span>
-                            <span class="new-client-doclist-group-title">{{ documentTypeLabel(type) }}</span>
-                          </span>
-                          <span class="new-client-doclist-group-count">{{ documentsForType(type).length }}</span>
-                        </summary>
-                        <div class="new-client-doclist-group-files">
-                          <div class="new-client-doclist-file-row" *ngFor="let doc of documentsForType(type)">
-                            <button type="button" class="new-client-doclist-file-link" (click)="openClientDocument(doc)">{{ doc.name }}</button>
-                            <button type="button" class="new-client-doclist-file-remove" (click)="removeNewClientDocumentByRef(doc)" aria-label="Odebrat doklad">✕</button>
-                          </div>
+                      <div class="new-client-doclist-file-card" *ngFor="let doc of previewClientDocumentsWithIndex(newClientDraft()); trackBy: trackByIndex">
+                        <div class="new-client-doclist-file-main">
+                          <button type="button" class="new-client-doclist-file-link" (click)="openClientDocument(doc)"><span class="new-client-doclist-file-icon" aria-hidden="true">{{ clientDocumentIcon(doc) }}</span><span>{{ doc.name }}</span></button>
+                          <button type="button" class="new-client-doclist-file-remove" (click)="removeNewClientDocumentAtIndex(doc.index)" aria-label="Odebrat doklad" title="smazat">✕</button>
                         </div>
-                      </details>
-                      <div class="new-client-doclist-empty" *ngIf="uploadedDocumentTypes().length === 0">Zatím nebyly nahrány žádné doklady.</div>
+<div class="new-client-select-wrap new-client-doclist-type-wrap">
+                          <select class="new-client-input new-client-select" [class.placeholder-active]="!(doc.type || '')" [ngModel]="doc.type" (ngModelChange)="setNewClientDocumentType(doc.index, $event)">
+                            <option value="">VYBERTE TYP DOKLADU</option>
+                            <option *ngFor="let opt of clientDocumentTypeOptions(); trackBy: trackByValue" [value]="opt">{{ opt }}</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="new-client-doclist-empty" *ngIf="previewClientDocumentsWithIndex(newClientDraft()).length === 0">Zatím nebyly nahrány žádné doklady.</div>
                     </div>
                   </article>
 
@@ -1476,10 +1465,8 @@
                     </div>
                   </article>
                 </div>
-              </section>
-
-              <section class="new-client-block" *ngIf="isActiveNewClientTab('checklist')">
-                <div class="new-client-grid">
+                  </div>
+                  <div class="new-client-checklist-column">
                   <article class="new-client-field-card new-client-field-card-full new-client-aml-light-buttons-card">
                     <div class="new-client-checklist-header">
                       <div class="new-client-checklist-progress-row">
@@ -1492,16 +1479,13 @@
                       <input #checklistFileInput type="file" class="new-client-hidden-file" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" (change)="addNewClientDocumentFileForType($event)" />
                     </div>
                     <div class="new-client-checklist">
-                        <div class="new-client-checklist-item" *ngFor="let item of filteredClientChecklistItems(); trackBy: trackByIndex" [class.satisfied]="item.satisfied" (click)="triggerUploadForType(checklistItemDocType(item.key), checklistFileInput)">
+<div class="new-client-checklist-item" *ngFor="let item of filteredClientChecklistItems(); trackBy: trackByIndex" [class.satisfied]="item.satisfied">
                           <div class="new-client-checklist-main">
                             <label class="new-client-checklist-label">
-                              <input type="checkbox" class="new-client-checklist-box" [checked]="item.satisfied" (click)="$event.preventDefault(); $event.stopPropagation(); triggerUploadForType(checklistItemDocType(item.key), checklistFileInput)" />
+                              <input type="checkbox" class="new-client-checklist-box" [checked]="item.satisfied" (click)="$event.preventDefault()" />
                               <span class="new-client-checklist-text-wrap">
                                 <span class="new-client-checklist-text">{{ item.label }}</span>
                                 <span class="new-client-checklist-subtitle" *ngIf="item.subtitle">{{ item.subtitle }}</span>
-                              </span>
-                              <span class="new-client-checklist-doc-icon" *ngIf="item.satisfied" aria-hidden="true">
-                                <svg xmlns="http://www.w3.org/2000/svg" height="14px" viewBox="0 -960 960 960" width="14px" fill="currentColor"><path d="M320-240h320v-80H320v80Zm0-160h320v-80H320v80Zm0-160h200v-80H320v80Zm-80 400q-33 0-56.5-23.5T160-240v-480q0-33 23.5-56.5T240-800h320l160 160v400q0 33-23.5 56.5T640-160H240Zm280-440v-120H240v480h400v-360H520Zm-280-120v120-120 480-480Z"/></svg>
                               </span>
                             </label>
                           </div>
@@ -1509,8 +1493,63 @@
                         <div class="new-client-checklist-empty" *ngIf="filteredClientChecklistItems().length === 0">Žádné položky.</div>
                     </div>
                   </article>
+                  </div>
                 </div>
               </section>
+
+<section class="new-client-block" *ngIf="isActiveNewClientTab('notes')">
+                <div class="new-client-notes-section">
+                  <div class="new-client-notes-toolbar">
+                    <button type="button" class="new-client-note-add-btn" (click)="addNewClientNote()">+ Přidat novou poznámku</button>
+                  </div>
+
+                  <div class="new-client-notes-grid">
+                    <article class="new-client-note-card" *ngFor="let note of newClientNotes(); trackBy: trackByNoteId" [class.new-client-note-red]="note.color === 'red'" [class.new-client-note-orange]="note.color === 'orange'" [class.new-client-note-green]="note.color === 'green'" [class.new-client-note-gray]="note.color === 'gray'">
+                      <div class="new-client-note-card-header">
+                        <span class="new-client-note-card-header-icon" aria-hidden="true" *ngIf="note.color === 'gray'" [innerHTML]="noteColorIcon(note.color)"></span>
+                        <span class="new-client-note-card-header-label">{{ noteColorLabel(note.color) }}</span>
+                      </div>
+                      <div class="new-client-note-card-body">
+                        <div class="new-client-note-card-deadline-label" *ngIf="editingClientNoteId() !== note.id">DEADLINE</div>
+                        <div class="new-client-note-card-deadline-value" *ngIf="editingClientNoteId() !== note.id">{{ note.deadline || '—' }}</div>
+                        <div class="new-client-note-card-gap" *ngIf="editingClientNoteId() !== note.id"></div>
+                        <div class="new-client-note-card-text" *ngIf="editingClientNoteId() !== note.id">{{ note.text || 'Bez textu poznámky.' }}</div>
+                        <ng-container *ngIf="editingClientNoteId() === note.id">
+                          <div class="new-client-note-editor-row">
+                            <label class="new-client-note-editor-label">Text poznámky</label>
+                            <textarea class="new-client-input new-client-textarea new-client-note-editor-textarea" rows="4" [ngModel]="note.text" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientNoteText(note.id, $event)" placeholder="Napište poznámku"></textarea>
+                          </div>
+                          <div class="new-client-note-editor-row">
+                            <label class="new-client-note-editor-label">Deadline</label>
+                            <input type="text" class="new-client-input" [ngModel]="note.deadline" (ngModelChange)="setNewClientNoteDeadline(note.id, $event)" placeholder="dd-mm-rr" />
+                          </div>
+                          <div class="new-client-note-editor-row">
+                            <label class="new-client-note-editor-label">Priorita</label>
+                            <div class="new-client-note-color-row">
+                              <button type="button" class="new-client-note-color-dot new-client-note-red-dot" [class.active]="note.color === 'red'" [attr.title]="noteColorHint('red')" (click)="setNewClientNoteColor(note.id, 'red')"></button>
+                              <button type="button" class="new-client-note-color-dot new-client-note-orange-dot" [class.active]="note.color === 'orange'" [attr.title]="noteColorHint('orange')" (click)="setNewClientNoteColor(note.id, 'orange')"></button>
+                              <button type="button" class="new-client-note-color-dot new-client-note-green-dot" [class.active]="note.color === 'green'" [attr.title]="noteColorHint('green')" (click)="setNewClientNoteColor(note.id, 'green')"></button>
+                              <button type="button" class="new-client-note-color-dot new-client-note-gray-dot" [class.active]="note.color === 'gray'" [attr.title]="noteColorHint('gray')" (click)="setNewClientNoteColor(note.id, 'gray')"></button>
+                            </div>
+                          </div>
+                        </ng-container>
+                      </div>
+                      <div class="new-client-note-card-actions">
+                        <button type="button" class="new-client-note-card-btn new-client-note-card-edit" *ngIf="editingClientNoteId() !== note.id" (click)="editNewClientNote(note.id)">Editovat</button>
+                        <button type="button" class="new-client-note-card-btn" *ngIf="editingClientNoteId() === note.id" (click)="closeNewClientNoteEditor()">Uložit</button>
+                        <button type="button" class="new-client-note-card-btn new-client-note-card-deactivate" *ngIf="note.color !== 'gray'" (click)="setNewClientNoteColor(note.id, 'gray')">Označit jako neaktivní</button>
+                        <button type="button" class="new-client-note-card-btn new-client-note-card-delete" (click)="removeNewClientNote(note.id)">Smazat</button>
+                      </div>
+                    </article>
+                    <div class="new-client-notes-empty" *ngIf="newClientNotes().length === 0">Zatím žádné poznámky. Přidejte první poznámku výše.</div>
+                  </div>
+                </div>
+              </section>
+
+              <div class="new-client-mobile-tab-nav">
+                <button type="button" class="new-client-mobile-tab-btn" *ngIf="canGoToPreviousClientTab()" (click)="goToPreviousClientTab()">← zpět</button>
+                <button type="button" class="new-client-mobile-tab-btn" *ngIf="canGoToNextClientTab()" (click)="goToNextClientTab()">další →</button>
+              </div>
 
               <div class="new-client-linked-cards">
                 <button type="button" class="client-create-card new-client-linked-card new-client-linked-card-full" *ngFor="let _ of newClientRelatedClientCards(); let index = index; trackBy: trackByIndex">
@@ -1598,7 +1637,11 @@
                     <td class="client-col-priority-1 client-status-column">
                       <span class="client-status-chip" [class.inactive]="client.status === 'Neaktivní'" [attr.aria-label]="client.status"></span>
                     </td>
-                    <td class="client-col-priority-1">{{ client.name }}</td>
+                    <td class="client-col-priority-1">
+                      <div class="client-directory-name-cell">
+                        <span>{{ client.name }}</span>
+                      </div>
+                    </td>
                     <td class="client-col-priority-1">{{ client.phone || '—' }}</td>
                     <td class="client-col-priority-3 client-email-column">{{ client.email || '—' }}</td>
                     <td class="client-col-priority-4 client-interest-column">{{ client.type }}</td>
@@ -1611,9 +1654,11 @@
                         <button type="button" class="client-action-btn plain" (click)="openClientPreviewEntry(client.index)" aria-label="Náhled klienta" title="Náhled klienta">
                           <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor" aria-hidden="true"><path d="M607.5-372.5Q660-425 660-500t-52.5-127.5Q555-680 480-680t-127.5 52.5Q300-575 300-500t52.5 127.5Q405-320 480-320t127.5-52.5Zm-204-51Q372-455 372-500t31.5-76.5Q435-608 480-608t76.5 31.5Q588-545 588-500t-31.5 76.5Q525-392 480-392t-76.5-31.5ZM214-281.5Q94-363 40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200q-146 0-266-81.5ZM480-500Zm207.5 160.5Q782-399 832-500q-50-101-144.5-160.5T480-720q-113 0-207.5 59.5T128-500q50 101 144.5 160.5T480-280q113 0 207.5-59.5Z"/></svg>
                         </button>
-                        <button type="button" class="client-action-btn plain" aria-label="Dokumenty klienta" title="Nahrané dokumenty">
-                          <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor" aria-hidden="true"><path d="M320-240h320v-80H320v80Zm0-160h320v-80H320v80Zm0-160h200v-80H320v80Zm-80 400q-33 0-56.5-23.5T160-240v-480q0-33 23.5-56.5T240-800h320l160 160v400q0 33-23.5 56.5T640-160H240Zm280-440v-120H240v480h400v-360H520Zm-280-120v120-120 480-480Z"/></svg>
-                        </button>
+                        <span class="client-directory-notes" [class.client-directory-notes-empty]="client.notes.length === 0">
+                          <button type="button" class="client-action-btn plain client-directory-notes-btn" aria-label="Poznámky klienta" title="Poznámky" (click)="openClientNotesPreviewEntry(client.index)">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor" aria-hidden="true"><path d="M320-240h320v-80H320v80Zm0-160h320v-80H320v80Zm0-160h200v-80H320v80Zm-80 400q-33 0-56.5-23.5T160-240v-480q0-33 23.5-56.5T240-800h320l160 160v400q0 33-23.5 56.5T640-160H240Zm280-440v-120H240v480h400v-360H520Zm-280-120v120-120 480-480Z"/></svg>
+                          </button>
+                        </span>
                       </div>
                     </td>
                   </tr>
@@ -1628,15 +1673,55 @@
                 <h3>Náhled klienta</h3>
                 <button type="button" class="client-preview-close" (click)="closeClientPreview()">Zavřít</button>
               </div>
-              <div class="client-preview-grid">
-                <div><span class="client-preview-label">Zájem klienta</span><span class="client-preview-value strong">{{ newClientInterestLabel(preview.draft.clientInterest) }}</span></div>
-                <div><span class="client-preview-label">Typ klienta</span><span class="client-preview-value strong">{{ preview.draft.clientType === 'pravnicka' ? 'Právnická osoba' : 'Fyzická osoba' }}</span></div>
-                <div><span class="client-preview-label">Klient jedná</span><span class="client-preview-value strong">{{ preview.draft.actingMode === 'zastoupeni' ? 'je zastupován' : 'sám za sebe' }}</span></div>
-                <div><span class="client-preview-label">Titul</span><span class="client-preview-value strong">{{ preview.draft.hasTitle ? (preview.draft.titleText || 'ANO') : 'NE' }}</span></div>
-                <div><span class="client-preview-label">Jméno a příjmení</span><span class="client-preview-value strong">{{ preview.draft.fullName || '—' }}</span></div>
-                <div><span class="client-preview-label">Datum narození</span><span class="client-preview-value strong">{{ preview.draft.birthDate || '—' }}</span></div>
-                <div><span class="client-preview-label">Telefon</span><span class="client-preview-value strong">{{ displayNewClientPhone(preview.draft) || '—' }}</span></div>
-                <div><span class="client-preview-label">E-mail</span><span class="client-preview-value strong">{{ preview.draft.email || '—' }}</span></div>
+<div class="client-preview-grid">
+                <ng-container *ngIf="!previewClientNotesOnly()">
+                <div class="client-preview-interest">
+                  <span>{{ newClientInterestLabel(preview.draft.clientInterest) }}</span>
+                </div>
+                <div class="client-preview-copy-row client-preview-name">
+                  <span>{{ previewClientPrimaryName(preview.draft) }}</span>
+                  <button type="button" class="client-preview-copy-btn" (click)="copyText(previewClientPrimaryName(preview.draft))" aria-label="Kopírovat řádek">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px" fill="currentColor"><path d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z"/></svg>
+                  </button>
+                </div>
+                <div class="client-preview-copy-row client-preview-simple-line" *ngIf="previewClientBirthDateValue(preview.draft)">
+                  <span>{{ previewClientBirthDateLabel(preview.draft) }}</span>
+                  <button type="button" class="client-preview-copy-btn" (click)="copyText(previewClientBirthDateValue(preview.draft))" aria-label="Kopírovat řádek">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px" fill="currentColor"><path d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z"/></svg>
+                  </button>
+                </div>
+                <div class="client-preview-copy-row client-preview-simple-line" *ngFor="let line of previewClientSummaryLines(preview.draft); trackBy: trackByIndex">
+                  <span>{{ line }}</span>
+                  <button type="button" class="client-preview-copy-btn" (click)="copyText(line)" aria-label="Kopírovat řádek">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px" fill="currentColor"><path d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z"/></svg>
+                  </button>
+                </div>
+                <div class="client-preview-progress-wrap">
+                  <div class="client-preview-progress-head">
+                    <span class="client-preview-progress-text">PROVĚŘENÍ KLIENTA</span>
+                    <span class="client-preview-progress-count">{{ previewClientChecklistSatisfiedCount(preview.draft) }}/{{ previewClientChecklistTotalCount(preview.draft) }}</span>
+                  </div>
+                  <div class="new-client-checklist-bar">
+                    <div class="new-client-checklist-bar-fill" [style.width.%]="previewClientChecklistProgressPercent(preview.draft)"></div>
+                  </div>
+                </div>
+<div class="client-preview-separator"></div>
+                <div class="client-preview-docs">
+                  <button type="button" class="client-preview-doc-chip" *ngFor="let doc of previewClientDocuments(preview.draft); trackBy: trackByIndex" (click)="openClientDocument(doc)">{{ previewClientDocumentLabel(doc) }}</button>
+                </div>
+                </ng-container>
+                <div class="client-preview-notes" *ngIf="previewClientNotesOnly() || activeClientNotesForDraft(preview.draft).length > 0">
+                  <div class="client-preview-notes-title">POZNÁMKY</div>
+                  <div class="client-preview-notes-list">
+                    <div class="client-preview-note-item" *ngFor="let note of activeClientNotesForDraft(preview.draft); trackBy: trackByNoteId" [class.new-client-note-red]="note.color === 'red'" [class.new-client-note-orange]="note.color === 'orange'" [class.new-client-note-green]="note.color === 'green'" [class.new-client-note-gray]="note.color === 'gray'">
+                      <span class="client-preview-note-item-text">{{ note.text }}</span>
+                      <span class="client-preview-note-item-deadline" *ngIf="note.deadline">
+                        {{ note.deadline }}
+                        <span class="client-preview-note-item-relative" *ngIf="noteDeadlineRelative(note.deadline)">{{ noteDeadlineRelative(note.deadline) }}</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </article>
           </section>
