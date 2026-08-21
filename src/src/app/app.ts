@@ -2492,7 +2492,7 @@ export class App {
 
   protected removeNewClientDocumentAtIndex(index: number): void {
     const name = this.newClientDraft().clientDocuments?.[index]?.name || 'tento doklad';
-    if (!window.confirm('opravdu chcete doklad smazat?')) {
+    if (!window.confirm('Opravdu chcete doklad smazat?')) {
       return;
     }
     this.newClientDraft.update((draft) => ({
@@ -2502,7 +2502,7 @@ export class App {
   }
 
   protected removeNewClientDocumentByRef(doc: { name: string; type: string; url?: string; fileType?: string; dataBase64?: string }): void {
-    if (!window.confirm('opravdu chcete doklad smazat?')) {
+    if (!window.confirm('Opravdu chcete doklad smazat?')) {
       return;
     }
     this.newClientDraft.update((draft) => ({
@@ -3723,7 +3723,9 @@ export class App {
   }
 
   constructor() {
-    void this.loadData();
+    void this.loadState().then(() => {
+      this.loading.set(false);
+    });
     this.loadTodayNameday();
     void this.loadHighRiskCountries();
   }
@@ -3762,38 +3764,6 @@ export class App {
     });
   }
 
-  protected loadData(): Promise<void> {
-    const infoUrl =
-      'https://docs.google.com/spreadsheets/d/1GD0AzdClLhxzbbIpispEJ0ecW1-BuWyL36lJZfZGkFA/gviz/tq?tqx=out:csv&sheet=INFORMACE';
-    const m2Url =
-      'https://docs.google.com/spreadsheets/d/1GD0AzdClLhxzbbIpispEJ0ecW1-BuWyL36lJZfZGkFA/gviz/tq?tqx=out:csv&sheet=m2';
-
-    return new Promise((resolve) => {
-      this.http.get(infoUrl, { responseType: 'text' }).subscribe({
-        next: (csvText) => {
-          const rows = this.csvToObjects(csvText);
-          this.prepareData(rows);
-
-          this.http.get(m2Url, { responseType: 'text' }).subscribe({
-            next: (m2CsvText) => {
-              const m2Rows = this.csvToObjects(m2CsvText);
-              this.prepareRoomAreaRules(m2Rows);
-              this.finishLoading(resolve);
-            },
-            error: () => this.finishLoading(resolve)
-          });
-        },
-        error: () => this.finishLoading(resolve)
-      });
-    });
-  }
-
-  private finishLoading(resolve: () => void): void {
-    void this.loadState().then(() => {
-      this.loading.set(false);
-      resolve();
-    });
-  }
 
   protected isSelection(item: ChecklistItem): boolean {
     if (this.isInfrastructureField(item) && item.options.length > 0) {
@@ -8311,73 +8281,6 @@ body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; 
     });
   }
 
-  private prepareData(rows: Record<string, string>[]): void {
-    const propertyTypes = new Set<string>();
-    const services = new Set<string>();
-    const ownerships = new Set<string>();
-    const sectionMap = new Map<string, Section>();
-
-    for (const row of rows) {
-      const sectionName = row['SEKCE'] || '';
-      if (!sectionName) {
-        continue;
-      }
-
-      const order = Number.parseInt(row['PORADI SEKCE'] || '999', 10);
-      const property = this.splitList(row['DRUH NEMOVITOSTI']);
-      const service = this.splitList(row['DRUH SLUZBY'] || row['SLUZBA']);
-      const ownership = this.splitList(row['VLASTNICTVI'] || row['VLASTNICTVÍ']);
-
-      property.forEach((value) => propertyTypes.add(value));
-      service.forEach((value) => services.add(value));
-      ownership.forEach((value) => ownerships.add(value));
-
-      const key = `${order}-${sectionName}`;
-      if (!sectionMap.has(key)) {
-        sectionMap.set(key, { name: sectionName, order, items: [] });
-      }
-
-      const subtitle = (row['PODNADPIS'] || row['VLASTNOST'] || '').trim();
-      const itemLabel = subtitle || (row['VLASTNOST'] || '').trim();
-
-      const item: ChecklistItem = {
-        id: this.buildItemId(row['PORADI CELKEM'], sectionName, subtitle, sectionMap.get(key)!.items.length),
-        label: this.normalizeDisplayText(itemLabel),
-        section: sectionName,
-        info: (row['INFORMACE'] || '').trim(),
-        action: this.normalize(row['AKCE']),
-        actionRaw: row['AKCE']?.trim() || '',
-        options: this.parseOptions(row['VYBER ZE SEZNAMU']),
-        propertyTypes: property,
-        services: service,
-        ownerships: ownership,
-        specialRule: row['SPECIALNI'] || row['SPECIÁLNÍ'] || '',
-        showToBuyer: this.parseBooleanFlag(row['ZOBRAZOVAT KUPUJICIMU'] || row['ZOBRAZOVAT KUPUJÍCÍMU'])
-      };
-
-      const normalizedLabel = this.normalize(item.label);
-      if (normalizedLabel.includes('SJIZDNA NA') && normalizedLabel.includes('K POZEMKU')) {
-        continue;
-      }
-
-      if (this.allowsCustomOption(item)) {
-        item.options = item.options.filter((option) => !this.isCustomOption(option));
-        item.options.push(this.customOptionLabel);
-      }
-
-      sectionMap.get(key)!.items.push(item);
-    }
-
-    this.sections.set(Array.from(sectionMap.values()).sort((a, b) => a.order - b.order));
-    const propertyOptions = this.sortOptionsWithCustomLast(Array.from(propertyTypes));
-    const serviceOptions = this.sortOptionsWithCustomLast(Array.from(services), ['Prodej', 'Pronájem', 'Podnájem']);
-    const ownershipOptions = this.sortOptionsWithCustomLast(Array.from(ownerships), ['Osobní', 'Družstevní', 'Podílové', 'Kombinované']);
-
-    this.propertyTypeOptions.set(propertyOptions);
-    this.serviceOptions.set(serviceOptions);
-    this.ownershipOptions.set(ownershipOptions);
-  }
-
   private getState(itemId: string): ItemState {
     if (!this.states.has(itemId)) {
       this.states.set(itemId, {
@@ -8413,58 +8316,9 @@ body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; 
     return this.states.get(itemId)!;
   }
 
-  private parseOptions(value: string): string[] {
-    if (!value?.trim()) {
-      return [];
-    }
-
-    if (value.includes('\n')) {
-      return value
-        .split('\n')
-        .map((part) => part.trim())
-        .filter(Boolean);
-    }
-
-    if (value.includes(',')) {
-      return value
-        .split(',')
-        .map((part) => part.trim())
-        .filter(Boolean);
-    }
-
-    return [value.trim()];
-  }
-
-  private buildItemId(order: string, sectionName: string, label: string, indexInSection: number): string {
-    const base = (order || 'item').trim();
-    const section = this.normalize(sectionName || 'SEKCE');
-    const property = this.normalize(label || 'POLOZKA');
-    return `${base}-${section}-${property}-${indexInSection}`;
-  }
-
   private normalizeDisplayText(text: string): string {
     const normalizedEnergy = text.replace(/\*?\s*bez\s*energi[ií]\s*a\s*služeb/iu, '*bez energií a služeb');
     return normalizedEnergy.replace(/\s{2,}/g, ' ').trim();
-  }
-
-  private splitList(value: string): string[] {
-    if (!value?.trim()) {
-      return [];
-    }
-
-    return value
-      .split(',')
-      .map((entry) => entry.trim())
-      .filter(Boolean);
-  }
-
-  private parseBooleanFlag(value: string): boolean {
-    const normalized = this.normalize((value || '').trim());
-    if (!normalized) {
-      return false;
-    }
-
-    return normalized === '1';
   }
 
   private itemPersistenceKey(item: ChecklistItem): string {
@@ -8494,51 +8348,6 @@ body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; 
     }
 
     return '';
-  }
-
-  private prepareRoomAreaRules(rows: Record<string, string>[]): void {
-    this.roomAreaRules.clear();
-    this.roomAreaInfo.clear();
-
-    const infoRow = rows[0] || {};
-    this.roomAreaInfo.set('podlahova', this.getRowValueByAliases(infoRow, ['PODLAHOVA PLOCHA', 'PODLAHOVA']));
-    this.roomAreaInfo.set('obytna', this.getRowValueByAliases(infoRow, ['OBYTNA PLOCHA', 'OBYTNA']));
-    this.roomAreaInfo.set('uzitna', this.getRowValueByAliases(infoRow, ['UZITNA PLOCHA', 'UZITNA', 'UŽITNÁ']));
-    this.roomAreaInfo.set(
-      'celkovaUzitna',
-      this.getRowValueByAliases(infoRow, ['CELKOVA UZITNA PLOCHA', 'CELKOVA UZITNA', 'CELKOVÁ UŽITNÁ PLOCHA'])
-    );
-
-    for (const row of rows) {
-      const room = this.getRowValueByAliases(row, [
-        'MISTNOST',
-        'MÍSTNOST',
-        'NAZEV MISTNOSTI',
-        'NÁZEV MÍSTNOSTI',
-        'NAZVY MISTNOSTI',
-        'NÁZVY MÍSTNOSTÍ'
-      ]);
-      if (!room) {
-        continue;
-      }
-
-      const normalizedRoom = this.normalize(room);
-      const rule = {
-        podlahova: this.isAreaRuleActive(this.getRowValueByAliases(row, ['PODLAHOVA', 'PODLAHOVA PLOCHA'])),
-        obytna: this.isAreaRuleActive(this.getRowValueByAliases(row, ['OBYTNA', 'OBYTNA PLOCHA'])),
-        uzitna: this.isAreaRuleActive(this.getRowValueByAliases(row, ['UZITNA', 'UŽITNÁ', 'UZITNA PLOCHA', 'UŽITNÁ PLOCHA'])),
-        celkovaUzitna: this.isAreaRuleActive(
-          this.getRowValueByAliases(row, ['CELKOVA UZITNA', 'CELKOVA UZITNA PLOCHA', 'CELKOVÁ UŽITNÁ', 'CELKOVÁ UŽITNÁ PLOCHA'])
-        )
-      };
-
-      this.roomAreaRules.set(normalizedRoom, rule);
-
-      const normalizedWithoutIndex = this.stripRoomIndex(normalizedRoom);
-      if (normalizedWithoutIndex && !this.roomAreaRules.has(normalizedWithoutIndex)) {
-        this.roomAreaRules.set(normalizedWithoutIndex, rule);
-      }
-    }
   }
 
   private roomAreaRuleForRoom(room: string): RoomAreaRule | undefined {
@@ -9284,70 +9093,5 @@ body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; 
       .trim();
 
     return cleaned || 'nabor-nemovitosti';
-  }
-
-  private csvToObjects(csvText: string): Record<string, string>[] {
-    const rows = this.parseCsv(csvText);
-    if (rows.length < 2) {
-      return [];
-    }
-
-    const headers = rows[0].map((header) => this.normalize(header));
-
-    return rows.slice(1).map((cells) => {
-      const row: Record<string, string> = {};
-      headers.forEach((header, index) => {
-        row[header] = cells[index]?.trim() || '';
-      });
-      return row;
-    });
-  }
-
-  private parseCsv(text: string): string[][] {
-    const rows: string[][] = [];
-    let row: string[] = [];
-    let value = '';
-    let inQuotes = false;
-
-    for (let i = 0; i < text.length; i += 1) {
-      const char = text[i];
-      const next = text[i + 1];
-
-      if (char === '"') {
-        if (inQuotes && next === '"') {
-          value += '"';
-          i += 1;
-        } else {
-          inQuotes = !inQuotes;
-        }
-        continue;
-      }
-
-      if (char === ',' && !inQuotes) {
-        row.push(value);
-        value = '';
-        continue;
-      }
-
-      if ((char === '\n' || char === '\r') && !inQuotes) {
-        if (char === '\r' && next === '\n') {
-          i += 1;
-        }
-        row.push(value);
-        rows.push(row);
-        row = [];
-        value = '';
-        continue;
-      }
-
-      value += char;
-    }
-
-    if (value.length > 0 || row.length > 0) {
-      row.push(value);
-      rows.push(row);
-    }
-
-    return rows;
   }
 }

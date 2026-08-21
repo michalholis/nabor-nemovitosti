@@ -1582,6 +1582,8 @@
   gap: 0.4rem;
   padding: 0.6rem 0.75rem;
   border-top: 1px solid #eef2f6;
+  justify-content: flex-end;
+  align-items: center;
 }
 
 .new-client-note-card-btn {
@@ -2146,6 +2148,8 @@
   gap: 0.22rem;
   color: #4c6074;
   white-space: nowrap;
+  justify-content: center;
+  margin-top: 0.2rem;
 }
 
 .new-client-checklist-progress-count-value {
@@ -2670,6 +2674,45 @@
   .new-client-aml-columns {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .new-client-doclist-file-name {
+    display: none;
+  }
+
+  .new-client-doclist-file-label {
+    display: inline;
+  }
+
+  .new-client-doclist-file-link {
+    justify-content: space-between;
+  }
+
+  .new-client-doclist-file-icon {
+    order: 2;
+    margin-left: auto;
+  }
+
+  .new-client-note-card-actions {
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .new-client-note-card-delete {
+    margin-left: 0 !important;
+    order: 1;
+  }
+
+  .new-client-note-card-deactivate {
+    order: 2;
+  }
+
+  .new-client-note-card-edit {
+    order: 3;
+  }
+
+  .new-client-note-card-btn:not(.new-client-note-card-delete):not(.new-client-note-card-deactivate):not(.new-client-note-card-edit) {
+    order: 3;
+  }
 }
 
 .client-status-chip {
@@ -3188,6 +3231,14 @@
   flex: 0 0 auto;
   font-size: 0.72rem;
   line-height: 1;
+}
+
+.new-client-doclist-file-label {
+  display: none;
+}
+
+.new-client-doclist-file-name {
+  display: inline;
 }
 
 .new-client-doclist-uploaded .new-client-doclist-file-remove {
