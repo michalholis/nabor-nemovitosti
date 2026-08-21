@@ -663,6 +663,22 @@
   margin-bottom: 0;
 }
 
+.workspace-panel.clients-directory-panel:has(.new-client-page-card) {
+  overflow: visible;
+}
+
+.new-client-page-card .new-client-layout {
+  overflow: visible;
+}
+
+.property-form-panel {
+  overflow: visible;
+}
+
+.property-form-panel .new-client-page-card {
+  overflow: visible;
+}
+
 .client-form-section-card {
   background: #fff;
   border: 1px solid #d9e1ea;
@@ -925,6 +941,12 @@
   display: flex;
   gap: 0.45rem;
   flex-wrap: wrap;
+  max-height: 5.5rem;
+  overflow-y: auto;
+  padding-bottom: 0.3rem;
+  position: relative;
+  z-index: 2;
+  background: #fff;
 }
 
 .new-client-tab {
@@ -948,6 +970,8 @@
   gap: 0;
   align-content: start;
   padding-bottom: 10px;
+  position: relative;
+  z-index: 1;
 }
 
 .new-client-linked-cards {
@@ -1408,7 +1432,7 @@
   background: #fff;
   border: 2px solid #d3dae3;
   border-radius: 0.9rem;
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 2px 8px rgba(15, 46, 71, 0.08);
 }
 
@@ -1510,7 +1534,7 @@
 }
 
 .new-client-note-editor-textarea {
-  min-height: 5.5rem;
+  min-height: 7rem;
   resize: vertical;
 }
 
@@ -1554,6 +1578,7 @@
 
 .new-client-note-card-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.4rem;
   padding: 0.6rem 0.75rem;
   border-top: 1px solid #eef2f6;
@@ -1568,6 +1593,7 @@
   font: 600 0.7rem/1 var(--font-main);
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
 }
 
 .new-client-note-card-btn.new-client-note-card-delete {
@@ -2376,6 +2402,15 @@
   vertical-align: middle;
 }
 
+.client-directory-table tbody tr {
+  transition: background 0.12s ease;
+  cursor: pointer;
+}
+
+.client-directory-table tbody tr:hover {
+  background: #f0f6fb;
+}
+
 .client-directory-name-cell {
   display: inline-flex;
   align-items: center;
@@ -2646,6 +2681,12 @@
   border-radius: 999px;
   background: var(--client-accent);
   color: transparent;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.client-directory-table tbody tr:hover .client-status-chip {
+  transform: scale(1.4);
+  box-shadow: 0 0 0 3px rgb(31 136 209 / 25%);
 }
 
 .client-status-chip.inactive {
@@ -2707,6 +2748,42 @@
 .client-action-btn svg {
   width: 1.42rem;
   height: 1.42rem;
+}
+
+.client-created-relative {
+  font-size: 0.75rem;
+  color: #8d98a6;
+  margin-top: 2px;
+}
+
+.client-created-relative-inline {
+  font-size: 0.8em;
+  color: #8d98a6;
+  margin-left: 4px;
+}
+
+.new-client-save-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.new-client-save-btn {
+  padding: 0.6rem 1.4rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--client-accent, #0c59a5);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: color-mix(in srgb, var(--client-accent, #0c59a5) 85%, #000);
+  }
 }
 
 .document-actions-grid {
@@ -2787,6 +2864,7 @@
 .client-preview-grid {
   display: grid;
   gap: 0.3rem;
+  position: relative;
 }
 
 .client-preview-simple-line {
@@ -2841,8 +2919,40 @@
 
 .client-preview-separator {
   height: 1px;
-  margin: 0.05rem 0 0.15rem;
-  background: linear-gradient(90deg, rgb(230 237 244 / 15%) 0%, rgb(230 237 244 / 100%) 14%, rgb(230 237 244 / 100%) 86%, rgb(230 237 244 / 15%) 100%);
+  background: #d9e1ea;
+  margin: 0.6rem 0;
+}
+
+.client-preview-profile-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0.6rem auto;
+  letter-spacing: 0.05em;
+}
+
+.client-preview-profile-bg {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 1.6rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.2;
+  letter-spacing: 0.05em;
+  pointer-events: none;
 }
 
 .client-preview-docs {
@@ -2962,7 +3072,9 @@
 .client-preview-note-item-text {
   flex: 1 1 auto;
   min-width: 0;
-  word-break: break-word;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .client-preview-note-item-deadline {

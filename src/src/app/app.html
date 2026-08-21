@@ -87,7 +87,78 @@
       </div>
 
       <ng-container *ngIf="showFormsWorkspace()">
-      <main class="sheet" [class.unfilled-print-sheet]="isUnfilledPrintMode()" [class.buyer-print-sheet]="isBuyerPrintMode()" [class.buyer-alt-print-sheet]="isBuyerAlternativePrintMode()" [class.buyer-compact-print-sheet]="isBuyerCompactPrintMode()" *ngIf="!loading() && !error()">
+      <section class="workspace-panel no-print clients-directory-panel property-form-panel" *ngIf="isWorkspaceActive('properties') && isPropertyWorkspaceMode('new')">
+        <section class="client-directory-card new-client-page-card">
+        <div class="client-directory-head">
+          <div class="client-directory-head-text">
+            <h2>{{ activeSavedPropertyId() ? 'UPRAVIT NEMOVITOST' : 'Nová nemovitost' }}</h2>
+            <div class="new-client-title-name" *ngIf="newPropertyDraft().title.trim()">{{ newPropertyDraft().title.trim() }}</div>
+          </div>
+          <div class="new-client-head-actions">
+            <button type="button" class="new-client-head-btn" (click)="activatePropertyWorkspaceMode('directory')">Odejít</button>
+          </div>
+        </div>
+
+        <div class="new-client-tabs">
+          <button type="button" class="new-client-tab" *ngFor="let tab of propertySectionTabs()" [class.active]="isActivePropertyTab(tab.key)" (click)="setActivePropertyTab(tab.key)">{{ tab.label }}</button>
+        </div>
+
+        <div class="new-client-layout">
+          <section class="new-client-block">
+            <div class="new-client-grid two-up" *ngIf="isActivePropertyTab('zakladni')">
+              <article class="new-client-field-card new-client-field-card-full">
+                <div class="new-client-label">Číslo případu</div>
+                <input type="text" class="new-client-input" [ngModel]="newPropertyDraft().title" (ngModelChange)="setNewPropertyDraftField('title', $event)" placeholder="např. 2026-001" />
+              </article>
+              <article class="new-client-field-card">
+                <div class="new-client-label">Nemovitost</div>
+                <select class="new-client-input new-client-select" [ngModel]="newPropertyDraft().propertyType" (ngModelChange)="setNewPropertyDraftField('propertyType', $event)">
+                  <option value="">Vyberte typ</option>
+                  <option *ngFor="let option of propertyTypeFormOptions()" [value]="option">{{ option }}</option>
+                </select>
+              </article>
+              <article class="new-client-field-card">
+                <div class="new-client-label">Vlastnictví</div>
+                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('zakladni', 'Vlastnictví')" (ngModelChange)="setPropertyTabFieldValue('zakladni', 'Vlastnictví', $event)" placeholder="např. osobní, družstevní" />
+              </article>
+              <article class="new-client-field-card">
+                <div class="new-client-label">Služba</div>
+                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('zakladni', 'Služba')" (ngModelChange)="setPropertyTabFieldValue('zakladni', 'Služba', $event)" placeholder="např. prodej, pronájem" />
+              </article>
+              <article class="new-client-field-card">
+                <div class="new-client-label">Smlouva</div>
+                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('zakladni', 'Smlouva')" (ngModelChange)="setPropertyTabFieldValue('zakladni', 'Smlouva', $event)" placeholder="číslo smlouvy" />
+              </article>
+              <article class="new-client-field-card new-client-field-card-full">
+                <div class="new-client-label">Adresa nemovitosti</div>
+                <input type="text" class="new-client-input" [ngModel]="newPropertyDraft().address" (ngModelChange)="setNewPropertyDraftField('address', $event)" placeholder="ulice, město, PSČ" />
+              </article>
+              <article class="new-client-field-card new-client-field-card-full">
+                <div class="new-client-label">Nejblížší adresa (orientační bod pro zájemce o prohlídku)</div>
+                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('zakladni', 'Nejblížší adresa')" (ngModelChange)="setPropertyTabFieldValue('zakladni', 'Nejblížší adresa', $event)" placeholder="orientační bod" />
+              </article>
+            </div>
+
+            <div class="new-client-grid two-up" *ngFor="let tab of propertySectionTabs()" [hidden]="!isActivePropertyTab(tab.key) && tab.key !== 'zakladni'">
+              <ng-container *ngIf="isActivePropertyTab(tab.key) && tab.key !== 'zakladni'">
+                <article class="new-client-field-card new-client-field-card-full" *ngFor="let field of propertyTabFieldLabels(tab.key)">
+                  <div class="new-client-label">{{ field }}</div>
+                  <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue(tab.key, field)" (ngModelChange)="setPropertyTabFieldValue(tab.key, field, $event)" [placeholder]="field" />
+                </article>
+              </ng-container>
+            </div>
+
+            <div class="new-client-save-row">
+              <button type="button" class="new-client-save-btn" (click)="saveCurrentProperty()">
+                {{ activeSavedPropertyId() ? 'Uložit změny' : 'Uložit nemovitost' }}
+              </button>
+              <button type="button" class="new-client-head-btn" (click)="activatePropertyWorkspaceMode('directory')">Zrušit</button>
+            </div>
+          </section>
+        </div>
+        </section>
+      </section>
+      <main class="sheet" [class.unfilled-print-sheet]="isUnfilledPrintMode()" [class.buyer-print-sheet]="isBuyerPrintMode()" [class.buyer-alt-print-sheet]="isBuyerAlternativePrintMode()" [class.buyer-compact-print-sheet]="isBuyerCompactPrintMode()" *ngIf="!loading() && !error() && !(isWorkspaceActive('properties') && isPropertyWorkspaceMode('new'))">
     <div class="section-tabs no-print" *ngIf="shouldShowSectionTabs()">
       <button
         type="button"
@@ -996,9 +1067,14 @@
                 <div class="new-client-grid two-up">
                   <article class="new-client-field-card new-client-title-field-card">
                     <div class="new-client-label">Zájem klienta</div>
-                    <select class="new-client-input new-client-select" [ngModel]="newClientDraft().clientInterest" (ngModelChange)="setNewClientDraftField('clientInterest', $event)">
-                      <option *ngFor="let option of resolvedNewClientInterestOptions()" [value]="option.value">{{ option.label }}</option>
-                    </select>
+                    <div class="new-client-toggle-row">
+                      <button type="button" class="new-client-toggle-btn" [class.active]="isNewClientDraftValue('clientInterest', 'prodavajici')" (click)="toggleNewClientDraftChoice('clientInterest', 'prodavajici', '')">Prodávající</button>
+                      <button type="button" class="new-client-toggle-btn" [class.active]="isNewClientDraftValue('clientInterest', 'pronajimatel')" (click)="toggleNewClientDraftChoice('clientInterest', 'pronajimatel', '')">Pronajímatel</button>
+                      <button type="button" class="new-client-toggle-btn" [class.active]="isNewClientDraftValue('clientInterest', 'kupujici')" (click)="toggleNewClientDraftChoice('clientInterest', 'kupujici', '')">Kupující</button>
+                      <button type="button" class="new-client-toggle-btn" [class.active]="isNewClientDraftValue('clientInterest', 'najemce')" (click)="toggleNewClientDraftChoice('clientInterest', 'najemce', '')">Nájemce</button>
+                      <button type="button" class="new-client-toggle-btn" [class.active]="isNewClientDraftValue('clientInterest', 'zajemce')" (click)="toggleNewClientDraftChoice('clientInterest', 'zajemce', '')">Zájemce</button>
+                      <button type="button" class="new-client-toggle-btn" [class.active]="isNewClientDraftValue('clientInterest', 'developer')" (click)="toggleNewClientDraftChoice('clientInterest', 'developer', '')">Developer</button>
+                    </div>
                   </article>
 
                   <article class="new-client-field-card">
@@ -1018,11 +1094,8 @@
                   </article>
 
                   <article class="new-client-field-card">
-                    <div class="new-client-label">
-                      <input type="checkbox" class="new-client-title-check" [ngModel]="newClientDraft().hasTitle" (ngModelChange)="setNewClientDraftField('hasTitle', $event)" />
-                      Titul před jménem nebo za jménem
-                    </div>
-                      <input *ngIf="newClientDraft().hasTitle" type="text" class="new-client-input" [ngModel]="newClientDraft().titleText" (ngModelChange)="setNewClientDraftField('titleText', $event)" placeholder="Vyplňte tituly oddělené čárkou" />
+                    <div class="new-client-label">Titul před jménem nebo za jménem</div>
+                    <input type="text" class="new-client-input" [ngModel]="newClientDraft().titleText" (ngModelChange)="setNewClientDraftField('titleText', $event)" placeholder="např. Mgr., Bc., PhDr." />
                   </article>
 
                   <article class="new-client-field-card">
@@ -1675,6 +1748,9 @@
               </div>
 <div class="client-preview-grid">
                 <ng-container *ngIf="!previewClientNotesOnly()">
+                <div class="client-preview-profile-bg" [style.background-color]="previewClientProfileColor(preview.draft.clientInterest)">
+                  {{ previewClientInitials(preview.draft) }}
+                </div>
                 <div class="client-preview-interest">
                   <span>{{ newClientInterestLabel(preview.draft.clientInterest) }}</span>
                 </div>
@@ -1710,7 +1786,7 @@
                   <button type="button" class="client-preview-doc-chip" *ngFor="let doc of previewClientDocuments(preview.draft); trackBy: trackByIndex" (click)="openClientDocument(doc)">{{ previewClientDocumentLabel(doc) }}</button>
                 </div>
                 </ng-container>
-                <div class="client-preview-notes" *ngIf="previewClientNotesOnly() || activeClientNotesForDraft(preview.draft).length > 0">
+                <div class="client-preview-notes" *ngIf="previewClientNotesOnly() && activeClientNotesForDraft(preview.draft).length > 0">
                   <div class="client-preview-notes-title">POZNÁMKY</div>
                   <div class="client-preview-notes-list">
                     <div class="client-preview-note-item" *ngFor="let note of activeClientNotesForDraft(preview.draft); trackBy: trackByNoteId" [class.new-client-note-red]="note.color === 'red'" [class.new-client-note-orange]="note.color === 'orange'" [class.new-client-note-green]="note.color === 'green'" [class.new-client-note-gray]="note.color === 'gray'">
@@ -1721,6 +1797,9 @@
                       </span>
                     </div>
                   </div>
+                </div>
+                <div class="client-preview-notes" *ngIf="previewClientNotesOnly() && activeClientNotesForDraft(preview.draft).length === 0">
+                  <div class="client-preview-notes-empty">Žádné poznámky.</div>
                 </div>
               </div>
             </article>
@@ -1753,7 +1832,7 @@
               </div>
             </article>
 
-            <button type="button" class="client-create-card" (click)="activatePropertyWorkspaceMode('new')">
+            <button type="button" class="client-create-card" (click)="createNewProperty()">
               <span class="client-create-plus">+</span>
               <span class="client-create-text">Nová nemovitost</span>
               <span class="client-create-note">Zadat novou nemovitost</span>
@@ -1785,9 +1864,10 @@
                   <tr>
                     <th class="client-col-priority-1 client-status-column" aria-label="Stav"></th>
                     <th class="client-col-priority-1 client-sortable property-name-col" (click)="sortPropertyDirectoryBy('title')"><span class="client-col-name-text">Název nemovitosti</span> <span class="client-sort-indicator">{{ propertyDirectorySortDirection('title') === 'asc' ? 'A-Z' : propertyDirectorySortDirection('title') === 'desc' ? 'Z-A' : '' }}</span></th>
-                    <th class="client-col-priority-1 client-sortable" (click)="sortPropertyDirectoryBy('type')">Typ <span class="client-sort-indicator">{{ propertyDirectorySortDirection('type') === 'asc' ? 'A-Z' : propertyDirectorySortDirection('type') === 'desc' ? 'Z-A' : '' }}</span></th>
                     <th class="client-col-priority-3">Adresa</th>
-                    <th class="client-col-priority-6 client-sortable" (click)="sortPropertyDirectoryBy('createdAt')">Datum zadání <span class="client-sort-indicator">{{ propertyDirectorySortDirection('createdAt') === 'asc' ? 'A-Z' : propertyDirectorySortDirection('createdAt') === 'desc' ? 'Z-A' : '' }}</span></th>
+                    <th class="client-col-priority-3">Cena</th>
+                    <th class="client-col-priority-3">Prodávající / pronajímatel</th>
+                    <th class="client-col-priority-6 client-sortable" (click)="sortPropertyDirectoryBy('createdAt')">Datum aktivace <span class="client-sort-indicator">{{ propertyDirectorySortDirection('createdAt') === 'asc' ? 'A-Z' : propertyDirectorySortDirection('createdAt') === 'desc' ? 'Z-A' : '' }}</span></th>
                     <th class="client-col-priority-1 client-status-column">Akce</th>
                   </tr>
                 </thead>
@@ -1797,9 +1877,13 @@
                       <span class="client-status-chip" [class.inactive]="property.status === 'Neaktivní'" [attr.aria-label]="property.status"></span>
                     </td>
                     <td class="client-col-priority-1">{{ property.title }}</td>
-                    <td class="client-col-priority-1">{{ property.type }}</td>
                     <td class="client-col-priority-3">{{ property.address }}</td>
-                    <td class="client-col-priority-6">{{ property.createdAt }}</td>
+                    <td class="client-col-priority-3">{{ formatPropertyPrice(property.price) }}</td>
+                    <td class="client-col-priority-3">{{ property.seller }}</td>
+                    <td class="client-col-priority-6">
+                      {{ property.createdAt }}
+                      <div class="client-created-relative" *ngIf="propertyCreatedRelative(property.createdAt)">{{ propertyCreatedRelative(property.createdAt) }}</div>
+                    </td>
                     <td class="client-col-priority-1 client-status-column">
                       <div class="client-actions-cell">
                         <button type="button" class="client-action-btn plain" (click)="openPropertyDirectoryEntry(property)" aria-label="Upravit nemovitost" title="Upravit nemovitost">
@@ -1817,7 +1901,7 @@
                 </tbody>
                 <tfoot *ngIf="activePropertyDirectoryEntries().length === 0">
                   <tr>
-                    <td [attr.colspan]="6" class="client-col-priority-1" style="text-align:center;color:#9bb5c5;font-style:italic;padding:1.2rem 0.55rem;">Zatím žádné nemovitosti. Klikněte na „Nová nemovitost“ pro začátek.</td>
+                    <td [attr.colspan]="7" class="client-col-priority-1" style="text-align:center;color:#9bb5c5;font-style:italic;padding:1.2rem 0.55rem;">Zatím žádné nemovitosti. Klikněte na „Nová nemovitost" pro začátek.</td>
                   </tr>
                 </tfoot>
               </table>
@@ -1834,7 +1918,9 @@
                 <div><span class="client-preview-label">Název nemovitosti</span><span class="client-preview-value strong">{{ preview.title || '—' }}</span></div>
                 <div><span class="client-preview-label">Typ nemovitosti</span><span class="client-preview-value strong">{{ preview.propertyType || '—' }}</span></div>
                 <div><span class="client-preview-label">Adresa</span><span class="client-preview-value strong">{{ preview.address || '—' }}</span></div>
-                <div><span class="client-preview-label">Datum zadání</span><span class="client-preview-value strong">{{ preview.createdAt || '—' }}</span></div>
+                <div><span class="client-preview-label">Cena</span><span class="client-preview-value strong">{{ formatPropertyPrice(preview.price || '') }}</span></div>
+                <div><span class="client-preview-label">Prodávající / pronajímatel</span><span class="client-preview-value strong">{{ preview.seller || '—' }}</span></div>
+                <div><span class="client-preview-label">Datum zadání</span><span class="client-preview-value strong">{{ preview.createdAt || '—' }}<span class="client-created-relative-inline" *ngIf="propertyCreatedRelative(preview.createdAt || '')"> ({{ propertyCreatedRelative(preview.createdAt || '') }})</span></span></div>
                 <div><span class="client-preview-label">Stav</span><span class="client-preview-value strong">{{ preview.status === 'active' ? 'Aktivní' : 'Neaktivní' }}</span></div>
               </div>
             </article>

@@ -300,6 +300,98 @@ const DOCUMENT_TYPE_SUBTITLES: Record<string, string> = {
   'PEP (politicky exponovaná osoba)': 'ověřením politicky exponované osoby'
 };
 
+const PROPERTY_TYPE_OPTIONS: string[] = [
+  'Byt',
+  'Dům',
+  'Pozemek',
+  'Komerční nemovitost',
+  'Chata',
+  'Garáž',
+  'Jiné'
+];
+
+const PROPERTY_SECTION_TABS: Array<{ key: NewPropertyTabKey; label: string }> = [
+  { key: 'zakladni', label: 'ZÁKLADNÍ INFORMACE' },
+  { key: 'pozemek', label: 'POZEMEK' },
+  { key: 'stavba', label: 'STAVBA' },
+  { key: 'bezbarierovost', label: 'BEZBARIÉROVOST' },
+  { key: 'socialni-zazemi', label: 'SOCIÁLNÍ ZÁZEMÍ' },
+  { key: 'prostory', label: 'PROSTORY' },
+  { key: 'garaz', label: 'GARÁŽ' },
+  { key: 'strecha', label: 'STŘECHA' },
+  { key: 'okna', label: 'OKNA' },
+  { key: 'dvere', label: 'DVEŘE' },
+  { key: 'podlahy', label: 'PODLAHY' },
+  { key: 'energeticka-trida', label: 'ENERGETICKÁ TŘÍDA' },
+  { key: 'dotace', label: 'DOTACE' },
+  { key: 'prijezdova-komunikace', label: 'PŘÍJEZDOVÁ KOMUNIKACE' },
+  { key: 'parkovani', label: 'PARKOVÁNÍ' },
+  { key: 'samostatna-garaz', label: 'SAMOSTATNÁ GARÁŽ' },
+  { key: 'sluzby', label: 'SLUŽBY' },
+  { key: 'zabezpeceni', label: 'ZABEZPEČENÍ NEMOVITOSTI' },
+  { key: 'elektina', label: 'ELEKTŘINA' },
+  { key: 'voda', label: 'VODA' },
+  { key: 'plyn', label: 'PLYN' },
+  { key: 'kanalizace', label: 'KANALIZACE' },
+  { key: 'topeni', label: 'TOPENÍ' },
+  { key: 'ohrev-vody', label: 'OHŘEV VODY' },
+  { key: 'datove-site', label: 'DATOVÉ SÍTĚ' },
+  { key: 'vybaveni', label: 'VYBAVENÍ' },
+  { key: 'naklady', label: 'NÁKLADY' },
+  { key: 'oblast', label: 'OBLAST' },
+  { key: 'dostupnost-v-okoli', label: 'DOSTUPNOST V OKOLÍ' },
+  { key: 'hlavni-prednosti', label: 'HLAVNÍ PŘEDNOSTI' },
+  { key: 'pravni-vady', label: 'PRÁVNÍ VADY A OMEZENÍ' },
+  { key: 'prodej', label: 'PRODEJ' },
+  { key: 'pronajem', label: 'PRONÁJEM' },
+  { key: 'cena-najmu', label: 'CENA NÁJMU' },
+  { key: 'rozpis-sluzeb', label: 'ROZPIS SLUŽEB' },
+  { key: 'doplnkove-informace', label: 'DOPLŇKOVÉ INFORMACE' },
+  { key: 'informace-do-letaku', label: 'INFORMACE DO LETÁKU' },
+  { key: 'predavaci-protokol', label: 'PŘEDÁVACÍ PROTOKOL' }
+];
+
+const PROPERTY_TAB_FIELDS: Partial<Record<NewPropertyTabKey, string[]>> = {
+  zakladni: ['Číslo případu', 'Nemovitost', 'Vlastnictví', 'Služba', 'Smlouva', 'Adresa nemovitosti', 'Nejblížší adresa'],
+  pozemek: ['Celková výměra pozemku', 'Druh pozemku', 'Zastavěná plocha', 'Plocha zahrady', 'Způsob využití pozemku', 'Zahrnutí do DP', 'Parcelní číslo', 'Katastrální území'],
+  stavba: ['Typ stavby', 'Zastavěná plocha', 'Užitná plocha', 'Podlahová plocha', 'Počet podlaží', 'Podsklepení', 'Rok výstavby', 'Stav objektu', 'Umístění objektu', 'Typ budovy', 'Počet bytů'],
+  bezbarierovost: ['Bezbariérový přístup', 'Výtah', 'Bezbariérové WC', 'Šířka dveří', 'Bezbariérová koupelna'],
+  'socialni-zazemi': ['Sociální zázemí', 'Počet WC', 'Počet koupelen'],
+  prostory: ['Dispozice', 'Počet pokojů', 'Počet ložnic', 'Počet kuchyní', 'Počet balkonů', 'Počet teras', 'Počet komor', 'Vybavení kuchyně', 'Vybavení koupelny'],
+  garaz: ['Typ garáže', 'Kapacita garáže', 'Garážové stání', 'Šířka vjezdu', 'Typ vrat'],
+  strecha: ['Typ střechy', 'Stav střechy', 'Materiál krytí', 'Podkrovní prostor'],
+  okna: ['Typ oken', 'Materiál oken', 'Počet oken', 'Stav oken', 'Zasklení'],
+  dvere: ['Typ dveří', 'Materiál dveří', 'Stav dveří', 'Počet dveří'],
+  podlahy: ['Typ podlah', 'Stav podlah', 'Materiál podlah'],
+  'energeticka-trida': ['Energetická třída', 'PENB', 'Spotřeba energie'],
+  dotace: ['Dotace', 'Typ dotace', 'Výše dotace'],
+  'prijezdova-komunikace': ['Typ příjezdové komunikace', 'Stav komunikace', 'Šířka komunikace', 'Údržba komunikace'],
+  parkovani: ['Typ parkování', 'Počet parkovacích míst', 'Kryté parkování', 'Parkovací stání'],
+  'samostatna-garaz': ['Samostatná garáž', 'Typ garáže', 'Výměra garáže'],
+  sluzby: ['Služby', 'Voda', 'Plyn', 'Elektřina', 'Kanalizace', 'Topení', 'Internet'],
+  zabezpeceni: ['Zabezpečení nemovitosti', 'Typ zabezpečení', 'Alarm', 'Kamerový systém', 'Elektrické vrata'],
+  elektina: ['Příkon elektřiny', 'Typ přípojky', 'Jističe', 'Revize elektřiny'],
+  voda: ['Zdroj vody', 'Typ vodovodu', 'Kvalita vody', 'Revize vody'],
+  plyn: ['Přípojka plynu', 'Typ plynu', 'Plynový kotel', 'Revize plynu'],
+  kanalizace: ['Typ kanalizace', 'Přípojka kanalizace', 'Septik', 'Čistička odpadních vod'],
+  topeni: ['Typ topení', 'Kotel', 'Radiátory', 'Podlahové topení', 'Vytápění'],
+  'ohrev-vody': ['Typ ohřevu vody', 'Bojler', 'TUV', 'Solární ohřev'],
+  'datove-site': ['Internet', 'Kabelová televize', 'Satelit', 'DATOVÉ SÍTĚ'],
+  vybaveni: ['Vybavení', 'Nábytek', 'Spotřebiče', 'Vestavěné skříně'],
+  naklady: ['Měsíční náklady', 'Zálohy na služby', 'Fund', 'Pojistné'],
+  oblast: ['Lokalita', 'Městská část', 'Okres', 'Kraj'],
+  'dostupnost-v-okoli': ['Dostupnost v okolí', 'Obchody', 'Školy', 'Lékaři', 'Doprava', 'Parky'],
+  'hlavni-prednosti': ['Hlavní přednosti nemovitosti'],
+  'pravni-vady': ['Právní vady a omezení', 'Věcná břemena', 'Zástavní práva', 'Exekuce'],
+  prodej: ['Typ prodeje', 'Stav prodeje', 'Datum zahájení prodeje'],
+  pronajem: ['Typ pronájmu', 'Stav pronájmu', 'Datum zahájení pronájmu'],
+  'cena-najmu': ['Cena nájmu', 'Měsíční nájemné', 'Kauce', 'Provize'],
+  'rozpis-sluzeb': ['Rozpis služeb', 'Voda', 'Topení', 'Údržba', 'Odpady', 'Pojištění'],
+  'doplnkove-informace': ['Doplňkové informace'],
+  'informace-do-letaku': ['Informace do letáku', 'Nadpis inzerátu', 'Text inzerátu', 'Fotogalerie'],
+  'predavaci-protokol': ['Předávací protokol', 'Stav při předání', 'Předávané doklady', 'Klíče']
+};
+
 const AML_SOURCE_OF_FUNDS_OPTIONS: string[] = [
   'Prodej majetku',
   'Dědictví',
@@ -478,6 +570,8 @@ interface PropertyDirectoryEntry {
   title: string;
   type: string;
   address: string;
+  price: string;
+  seller: string;
   createdAt: string;
   status: 'Aktivní' | 'Neaktivní';
 }
@@ -589,11 +683,63 @@ interface SavedPropertyRecord {
   title: string;
   propertyType: string;
   address: string;
+  price: string;
+  seller: string;
   status: 'active' | 'inactive';
+  tabValues?: Partial<Record<NewPropertyTabKey, Record<string, string>>>;
 }
 
 type PropertyDirectorySortKey = 'title' | 'type' | 'createdAt';
 type PropertyDirectoryView = 'all' | 'active';
+
+type NewPropertyTabKey =
+  | 'zakladni'
+  | 'pozemek'
+  | 'stavba'
+  | 'bezbarierovost'
+  | 'socialni-zazemi'
+  | 'prostory'
+  | 'garaz'
+  | 'strecha'
+  | 'okna'
+  | 'dvere'
+  | 'podlahy'
+  | 'energeticka-trida'
+  | 'dotace'
+  | 'prijezdova-komunikace'
+  | 'parkovani'
+  | 'samostatna-garaz'
+  | 'sluzby'
+  | 'zabezpeceni'
+  | 'elektina'
+  | 'voda'
+  | 'plyn'
+  | 'kanalizace'
+  | 'topeni'
+  | 'ohrev-vody'
+  | 'datove-site'
+  | 'vybaveni'
+  | 'naklady'
+  | 'oblast'
+  | 'dostupnost-v-okoli'
+  | 'hlavni-prednosti'
+  | 'pravni-vady'
+  | 'prodej'
+  | 'pronajem'
+  | 'cena-najmu'
+  | 'rozpis-sluzeb'
+  | 'doplnkove-informace'
+  | 'informace-do-letaku'
+  | 'predavaci-protokol';
+
+interface NewPropertyDraft {
+  title: string;
+  propertyType: string;
+  address: string;
+  price: string;
+  seller: string;
+  tabValues: Partial<Record<NewPropertyTabKey, Record<string, string>>>;
+}
 
 type ClientDirectorySortKey = 'name' | 'phone' | 'email' | 'createdAt' | 'type' | 'status';
 type ClientDirectoryView = 'all' | 'active';
@@ -798,6 +944,9 @@ export class App {
   private readonly activeSavedClientId = signal('');
   private readonly clientCount = signal(1);
   protected readonly savedPropertyRecords = signal<SavedPropertyRecord[]>([]);
+  protected readonly newPropertyDraft = signal<NewPropertyDraft>(this.createDefaultNewPropertyDraft());
+  protected readonly activeSavedPropertyId = signal('');
+  protected readonly activePropertyFormTab = signal<NewPropertyTabKey>('zakladni');
   private readonly highRiskCountries = signal<string[]>(HIGH_RISK_COUNTRIES);
   protected readonly agentProfile = signal<AgentProfile>({
     fullName: 'Petrášová Eliška',
@@ -1010,6 +1159,8 @@ export class App {
        title: record.title,
        type: record.propertyType,
        address: record.address,
+       price: record.price || '',
+       seller: record.seller || '',
        createdAt: record.createdAt,
        status: record.status === 'active' ? 'Aktivní' : 'Neaktivní'
      }))
@@ -1237,12 +1388,14 @@ export class App {
       return;
     }
 
+    if (workspace === 'properties') {
+      this.activatePropertyWorkspaceMode('directory');
+      return;
+    }
+
     this.activeWorkspace.set(workspace);
     this.activeGroupKey.set('');
     this.closeSidebarOnMobile();
-    if (workspace !== 'properties') {
-      this.propertyWorkspaceMode.set('new');
-    }
     this.clientWorkspaceMode.set('directory');
   }
 
@@ -1568,8 +1721,10 @@ export class App {
     if (workspace.key === 'properties') {
       if (subItemKey === 'directory') {
         this.activatePropertyWorkspaceMode('directory');
+      } else if (subItemKey === 'new') {
+        this.createNewProperty();
       } else {
-        this.activatePropertyWorkspaceMode(subItemKey === 'new' ? 'new' : 'mine');
+        this.activatePropertyWorkspaceMode('mine');
       }
       return;
     }
@@ -2289,6 +2444,31 @@ export class App {
     return draft.birthDate?.trim() || '';
   }
 
+  protected previewClientProfileColor(interest: string): string {
+    const colors: Record<string, string> = {
+      prodavajici: '#dc3545',
+      kupujici: '#0d6efd',
+      zajemce: '#198754',
+      poptavajici: '#6f42c1',
+      pronajimatel: '#fd7e14',
+      najemce: '#0dcaf0',
+      zastupce: '#6c757d',
+      developer: '#20c997',
+      jiny: '#adb5bd'
+    };
+    return colors[interest] || '#adb5bd';
+  }
+
+  protected previewClientInitials(draft: NewClientDraft): string {
+    const name = draft.fullName?.trim() || '';
+    if (!name) {
+      return '??';
+    }
+    const parts = name.split(/\s+/).filter(Boolean);
+    const initials = (parts[0]?.[0] || '') + (parts[1]?.[0] || '');
+    return (initials || '??').toUpperCase();
+  }
+
   protected previewClientDocumentsWithIndex(draft: NewClientDraft): Array<{ index: number; name: string; type: string; url?: string; fileType?: string; dataBase64?: string }> {
     return (draft.clientDocuments || [])
       .map((doc, index) => ({ index, ...doc }))
@@ -2688,11 +2868,19 @@ export class App {
   protected openPropertyDirectoryEntry(entry: PropertyDirectoryEntry): void {
     const record = this.savedPropertyRecords()[entry.index];
     if (!record) {
-      this.activatePropertyWorkspaceMode('new');
+      this.createNewProperty();
       return;
     }
 
-    this.activePropertyId.set(record.id);
+    this.activeSavedPropertyId.set(record.id);
+    this.newPropertyDraft.set({
+      title: record.title,
+      propertyType: record.propertyType,
+      address: record.address,
+      price: record.price || '',
+      seller: record.seller || '',
+      tabValues: {}
+    });
     this.activatePropertyWorkspaceMode('new');
   }
 
@@ -2703,6 +2891,187 @@ export class App {
   protected previewPropertyRecord(): SavedPropertyRecord | null {
     const id = this.previewPropertyRecordId();
     return this.savedPropertyRecords().find((record) => record.id === id) || null;
+  }
+
+  protected propertyTypeFormOptions(): string[] {
+    return PROPERTY_TYPE_OPTIONS;
+  }
+
+  protected setNewPropertyDraftField<K extends keyof NewPropertyDraft>(field: K, value: NewPropertyDraft[K]): void {
+    this.newPropertyDraft.update((draft) => ({ ...draft, [field]: value }));
+  }
+
+  protected isNewPropertyDraftValue<K extends keyof NewPropertyDraft>(field: K, value: NewPropertyDraft[K]): boolean {
+    return this.newPropertyDraft()[field] === value;
+  }
+
+  protected saveCurrentProperty(): void {
+    const draft = this.newPropertyDraft();
+    const activeId = this.activeSavedPropertyId();
+
+    if (activeId) {
+      this.savedPropertyRecords.update((records) =>
+        records.map((record) =>
+          record.id === activeId
+            ? { ...record, title: draft.title, propertyType: draft.propertyType, address: draft.address, price: draft.price, seller: draft.seller, tabValues: draft.tabValues }
+            : record
+        )
+      );
+    } else {
+      const id = `property-${Date.now()}`;
+      this.activeSavedPropertyId.set(id);
+      this.savedPropertyRecords.update((records) => [{
+        id,
+        createdAt: new Date().toLocaleDateString('cs-CZ'),
+        title: draft.title,
+        propertyType: draft.propertyType,
+        address: draft.address,
+        price: draft.price,
+        seller: draft.seller,
+        status: 'active' as const,
+        tabValues: draft.tabValues
+      }, ...records]);
+    }
+
+    const xml = this.buildXmlString();
+    void this.saveState(xml);
+    this.downloadXml(xml);
+    this.activatePropertyWorkspaceMode('directory');
+  }
+
+  protected openPropertyFormForRecord(index: number): void {
+    const record = this.savedPropertyRecords()[index];
+    if (!record) {
+      return;
+    }
+
+    this.activeSavedPropertyId.set(record.id);
+    this.newPropertyDraft.set({
+      title: record.title,
+      propertyType: record.propertyType,
+      address: record.address,
+      price: record.price || '',
+      seller: record.seller || '',
+      tabValues: record.tabValues || {}
+    });
+    this.activatePropertyWorkspaceMode('new');
+  }
+
+  protected createNewProperty(): void {
+    this.activeSavedPropertyId.set('');
+    this.newPropertyDraft.set(this.createDefaultNewPropertyDraft());
+    this.activePropertyFormTab.set('zakladni');
+    this.activatePropertyWorkspaceMode('new');
+  }
+
+  protected propertySectionTabs(): Array<{ key: NewPropertyTabKey; label: string }> {
+    return PROPERTY_SECTION_TABS;
+  }
+
+  protected isActivePropertyTab(tab: NewPropertyTabKey): boolean {
+    return this.activePropertyFormTab() === tab;
+  }
+
+  protected setActivePropertyTab(tab: NewPropertyTabKey): void {
+    this.activePropertyFormTab.set(tab);
+  }
+
+  protected propertyTabFieldLabels(tab: NewPropertyTabKey): string[] {
+    return PROPERTY_TAB_FIELDS[tab] || [];
+  }
+
+  protected propertyTabFieldValue(tab: NewPropertyTabKey, field: string): string {
+    const draft = this.newPropertyDraft();
+    return draft.tabValues?.[tab]?.[field] || '';
+  }
+
+  protected setPropertyTabFieldValue(tab: NewPropertyTabKey, field: string, value: string): void {
+    this.newPropertyDraft.update((draft) => {
+      const tabValues = { ...draft.tabValues };
+      const currentTab = { ...(tabValues[tab] || {}) };
+      currentTab[field] = value;
+      tabValues[tab] = currentTab;
+      return { ...draft, tabValues };
+    });
+  }
+
+  protected propertyCreatedRelative(createdAt: string): string {
+    if (!createdAt || !createdAt.trim()) {
+      return '';
+    }
+
+    const parts = createdAt.split(/[.\-\/]/).map((part) => part.trim());
+    if (parts.length !== 3) {
+      return '';
+    }
+
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
+    let year = parseInt(parts[2], 10);
+    if (year < 100) {
+      year += 2000;
+    }
+    if (isNaN(day) || isNaN(month) || isNaN(year)) {
+      return '';
+    }
+
+    const created = new Date(year, month - 1, day).getTime();
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const diffMs = today - created;
+    const diffDays = Math.round(diffMs / 86400000);
+
+    if (diffDays < 0) {
+      return 'dnes';
+    }
+    if (diffDays === 0) {
+      return 'dnes';
+    }
+    if (diffDays === 1) {
+      return 'včera';
+    }
+    if (diffDays < 30) {
+      return `před ${diffDays} dny`;
+    }
+
+    const diffMonths = Math.floor(diffDays / 30);
+    if (diffMonths < 12) {
+      if (diffMonths === 1) {
+        return 'před 1 měsícem';
+      }
+      if (diffMonths >= 2 && diffMonths <= 4) {
+        return `před ${diffMonths} měsíci`;
+      }
+      return `před ${diffMonths} měsíci`;
+    }
+
+    const diffYears = Math.floor(diffMonths / 12);
+    if (diffYears === 1) {
+      return 'před 1 rokem';
+    }
+    return `před ${diffYears} lety`;
+  }
+
+  protected formatPropertyPrice(price: string): string {
+    if (!price || !price.trim()) {
+      return '—';
+    }
+    const num = parseInt(price.replace(/\D/g, ''), 10);
+    if (isNaN(num)) {
+      return price;
+    }
+    return num.toLocaleString('cs-CZ') + ' Kč';
+  }
+
+  private createDefaultNewPropertyDraft(): NewPropertyDraft {
+    return {
+      title: '',
+      propertyType: '',
+      address: '',
+      price: '',
+      seller: '',
+      tabValues: {}
+    };
   }
 
   private clientRecordStatus(_record: SavedClientRecord): 'Aktivní' | 'Neaktivní' {
@@ -6731,8 +7100,27 @@ export class App {
     });
   }
 
+  private syncActivePropertyToRecords(): void {
+    if (!this.activeSavedPropertyId()) {
+      return;
+    }
+    if (this.propertyWorkspaceMode() !== 'new') {
+      return;
+    }
+    const draft = this.newPropertyDraft();
+    const activeId = this.activeSavedPropertyId();
+    this.savedPropertyRecords.update((records) =>
+      records.map((record) =>
+        record.id === activeId
+          ? { ...record, title: draft.title, propertyType: draft.propertyType, address: draft.address, price: draft.price, seller: draft.seller, tabValues: draft.tabValues }
+          : record
+      )
+    );
+  }
+
   protected saveToXml(): void {
     this.syncActiveNewClientToRecords();
+    this.syncActivePropertyToRecords();
     const xml = this.buildXmlString();
     void this.saveState(xml);
     this.downloadXml(xml);
