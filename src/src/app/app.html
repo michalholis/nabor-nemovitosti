@@ -396,16 +396,6 @@
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('stavba', 'Uváděná celková užitná plocha')" (ngModelChange)="setPropertyTabFieldValue('stavba', 'Uváděná celková užitná plocha', $event.replace(/\D/g, ''))" (blur)="formatStavbaDecimalField('Uváděná celková užitná plocha')" placeholder="m²" inputmode="numeric" />
               </article>
 
-              <article class="new-client-field-card" *ngIf="!isCurrentPropertyType('Byt')">
-                <div class="new-client-label">Dispozice</div>
-                <select class="new-client-input new-client-select" [ngModel]="stavbaSingleSelectValue('Dispozice', stavbaDispositionOptions())" (ngModelChange)="setStavbaSingleSelectValue('Dispozice', $event, stavbaDispositionOptions())">
-                  <option value="">Vyberte dispozici</option>
-                  <option *ngFor="let option of stavbaDispositionOptions()" [value]="option">{{ option }}</option>
-                  <option [value]="propertyCustomOption">dopsat vlastní možnost</option>
-                </select>
-                <input *ngIf="isStavbaCustomValue('Dispozice', stavbaDispositionOptions())" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('stavba', 'Dispozice') === propertyCustomOption ? '' : propertyTabFieldValue('stavba', 'Dispozice')" (ngModelChange)="setPropertyTabFieldValue('stavba', 'Dispozice', $event)" placeholder="doplňte vlastní možnost" />
-              </article>
-
               <article class="new-client-field-card">
                 <div class="new-client-label">Označení budovy</div>
                 <div class="new-client-land-rent-row">
@@ -439,7 +429,7 @@
                 </select>
               </article>
 
-              <article class="new-client-field-card">
+              <article class="new-client-field-card" *ngIf="propertyTabFieldValue('stavba', 'Výtah v budově') !== 'Ne'">
                 <div class="new-client-label">Číslo ve výtahu</div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('stavba', 'Číslo ve výtahu')" (ngModelChange)="setPropertyTabFieldValue('stavba', 'Číslo ve výtahu', $event.replace(/[^0-9]/g, ''))" placeholder="číslo" inputmode="numeric" />
               </article>
@@ -452,7 +442,7 @@
                 </select>
               </article>
 
-              <article class="new-client-field-card">
+              <article class="new-client-field-card" *ngIf="propertyTabFieldValue('stavba', 'Rozděleno na jednotky') !== 'Ne'">
                 <div class="new-client-label">Počet jednotek v domě</div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('stavba', 'Počet jednotek v domě')" (ngModelChange)="setPropertyTabFieldValue('stavba', 'Počet jednotek v domě', $event)" placeholder="počet jednotek" />
               </article>
@@ -1271,7 +1261,7 @@
                 </select>
               </article>
 
-              <article class="new-client-field-card" *ngIf="!isVodaNezaveden()">
+              <article class="new-client-field-card" *ngIf="!isVodaNezaveden() && isNewPropertyByt()">
                 <div class="new-client-label">Vodoměr</div>
                 <div class="new-client-toggle-row">
                   <button type="button" class="new-client-toggle-btn" *ngFor="let option of vodaMerakOptions(); trackBy: trackByValue" [class.active]="hasVodaMultiValue('Vodoměr', option)" (click)="toggleVodaMultiValue('Vodoměr', option)">{{ option }}</button>
@@ -2328,8 +2318,89 @@
               </article>
             </div>
 
+            <div class="new-client-grid two-up new-client-price-columns" *ngIf="isActivePropertyTab('cena-nemovitosti')">
+              <div class="new-client-price-column">
+                <article class="new-client-field-card">
+                  <div class="new-client-price-slider-title">NABÍDKOVÁ CENA</div>
+                  <div class="new-client-slider-value">{{ cenaNemovitostiOfferPriceLabel() }}</div>
+                  <input type="range" class="new-client-range" min="0" max="20000000" step="10000" [ngModel]="cenaNemovitostiOfferPriceSlider()" (ngModelChange)="setCenaNemovitostiSliderCurrencyField('Doporučená nabídková cena vč. DPH', $event)" />
+                </article>
+
+                <article class="new-client-field-card">
+                  <div class="new-client-label">Doporučená nabídková cena vč. DPH</div>
+                  <input type="text" class="new-client-input new-client-room-area-result" [ngModel]="propertyTabFieldValue('cena-nemovitosti', 'Doporučená nabídková cena vč. DPH')" (ngModelChange)="setPropertyTabFieldValue('cena-nemovitosti', 'Doporučená nabídková cena vč. DPH', $event.replace(/[^0-9,.\sKč]/g, ''))" (blur)="formatCenaNemovitostiCurrencyField('Doporučená nabídková cena vč. DPH')" placeholder="Kč" inputmode="decimal" />
+                </article>
+
+                <article class="new-client-field-card new-client-price-offset-row">
+                  <div class="new-client-label">Z TOHO DPH</div>
+                  <div class="new-client-price-result new-client-price-result-indent">{{ cenaNemovitostiVatAmount() || 'Kč' }}</div>
+                </article>
+
+                <article class="new-client-field-card new-client-price-offset-row">
+                  <div class="new-client-label">Doporučená nabídková cena bez DPH</div>
+                  <div class="new-client-price-result new-client-price-result-indent">{{ cenaNemovitostiRecommendedPriceWithoutVat() || 'Kč' }}</div>
+                </article>
+
+                <article class="new-client-field-card new-client-price-offset-row">
+                  <div class="new-client-label">Smluvené % z prodeje bez DPH</div>
+                  <input type="text" class="new-client-input" [ngModel]="cenaNemovitostiCommissionPercent()" (ngModelChange)="setPropertyTabFieldValue('cena-nemovitosti', 'Smluvené % z prodeje bez DPH', $event.replace(/[^0-9,.\s%]/g, ''))" (blur)="formatCenaNemovitostiPercentField()" placeholder="5%" inputmode="decimal" />
+                </article>
+
+                <article class="new-client-field-card new-client-price-offset-row">
+                  <div class="new-client-label">Provize vč. DPH v Kč</div>
+                  <div class="new-client-price-result new-client-price-result-indent">{{ cenaNemovitostiCommissionWithVat() || 'Kč' }}</div>
+                </article>
+
+                <article class="new-client-field-card new-client-price-offset-row">
+                  <div class="new-client-label">Počet prodávajících</div>
+                  <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('cena-nemovitosti', 'Počet prodávajících')" (ngModelChange)="setPropertyTabFieldValue('cena-nemovitosti', 'Počet prodávajících', $event.replace(/\D/g, ''))" placeholder="např. 2" inputmode="numeric" />
+                </article>
+
+                <article class="new-client-field-card new-client-price-offset-row">
+                  <div class="new-client-label">Klienti získají z prodeje</div>
+                  <div *ngIf="hasCenaNemovitostiSplitProceeds(); else singleSellerProceeds" class="new-client-price-result new-client-price-result-indent">{{ cenaNemovitostiSellerProceeds() || 'Kč' }}</div>
+                  <ng-template #singleSellerProceeds>
+                    <div class="new-client-price-client-result">{{ cenaNemovitostiSellerProceeds() || 'Kč' }}</div>
+                  </ng-template>
+                </article>
+
+                <article class="new-client-field-card new-client-price-offset-row" *ngIf="hasCenaNemovitostiSplitProceeds()">
+                  <div class="new-client-label">V případě dělení klienti získají</div>
+                  <div class="new-client-price-result new-client-price-client-result">{{ cenaNemovitostiSplitProceeds() }}</div>
+                </article>
+              </div>
+
+              <div class="new-client-price-column">
+                <article class="new-client-field-card">
+                  <div class="new-client-price-slider-title">KLIENT POŽADUJE ČÁSTKU</div>
+                  <div class="new-client-slider-value">{{ cenaNemovitostiClientDemandLabel() }}</div>
+                  <input type="range" class="new-client-range" min="0" max="20000000" step="10000" [ngModel]="cenaNemovitostiClientDemandSlider()" (ngModelChange)="setCenaNemovitostiSliderCurrencyField('Požadovaná částka vč. DPH', $event)" />
+                </article>
+
+                <article class="new-client-field-card">
+                  <div class="new-client-label">Požadovaná částka vč. DPH</div>
+                  <input type="text" class="new-client-input new-client-room-area-result" [ngModel]="propertyTabFieldValue('cena-nemovitosti', 'Požadovaná částka vč. DPH')" (ngModelChange)="setPropertyTabFieldValue('cena-nemovitosti', 'Požadovaná částka vč. DPH', $event.replace(/[^0-9,.\sKč]/g, ''))" (blur)="formatCenaNemovitostiCurrencyField('Požadovaná částka vč. DPH')" placeholder="Kč" inputmode="decimal" />
+                </article>
+
+                <article class="new-client-field-card new-client-price-offset-row">
+                  <div class="new-client-label">Smluvené % z prodeje bez DPH</div>
+                  <input type="text" class="new-client-input" [ngModel]="cenaNemovitostiCommissionPercent()" (ngModelChange)="setPropertyTabFieldValue('cena-nemovitosti', 'Smluvené % z prodeje bez DPH', $event.replace(/[^0-9,.\s%]/g, ''))" (blur)="formatCenaNemovitostiPercentField()" placeholder="5%" inputmode="decimal" />
+                </article>
+
+                <article class="new-client-field-card new-client-price-offset-row">
+                  <div class="new-client-label">Výsledná prodejní cena bez DPH</div>
+                  <div class="new-client-price-result new-client-price-result-indent">{{ cenaNemovitostiResultSaleWithoutVat() || 'Kč' }}</div>
+                </article>
+
+                <article class="new-client-field-card new-client-price-offset-row">
+                  <div class="new-client-label">Výsledná prodejní cena s DPH</div>
+                  <div class="new-client-price-result new-client-price-client-result">{{ cenaNemovitostiResultSaleWithVat() || 'Kč' }}</div>
+                </article>
+              </div>
+            </div>
+
             <div class="new-client-grid two-up" *ngFor="let tab of visiblePropertySectionTabs()" [hidden]="!isActivePropertyTab(tab.key) && tab.key !== 'zakladni'">
-              <ng-container *ngIf="isActivePropertyTab(tab.key) && tab.key !== 'zakladni' && tab.key !== 'informace-do-letaku' && tab.key !== 'pozemek' && tab.key !== 'stavba' && tab.key !== 'jednotka' && tab.key !== 'prostory' && tab.key !== 'bezbarierovost' && tab.key !== 'socialni-zazemi' && tab.key !== 'strecha' && tab.key !== 'okna' && tab.key !== 'podlahy' && tab.key !== 'dotace' && tab.key !== 'prijezdova-komunikace' && tab.key !== 'sluzby' && tab.key !== 'elektina' && tab.key !== 'voda' && tab.key !== 'plyn' && tab.key !== 'kanalizace' && tab.key !== 'topeni' && tab.key !== 'ohrev-vody' && tab.key !== 'datove-site' && tab.key !== 'vybaveni' && tab.key !== 'naklady' && tab.key !== 'oblast' && tab.key !== 'dostupnost-v-okoli' && tab.key !== 'hlavni-prednosti' && tab.key !== 'pravni-vady' && tab.key !== 'prodej' && tab.key !== 'pronajem' && tab.key !== 'podnajem' && tab.key !== 'cena-najmu' && tab.key !== 'rozpis-sluzeb' && tab.key !== 'doplnkove-informace' && tab.key !== 'predavaci-protokol'">
+              <ng-container *ngIf="isActivePropertyTab(tab.key) && tab.key !== 'zakladni' && tab.key !== 'informace-do-letaku' && tab.key !== 'pozemek' && tab.key !== 'stavba' && tab.key !== 'jednotka' && tab.key !== 'prostory' && tab.key !== 'bezbarierovost' && tab.key !== 'socialni-zazemi' && tab.key !== 'strecha' && tab.key !== 'okna' && tab.key !== 'podlahy' && tab.key !== 'dotace' && tab.key !== 'prijezdova-komunikace' && tab.key !== 'sluzby' && tab.key !== 'elektina' && tab.key !== 'voda' && tab.key !== 'plyn' && tab.key !== 'kanalizace' && tab.key !== 'topeni' && tab.key !== 'ohrev-vody' && tab.key !== 'datove-site' && tab.key !== 'vybaveni' && tab.key !== 'naklady' && tab.key !== 'oblast' && tab.key !== 'dostupnost-v-okoli' && tab.key !== 'hlavni-prednosti' && tab.key !== 'pravni-vady' && tab.key !== 'prodej' && tab.key !== 'pronajem' && tab.key !== 'podnajem' && tab.key !== 'cena-najmu' && tab.key !== 'rozpis-sluzeb' && tab.key !== 'doplnkove-informace' && tab.key !== 'predavaci-protokol' && tab.key !== 'cena-nemovitosti'">
                 <article class="new-client-field-card new-client-field-card-full" *ngFor="let field of propertyTabFieldLabels(tab.key)">
                   <div class="new-client-label">{{ field }}</div>
                   <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue(tab.key, field)" (ngModelChange)="setPropertyTabFieldValue(tab.key, field, $event)" [placeholder]="field" />

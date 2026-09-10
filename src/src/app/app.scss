@@ -1036,6 +1036,100 @@
   font-weight: 800;
 }
 
+.new-client-price-columns {
+  column-count: initial;
+  display: grid !important;
+  gap: 0.55rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.new-client-price-column {
+  display: grid;
+  align-content: start;
+  gap: 0;
+}
+
+.new-client-price-column .new-client-field-card {
+  gap: 0.12rem;
+  margin-bottom: 0;
+  min-height: 0;
+  padding-bottom: 0.12rem;
+  padding-top: 0.12rem;
+}
+
+.new-client-price-column .new-client-price-offset-row {
+  padding-top: calc(0.12rem + 10px);
+}
+
+.new-client-price-column .new-client-input {
+  min-height: 2rem !important;
+  padding-bottom: 0.22rem !important;
+  padding-top: 0.22rem !important;
+}
+
+.new-client-slider-value {
+  color: var(--client-accent-ink);
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1.05;
+  margin-bottom: 0.04rem;
+}
+
+.new-client-price-slider-title {
+  color: #6f7f91;
+  font-size: 0.9rem;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.new-client-range {
+  accent-color: var(--client-accent);
+  cursor: pointer;
+  margin: 0;
+  width: 100%;
+}
+
+.new-client-price-result {
+  color: #183751;
+  font-family: var(--font-main);
+  font-size: 0.76rem;
+  font-weight: 400;
+  line-height: 1.2;
+  min-height: 1.1rem;
+}
+
+.new-client-price-result-strong {
+  color: var(--client-accent-ink);
+  font-weight: 950;
+}
+
+.new-client-price-result-indent {
+  padding-left: 9px;
+}
+
+.new-client-price-major-result {
+  color: #142234;
+  font-size: 1.16rem;
+  font-weight: 950;
+  line-height: 1.05;
+}
+
+.new-client-price-client-result {
+  background: linear-gradient(135deg, #0b63ce, #12a66a);
+  border-radius: 0.75rem;
+  color: #fff;
+  font-size: 1.45rem;
+  font-weight: 950;
+  line-height: 1.05;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0.55rem 0.8rem;
+  text-align: center;
+  width: calc(100% - 40px);
+}
+
 .service-breakdown-list {
   display: grid;
   gap: 0.3rem;
@@ -3137,6 +3231,10 @@
 @media (max-width: 760px) {
   .new-client-grid.two-up {
     column-count: 1;
+  }
+
+  .new-client-price-columns {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .new-client-doc-top-row {

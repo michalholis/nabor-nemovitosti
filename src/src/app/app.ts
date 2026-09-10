@@ -779,7 +779,8 @@ const PROPERTY_SECTION_TABS: Array<{ key: NewPropertyTabKey; label: string }> = 
   { key: 'rozpis-sluzeb', label: 'ROZPIS SLUŽEB' },
   { key: 'doplnkove-informace', label: 'DOPLŇKOVÉ INFORMACE' },
   { key: 'informace-do-letaku', label: 'INFORMACE DO LETÁKU' },
-  { key: 'predavaci-protokol', label: 'DOKLADY' }
+  { key: 'predavaci-protokol', label: 'DOKLADY' },
+  { key: 'cena-nemovitosti', label: 'CENA NEMOVITOSTI' }
 ];
 
 const PROPERTY_TAB_FIELDS: Partial<Record<NewPropertyTabKey, string[]>> = {
@@ -877,7 +878,8 @@ const PROPERTY_TAB_FIELDS: Partial<Record<NewPropertyTabKey, string[]>> = {
     'Zástavní věřitel (vyjádření)',
     'Sídla jiných firem'
   ],
-  'predavaci-protokol': []
+  'predavaci-protokol': [],
+  'cena-nemovitosti': []
 };
 
 const LEAFLET_FIELD_HINT = 'Vlož soubor z PC nebo odkaz (otevřít v novém okně)';
@@ -1229,7 +1231,8 @@ type NewPropertyTabKey =
   | 'rozpis-sluzeb'
   | 'doplnkove-informace'
   | 'informace-do-letaku'
-  | 'predavaci-protokol';
+  | 'predavaci-protokol'
+  | 'cena-nemovitosti';
 
 interface NewPropertyDraft {
   title: string;
@@ -4677,6 +4680,135 @@ export class App {
     this.setPropertyTabFieldValue('prodej', field, Number.isFinite(value) && value > 0 ? `${Math.round(value).toLocaleString('cs-CZ')} Kč` : '');
   }
 
+  protected cenaNemovitostiCommissionPercent(): string {
+    const value = this.propertyTabFieldValue('cena-nemovitosti', 'Smluvené % z prodeje bez DPH');
+    return value || '5%';
+  }
+
+  protected formatCenaNemovitostiPercentField(): void {
+    const value = this.parsePercentLikeNumber(this.propertyTabFieldValue('cena-nemovitosti', 'Smluvené % z prodeje bez DPH'));
+    if (value <= 0) {
+      this.setPropertyTabFieldValue('cena-nemovitosti', 'Smluvené % z prodeje bez DPH', '');
+      return;
+    }
+    const hasDecimals = Math.abs(value - Math.round(value)) > 0.0001;
+    this.setPropertyTabFieldValue('cena-nemovitosti', 'Smluvené % z prodeje bez DPH', `${value.toLocaleString('cs-CZ', { minimumFractionDigits: hasDecimals ? 2 : 0, maximumFractionDigits: 2 })}${hasDecimals ? ' %' : '%'}`);
+  }
+
+  protected formatCenaNemovitostiCurrencyField(field: string): void {
+    const value = this.parseCurrencyLikeNumber(this.propertyTabFieldValue('cena-nemovitosti', field));
+    this.setPropertyTabFieldValue('cena-nemovitosti', field, this.formatCurrencyResult(value));
+  }
+
+  protected cenaNemovitostiRecommendedPriceWithoutVat(): string {
+    const value = this.cenaNemovitostiOfferPrice() - this.cenaNemovitostiVatAmountValue();
+    return this.formatCurrencyResult(value);
+  }
+
+  protected cenaNemovitostiVatAmount(): string {
+    return this.formatCurrencyResult(this.cenaNemovitostiVatAmountValue());
+  }
+
+  protected cenaNemovitostiCommissionWithVat(): string {
+    return this.formatCurrencyResult(this.cenaNemovitostiCommissionWithVatValue(this.cenaNemovitostiOfferPrice()));
+  }
+
+  protected cenaNemovitostiSellerProceeds(): string {
+    const price = this.cenaNemovitostiOfferPrice();
+    const commission = this.cenaNemovitostiCommissionWithVatValue(price);
+    const proceeds = price - commission;
+    return this.formatCurrencyResult(proceeds);
+  }
+
+  protected cenaNemovitostiSplitProceeds(): string {
+    const sellers = Number.parseInt(this.propertyTabFieldValue('cena-nemovitosti', 'Počet prodávajících'), 10);
+    if (!Number.isFinite(sellers) || sellers < 2) { return ''; }
+    const price = this.cenaNemovitostiOfferPrice();
+    const commission = this.cenaNemovitostiCommissionWithVatValue(price);
+    const proceeds = price - commission;
+    return this.formatCurrencyResult(proceeds / sellers);
+  }
+
+  protected hasCenaNemovitostiSplitProceeds(): boolean {
+    const sellers = Number.parseInt(this.propertyTabFieldValue('cena-nemovitosti', 'Počet prodávajících'), 10);
+    return Number.isFinite(sellers) && sellers > 1 && Boolean(this.cenaNemovitostiSplitProceeds());
+  }
+
+  protected cenaNemovitostiClientDemandSlider(): number {
+    return Math.round(this.parseCurrencyLikeNumber(this.propertyTabFieldValue('cena-nemovitosti', 'Požadovaná částka vč. DPH')));
+  }
+
+  protected cenaNemovitostiOfferPriceSlider(): number {
+    return Math.round(this.cenaNemovitostiOfferPrice());
+  }
+
+  protected cenaNemovitostiClientDemandLabel(): string {
+    const value = this.cenaNemovitostiClientDemandSlider();
+    return value > 0 ? `${value.toLocaleString('cs-CZ')} Kč` : '0 Kč';
+  }
+
+  protected cenaNemovitostiOfferPriceLabel(): string {
+    const value = this.cenaNemovitostiOfferPriceSlider();
+    return value > 0 ? `${value.toLocaleString('cs-CZ')} Kč` : '0 Kč';
+  }
+
+  protected setCenaNemovitostiSliderCurrencyField(field: string, value: string | number): void {
+    const numericValue = Number(value);
+    this.setPropertyTabFieldValue('cena-nemovitosti', field, Number.isFinite(numericValue) && numericValue > 0 ? `${Math.round(numericValue).toLocaleString('cs-CZ')} Kč` : '');
+  }
+
+  protected cenaNemovitostiResultSaleWithoutVat(): string {
+    return this.formatCurrencyResult(this.cenaNemovitostiResultSaleWithVatValue() - this.cenaNemovitostiResultVatAmountValue());
+  }
+
+  protected cenaNemovitostiResultSaleWithVat(): string {
+    return this.formatCurrencyResult(this.cenaNemovitostiResultSaleWithVatValue());
+  }
+
+  private cenaNemovitostiOfferPrice(): number {
+    return this.parseCurrencyLikeNumber(this.propertyTabFieldValue('cena-nemovitosti', 'Doporučená nabídková cena vč. DPH'));
+  }
+
+  private cenaNemovitostiCommissionWithVatValue(priceWithVat: number): number {
+    return priceWithVat * this.cenaNemovitostiCommissionRate() * 1.21;
+  }
+
+  private cenaNemovitostiVatAmountValue(): number {
+    return this.cenaNemovitostiCommissionWithVatValue(this.cenaNemovitostiOfferPrice()) - (this.cenaNemovitostiOfferPrice() * this.cenaNemovitostiCommissionRate());
+  }
+
+  private cenaNemovitostiResultSaleWithVatValue(): number {
+    const clientDemand = this.cenaNemovitostiClientDemandSlider();
+    const rateWithVat = this.cenaNemovitostiCommissionRate() * 1.21;
+    return clientDemand > 0 && rateWithVat < 1 ? clientDemand / (1 - rateWithVat) : 0;
+  }
+
+  private cenaNemovitostiResultVatAmountValue(): number {
+    const priceWithVat = this.cenaNemovitostiResultSaleWithVatValue();
+    return this.cenaNemovitostiCommissionWithVatValue(priceWithVat) - (priceWithVat * this.cenaNemovitostiCommissionRate());
+  }
+
+  private cenaNemovitostiCommissionRate(): number {
+    const value = this.parsePercentLikeNumber(this.cenaNemovitostiCommissionPercent());
+    return Number.isFinite(value) && value > 0 ? value / 100 : 0;
+  }
+
+  private parsePercentLikeNumber(value: string): number {
+    const normalized = value.replace(/\s/g, '').replace('%', '').replace(',', '.');
+    const parsed = Number.parseFloat(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  private formatCurrencyResult(value: number): string {
+    return value > 0 ? `${Math.round(value).toLocaleString('cs-CZ')} Kč` : '';
+  }
+
+  private parseCurrencyLikeNumber(value: string): number {
+    const normalized = value.replace(/\s/g, '').replace(/Kč/gi, '').replace(/\./g, '').replace(',', '.');
+    const parsed = Number.parseFloat(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
   // --- PRONÁJEM helpers ---
   protected pronajemAnoNeOptions(): string[] { return ['ANO', 'NE']; }
   protected pronajemDostupnostOptions(): string[] { return ['Volný ihned', 'Volný od']; }
@@ -5269,10 +5401,7 @@ export class App {
   }
 
   protected isJednotkaTabVisible(): boolean {
-    const type = this.newPropertyDraft().propertyType.trim();
-    if (!type) { return false; }
-    const allowed = ['Dům', 'Byt', 'Ubytovací zařízení'];
-    return allowed.includes(type) || !PROPERTY_TYPE_OPTIONS.includes(type);
+    return this.isNewPropertyByt() || this.propertyTabFieldValue('stavba', 'Rozděleno na jednotky') === 'Ano';
   }
 
   protected isCurrentPropertyType(type: string): boolean {
@@ -9571,7 +9700,7 @@ export class App {
 
   protected generateCurrentPropertyBuyerInfo(): void {
     const draft = this.newPropertyDraft();
-    const skippedKeys = new Set(['informace-do-letaku', 'predavaci-protokol']);
+    const skippedKeys = new Set(['informace-do-letaku', 'predavaci-protokol', 'cena-nemovitosti']);
     const sections = this.propertySectionTabs()
       .filter((tab) => !skippedKeys.has(tab.key))
       .map((tab) => {
