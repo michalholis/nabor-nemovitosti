@@ -301,34 +301,464 @@ const DOCUMENT_TYPE_SUBTITLES: Record<string, string> = {
 };
 
 const PROPERTY_TYPE_OPTIONS: string[] = [
-  'Byt',
   'Dům',
-  'Pozemek',
-  'Komerční nemovitost',
-  'Chata',
+  'Byt',
   'Garáž',
-  'Jiné'
+  'Chatka',
+  'Chata',
+  'Zahrada',
+  'Pozemek',
+  'Pole',
+  'Nebytový prostor',
+  'Ubytovací zařízení'
 ];
+
+const PROPERTY_TYPE_CUSTOM_OPTION = '__vlastni__';
+
+const PROPERTY_OWNERSHIP_FORM_OPTIONS: string[] = [
+  'Osobní',
+  'Družstevní',
+  'Podílové',
+  'Kombinované'
+];
+
+const PROPERTY_SERVICE_FORM_OPTIONS: string[] = [
+  'Prodej',
+  'Pronájem',
+  'Podnájem'
+];
+
+const PROPERTY_CONTRACT_FORM_OPTIONS: string[] = [
+  'Výhradní spolupráce',
+  'Nevýhradní spolupráce'
+];
+
+const PROPERTY_CUSTOM_OPTION = '__vlastni__';
+
+const LAND_PRESENT_OPTIONS: string[] = ['Ne', 'Ano'];
+
+const LAND_OWNERSHIP_OPTIONS: string[] = [
+  'Osobní',
+  'Družstevní',
+  'Podílové',
+  'V nájmu'
+];
+
+const LAND_PARCEL_TYPE_OPTIONS: string[] = [
+  'Orná půda',
+  'Chmelnice',
+  'Vinice',
+  'Zahrada',
+  'Ovocný sad',
+  'Trvalý travní porost',
+  'Lesní pozemek',
+  'Vodní plocha',
+  'Zastavěná plocha a nádvoří',
+  'Ostatní plocha'
+];
+
+const LAND_APPEARANCE_OPTIONS: string[] = ['Rovinatý', 'Svažitý'];
+
+const LAND_RENT_PERIOD_OPTIONS: string[] = ['Týdně', 'Měsíčně', 'Za půlrok', 'Ročně'];
+
+const LAND_FENCING_OPTIONS: string[] = ['Žádné', 'Částečné', 'Plné'];
+
+const LAND_FENCE_OPTIONS: string[] = ['Dřevo', 'Pletivo', 'Plast', 'Hliník', 'Živý plot'];
+
+const LAND_GARDEN_OPTIONS: string[] = ['Není', 'Vlastní', 'Společná'];
+
+const LAND_CULTIVATION_OPTIONS: string[] = [
+  'Angrešt',
+  'Arónie',
+  'Bez černý',
+  'Borůvky',
+  'Broskve',
+  'Brusinky',
+  'Dřín',
+  'Hrozny bílé',
+  'Hrozny modré',
+  'Hruška',
+  'Jabloň',
+  'Jeřabiny',
+  'Jahody',
+  'Josta',
+  'Kanadská ostružina',
+  'Kanadská borůvka',
+  'Kdoule',
+  'Kiwi',
+  'Klikva',
+  'Malinovník',
+  'Meruňky',
+  'Moruše',
+  'Nektarinky',
+  'Ostružiník',
+  'Rakytník',
+  'Rybíz bílý',
+  'Rybíz černý',
+  'Rybíz červený',
+  'Třešeň',
+  'Višeň',
+  'Zimolez kamčatský',
+  'Švestka'
+];
+
+const STAVBA_ON_PLOT_OPTIONS: string[] = ['Ano', 'Ne'];
+
+const STAVBA_OWNERSHIP_OPTIONS: string[] = ['Osobní', 'Družstevní', 'Podílové', 'V nájmu'];
+
+const STAVBA_CADASTRE_OPTIONS: string[] = ['Ano', 'Ne'];
+
+const STAVBA_DISPOSITION_OPTIONS: string[] = [
+  '1+0', '1+1', '1+kk', '2+1', '2+kk', '3+1', '3+kk',
+  '4+1', '4+kk', '5+1', '5+kk', '6+1', '6+kk'
+];
+
+const STAVBA_BUILDING_NUMBER_OPTIONS: string[] = [
+  'Číslo popisné',
+  'Číslo evidenční',
+  'Bez čísla popisného nebo evidenčního'
+];
+
+const STAVBA_ELEVATOR_OPTIONS: string[] = ['Ano', 'Ne'];
+
+const STAVBA_SPLIT_UNITS_OPTIONS: string[] = ['Ano', 'Ne'];
+
+const STAVBA_UNIT_COUNT_OPTIONS: string[] = ['1', '2', '3', '4', '5', '17'];
+
+const STAVBA_CONSTRUCTION_OPTIONS: string[] = [
+  'Základ beton.',
+  'Základ kámen',
+  'Základ cihla',
+  'Panel.',
+  'Dřevo',
+  'Cihlová',
+  'Ytong',
+  'Porobeton',
+  'Sádrokarton',
+  'Kámen',
+  'Plech'
+];
+
+const STAVBA_FACADE_OPTIONS: string[] = [
+  'Brizolit',
+  'Omítka',
+  'Omyvatelná omítka',
+  'Obklad soklu (kabřinec)',
+  'Dřevěný obklad'
+];
+
+const STAVBA_LOCATION_OPTIONS: string[] = [
+  'Centrum obce',
+  'Klidná část obce',
+  'Sídliště',
+  'Kraj obce',
+  'Polosamota',
+  'Samota',
+  'Chatová osada'
+];
+
+const STAVBA_SETTLEMENT_OPTIONS: string[] = [
+  'Samostatný',
+  'Rádový',
+  'Rohový',
+  'V bloku'
+];
+
+const STAVBA_INSULATION_ACTIVE_OPTIONS: string[] = ['Ano', 'Ne'];
+
+const STAVBA_INSULATION_OPTIONS: string[] = [
+  'Částečné',
+  'Celý plášť',
+  'PES',
+  'VATA',
+  'HOBRA'
+];
+
+const STAVBA_ORIENTATION_OPTIONS: string[] = [
+  'S', 'J', 'V', 'Z', 'SV', 'JV', 'SZ', 'JZ'
+];
+
+const STAVBA_ENERGY_CLASS_OPTIONS: string[] = [
+  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'neudává se'
+];
+
+const PROPERTY_SALES_PHASES: string[] = [
+  'Náběr',
+  'Prohlídky',
+  'Rezervace',
+  'Kupní smlouva',
+  'Katastr',
+  'Předání'
+];
+
+const JEDNOTKA_OWNERSHIP_OPTIONS: string[] = ['Osobní', 'Družstevní', 'Podílové', 'V nájmu'];
+
+const JEDNOTKA_DISPOSITION_OPTIONS: string[] = [
+  '1+0', '1+1', '1+kk', '2+1', '2+kk', '3+1', '3+kk',
+  '4+1', '4+kk', '5+1', '5+kk', '6+1', '6+kk'
+];
+
+const JEDNOTKA_ELEVATOR_OPTIONS: string[] = ['Ano', 'Ne'];
+
+const BEZBARIEROVOST_OPTIONS: string[] = ['Ano', 'Ne'];
+
+const SOCIALNI_ZAZEMI_CORE_OPTIONS: string[] = ['Zděné', 'Umakart', 'Sádrokartonové', 'Kombinované'];
+
+const SOCIALNI_ZAZEMI_BATHROOM_OPTIONS: string[] = [
+  'Umyvadlo',
+  'Vana',
+  'Sprchový kout',
+  'Bidet',
+  'Splachovací WC',
+  'Chemické WC',
+  'Improvizované WC',
+  'Přívod na pračku'
+];
+
+const SOCIALNI_ZAZEMI_TOILET_OPTIONS: string[] = ['Samostatné', 'V koupelně', 'Na pozemku', 'V chatce'];
+
+const SOCIALNI_ZAZEMI_WASHING_MACHINE_OPTIONS: string[] = [
+  'Bez pračky',
+  'V koupelně',
+  'Na chodbě',
+  'V kuchyni',
+  'V technické místnosti',
+  'Šíře dveří 40 cm',
+  'Šíře dveří 50 cm',
+  'Šíře dveří 60 cm',
+  'Zásuvka na pračku i myčku',
+  'Zásuvka pouze na pračku'
+];
+
+const STRECHA_MATERIAL_OPTIONS: string[] = [
+  'Asfalt. pás',
+  'Plech',
+  'Onduline ∿',
+  'Beton',
+  'Taška betovoná',
+  'Pálená taška',
+  'Plech. krytina - hliník',
+  'Vlákno-cementová krytina',
+  'IPA',
+  'Eternit (azbestocement)'
+];
+
+const STRECHA_TYPE_OPTIONS: string[] = [
+  'Plochá',
+  'Pultová',
+  'Sedlová',
+  'Valbová',
+  'Polovalbová',
+  'Stanová (jehlanová)',
+  'Mansardová',
+  'Pilová (shedová)',
+  'Oblouková (valená)',
+  'Kupolová'
+];
+
+const STRECHA_INSULATION_OPTIONS: string[] = ['Ano', 'Ne'];
+
+const STRECHA_INSULATION_TYPE_OPTIONS: string[] = ['Zatepleno vata', 'Zatepleno PES', 'Zatepleno PUR'];
+
+const STRECHA_ACCESS_OPTIONS: string[] = ['Zevnitř nemovitosti', 'Servisní otvor na střechu', 'Zvenku'];
+
+const OKNA_TYPE_OPTIONS: string[] = [
+  'bez oken',
+  'Plastová okna',
+  'Dřevěná okna',
+  'Hliníková okna',
+  'Dřevohliníková okna',
+  'Eurookna (moderní dřevěná)',
+  'Zdvojená (dvojkřídlá spojená okna)',
+  'Špaletová okna (venkovní)',
+  'Kastlová (skříňová)'
+];
+
+const OKNA_GLAZING_OPTIONS: string[] = ['Dvojsklo', 'Trojsklo'];
+
+const OKNA_STATE_OPTIONS: string[] = ['Původní', 'Nová', 'Původní + nová'];
+
+const DVERE_TYPE_OPTIONS: string[] = [
+  'Bezpečnostní',
+  'Protipožární',
+  'Vchodové běžné',
+  'Dřevěné zateplené',
+  'Dřevěné nezateplené',
+  'Interiérové'
+];
+
+const PODLAHY_OPTIONS: string[] = [
+  'Betonový základ',
+  'Dřevo - palubovka',
+  'Dřevo - desky',
+  'Dřevotříska',
+  'Parkety',
+  'Marmoleum',
+  'Linoleum',
+  'Keramická dlažba',
+  'Vinyl',
+  'Lamino',
+  'Plovoucí podlahy',
+  'Koberec',
+  'Litá',
+  'Betonová',
+  'Dřevěná'
+];
+
+const PRIJEZD_CESTA_OPTIONS: string[] = [
+  'Zpevněná',
+  'Nezpevněná',
+  'Asfaltová',
+  'Dlážděná',
+  'Bez příjezdové cesty',
+  'Rovná',
+  'Do kopce',
+  'Z kopce'
+];
+
+const MAJITEL_CESTY_OPTIONS: string[] = [
+  'Prodávající',
+  'Město',
+  'Obec',
+  'Družstva',
+  'Třetí osoba / soused',
+  'ČR',
+  'Lesy ČR'
+];
+
+const PARKOVANI_OPTIONS: string[] = [
+  'Bez parkování',
+  'Veřejné venkovní',
+  'Ve dvoře',
+  'Na pozemku',
+  'Nedaleko pozemku',
+  'Na okraji pozemku',
+  'Garáž',
+  'Kryté stání',
+  'Vyhrazené'
+];
+
+const SLUZBY_OPTIONS: string[] = [
+  'Předseda / správce',
+  'Správce jmenovaný svazem zahrádkářů',
+  'Správce elektroměru',
+  'Správce oblasti',
+  'Nejmenovaný správce',
+  'Voda',
+  'Rampa',
+  'Úklid společných prostor',
+  'Recepce'
+];
+
+const ELEKTRO_TECHNOLOGIE_OPTIONS: string[] = ['120 V', '230 V', '400 V', 'Fotovoltaika', 'Solární panely'];
+const ELEKTRO_JISTICE_OPTIONS: string[] = ['1 fázový', '3 fázový'];
+const ELEKTRO_VENI_OPTIONS: string[] = ['Hliník', 'Měď', 'Hliník i měď'];
+const ELEKTRO_METER_OPTIONS: string[] = ['Vlastní', 'Podružný'];
+const ELEKTRO_METER_LOCATION_OPTIONS: string[] = ['V garáži', 'Venku', 'V chatce'];
+const ELEKTRO_SUPPLIER_OPTIONS: string[] = [
+  'ČEZ', 'E.ON', 'PRE', 'innogy', 'Centropol', 'MND Energie', 'LAMA energy', 'EPET',
+  'Pražská plynárenská', 'Yello', 'Fonergy', 'Armex Energy', 'TEDOM energie', 'Dobrá Energie',
+  'Elimon', 'Green Gas DPB'
+];
+
+const VODA_ZDROJ_OPTIONS: string[] = ['Obecní vodovod', 'Místní vodovod'];
+const VODA_MERAK_OPTIONS: string[] = ['Vlastní', 'Podružný'];
+const VODA_VEDLEJSI_OPTIONS: string[] = ['Studna vlastní', 'Studna společná', 'Retenční nádrž na dešťovou vodu'];
+const VODA_DRUH_STUDNY_OPTIONS: string[] = ['Studna vrtaná', 'Studna kopaná'];
+const VODA_KVALITA_OPTIONS: string[] = ['Pitná', 'Užitková', 'Pitná po převaření'];
+const VODA_PRIVOD_OPTIONS: string[] = ['Sezonní (na zimu se vypouští)', 'Celoroční'];
+const VODA_STOUPACKY_OPTIONS: string[] = ['Původní', 'Rekonstruováno', 'Částečně rekonstruováno'];
+const VODA_PROVOZOVATEL_OPTIONS: string[] = ['SMVaK'];
+
+const PLYN_TYP_OPTIONS: string[] = ['Propan-butan', 'Zemní plyn'];
+const PLYN_UMISTENI_OPTIONS: string[] = ['Do domu', 'Na hranici pozemku', 'Na okraji pozemku'];
+const PLYN_POSKYTOVATEL_OPTIONS: string[] = ['ČEZ', 'EON'];
+
+const PROSTORY_ADDITIONAL_OPTIONS: string[] = ['Recepce', 'Kancelář', 'Sklad', 'Wellness', 'Sauna', 'Prádelna', 'Sušárna', 'Dílna'];
+
+const PROSTORY_ROOM_EQUIPMENT_OPTIONS: string[] = [
+  'Umyvadlo',
+  'Vana',
+  'Sprchový kout',
+  'Bidet',
+  'Splachovací WC',
+  'Chemické WC',
+  'Pračka',
+  'Přívod na pračku',
+  'Kuchyňka'
+];
+
+const PROSTORY_ROOM_LIST_OPTIONS: string[] = [
+  'Garáž',
+  'Kočárkárna',
+  'Kolárna',
+  'Společná chodba',
+  'Jiné společné prostory',
+  'Schodiště (RD)',
+  'Výtah',
+  'Balkon',
+  'Lodžie',
+  'Terasa',
+  'Sklep',
+  'Spíž',
+  'Předsíň (zádveří)',
+  'Chodba (uvnitř bytu/domu)',
+  'Předsíň + chodba',
+  'Koupelna',
+  'Koupelna s toaletou',
+  'Samostatná toaleta',
+  'Šatna',
+  'Komora',
+  'Technická místnost',
+  'Jídelna',
+  'Kuchyně do 12m²',
+  'Kuchyně větší než 12m²',
+  'Ložnice',
+  'Obývací pokoj',
+  'Obývací pokoj + kuchyně',
+  'Obytná místnost',
+  'Bazén'
+];
+
+const PROSTORY_CELLAR_TYPE_OPTIONS: string[] = ['Zděný sklep', 'Sklepní kóje', 'Částečně podsklepený', 'Celopodsklepený'];
+
+const PROSTORY_CELLAR_SIDES_OPTIONS: string[] = ['1 strana', '2 stran', '3 stran', '4 stran'];
+
+const PROSTORY_GARAGE_DOOR_MATERIAL_OPTIONS: string[] = ['Plechové', 'Dřevěné', 'Plastové'];
+
+const PROSTORY_GARAGE_DOOR_OPENING_OPTIONS: string[] = ['Klasické', 'Doleva', 'Doprava', 'Vyjížděcí'];
+
+const PROSTORY_LODGING_TYPES: string[] = ['Jiná', 'Ubytovací zařízení'];
+
+const PROSTORY_GENERAL_TYPES: string[] = ['Dům', 'Byt', 'Chata', 'Zahrada', 'Pozemek', 'Pole', 'Nebytový prostor', 'Jiná', 'Ubytovací zařízení', 'Chatka'];
+
+const PROSTORY_OBYTNA_ROOMS: string[] = [
+  'Jídelna',
+  'Kuchyně větší než 12m²',
+  'Ložnice',
+  'Obývací pokoj',
+  'Obývací pokoj + kuchyně',
+  'Obytná místnost'
+];
+
+const PROSTORY_PODLAHOVA_EXCLUDED_ROOMS: string[] = ['Garáž', 'Kočárkárna', 'Kolárna', 'Společná chodba', 'Jiné společné prostory', 'Schodiště (RD)', 'Výtah', 'Balkon', 'Lodžie', 'Terasa', 'Sklep', 'Bazén'];
+
+const PROSTORY_UZITNA_EXCLUDED_ROOMS: string[] = ['Kočárkárna', 'Kolárna', 'Společná chodba', 'Jiné společné prostory', 'Schodiště (RD)', 'Výtah', 'Balkon', 'Lodžie', 'Terasa', 'Bazén'];
 
 const PROPERTY_SECTION_TABS: Array<{ key: NewPropertyTabKey; label: string }> = [
   { key: 'zakladni', label: 'ZÁKLADNÍ INFORMACE' },
   { key: 'pozemek', label: 'POZEMEK' },
   { key: 'stavba', label: 'STAVBA' },
-  { key: 'bezbarierovost', label: 'BEZBARIÉROVOST' },
+  { key: 'jednotka', label: 'JEDNOTKA' },
+  { key: 'prostory', label: 'DISPOZICE' },
   { key: 'socialni-zazemi', label: 'SOCIÁLNÍ ZÁZEMÍ' },
-  { key: 'prostory', label: 'PROSTORY' },
-  { key: 'garaz', label: 'GARÁŽ' },
+  { key: 'bezbarierovost', label: 'BEZBARIÉROVOST' },
   { key: 'strecha', label: 'STŘECHA' },
-  { key: 'okna', label: 'OKNA' },
-  { key: 'dvere', label: 'DVEŘE' },
+  { key: 'okna', label: 'OKNA A DVEŘE' },
   { key: 'podlahy', label: 'PODLAHY' },
-  { key: 'energeticka-trida', label: 'ENERGETICKÁ TŘÍDA' },
   { key: 'dotace', label: 'DOTACE' },
   { key: 'prijezdova-komunikace', label: 'PŘÍJEZDOVÁ KOMUNIKACE' },
-  { key: 'parkovani', label: 'PARKOVÁNÍ' },
-  { key: 'samostatna-garaz', label: 'SAMOSTATNÁ GARÁŽ' },
   { key: 'sluzby', label: 'SLUŽBY' },
-  { key: 'zabezpeceni', label: 'ZABEZPEČENÍ NEMOVITOSTI' },
   { key: 'elektina', label: 'ELEKTŘINA' },
   { key: 'voda', label: 'VODA' },
   { key: 'plyn', label: 'PLYN' },
@@ -348,49 +778,107 @@ const PROPERTY_SECTION_TABS: Array<{ key: NewPropertyTabKey; label: string }> = 
   { key: 'rozpis-sluzeb', label: 'ROZPIS SLUŽEB' },
   { key: 'doplnkove-informace', label: 'DOPLŇKOVÉ INFORMACE' },
   { key: 'informace-do-letaku', label: 'INFORMACE DO LETÁKU' },
-  { key: 'predavaci-protokol', label: 'PŘEDÁVACÍ PROTOKOL' }
+  { key: 'predavaci-protokol', label: 'DOKLADY' }
 ];
 
 const PROPERTY_TAB_FIELDS: Partial<Record<NewPropertyTabKey, string[]>> = {
   zakladni: ['Číslo případu', 'Nemovitost', 'Vlastnictví', 'Služba', 'Smlouva', 'Adresa nemovitosti', 'Nejblížší adresa'],
   pozemek: ['Celková výměra pozemku', 'Druh pozemku', 'Zastavěná plocha', 'Plocha zahrady', 'Způsob využití pozemku', 'Zahrnutí do DP', 'Parcelní číslo', 'Katastrální území'],
-  stavba: ['Typ stavby', 'Zastavěná plocha', 'Užitná plocha', 'Podlahová plocha', 'Počet podlaží', 'Podsklepení', 'Rok výstavby', 'Stav objektu', 'Umístění objektu', 'Typ budovy', 'Počet bytů'],
+  stavba: [],
+  jednotka: [],
+  prostory: [],
   bezbarierovost: ['Bezbariérový přístup', 'Výtah', 'Bezbariérové WC', 'Šířka dveří', 'Bezbariérová koupelna'],
-  'socialni-zazemi': ['Sociální zázemí', 'Počet WC', 'Počet koupelen'],
-  prostory: ['Dispozice', 'Počet pokojů', 'Počet ložnic', 'Počet kuchyní', 'Počet balkonů', 'Počet teras', 'Počet komor', 'Vybavení kuchyně', 'Vybavení koupelny'],
+  'socialni-zazemi': [],
   garaz: ['Typ garáže', 'Kapacita garáže', 'Garážové stání', 'Šířka vjezdu', 'Typ vrat'],
-  strecha: ['Typ střechy', 'Stav střechy', 'Materiál krytí', 'Podkrovní prostor'],
-  okna: ['Typ oken', 'Materiál oken', 'Počet oken', 'Stav oken', 'Zasklení'],
-  dvere: ['Typ dveří', 'Materiál dveří', 'Stav dveří', 'Počet dveří'],
-  podlahy: ['Typ podlah', 'Stav podlah', 'Materiál podlah'],
-  'energeticka-trida': ['Energetická třída', 'PENB', 'Spotřeba energie'],
-  dotace: ['Dotace', 'Typ dotace', 'Výše dotace'],
-  'prijezdova-komunikace': ['Typ příjezdové komunikace', 'Stav komunikace', 'Šířka komunikace', 'Údržba komunikace'],
-  parkovani: ['Typ parkování', 'Počet parkovacích míst', 'Kryté parkování', 'Parkovací stání'],
-  'samostatna-garaz': ['Samostatná garáž', 'Typ garáže', 'Výměra garáže'],
-  sluzby: ['Služby', 'Voda', 'Plyn', 'Elektřina', 'Kanalizace', 'Topení', 'Internet'],
-  zabezpeceni: ['Zabezpečení nemovitosti', 'Typ zabezpečení', 'Alarm', 'Kamerový systém', 'Elektrické vrata'],
-  elektina: ['Příkon elektřiny', 'Typ přípojky', 'Jističe', 'Revize elektřiny'],
-  voda: ['Zdroj vody', 'Typ vodovodu', 'Kvalita vody', 'Revize vody'],
-  plyn: ['Přípojka plynu', 'Typ plynu', 'Plynový kotel', 'Revize plynu'],
-  kanalizace: ['Typ kanalizace', 'Přípojka kanalizace', 'Septik', 'Čistička odpadních vod'],
-  topeni: ['Typ topení', 'Kotel', 'Radiátory', 'Podlahové topení', 'Vytápění'],
-  'ohrev-vody': ['Typ ohřevu vody', 'Bojler', 'TUV', 'Solární ohřev'],
-  'datove-site': ['Internet', 'Kabelová televize', 'Satelit', 'DATOVÉ SÍTĚ'],
-  vybaveni: ['Vybavení', 'Nábytek', 'Spotřebiče', 'Vestavěné skříně'],
-  naklady: ['Měsíční náklady', 'Zálohy na služby', 'Fund', 'Pojistné'],
-  oblast: ['Lokalita', 'Městská část', 'Okres', 'Kraj'],
-  'dostupnost-v-okoli': ['Dostupnost v okolí', 'Obchody', 'Školy', 'Lékaři', 'Doprava', 'Parky'],
-  'hlavni-prednosti': ['Hlavní přednosti nemovitosti'],
-  'pravni-vady': ['Právní vady a omezení', 'Věcná břemena', 'Zástavní práva', 'Exekuce'],
-  prodej: ['Typ prodeje', 'Stav prodeje', 'Datum zahájení prodeje'],
-  pronajem: ['Typ pronájmu', 'Stav pronájmu', 'Datum zahájení pronájmu'],
-  'cena-najmu': ['Cena nájmu', 'Měsíční nájemné', 'Kauce', 'Provize'],
-  'rozpis-sluzeb': ['Rozpis služeb', 'Voda', 'Topení', 'Údržba', 'Odpady', 'Pojištění'],
-  'doplnkove-informace': ['Doplňkové informace'],
-  'informace-do-letaku': ['Informace do letáku', 'Nadpis inzerátu', 'Text inzerátu', 'Fotogalerie'],
-  'predavaci-protokol': ['Předávací protokol', 'Stav při předání', 'Předávané doklady', 'Klíče']
+  strecha: [],
+  okna: [],
+  podlahy: [],
+  dotace: [],
+  'prijezdova-komunikace': [],
+  sluzby: [],
+  elektina: [],
+  voda: [],
+  plyn: [],
+  kanalizace: [],
+  topeni: [],
+  'ohrev-vody': [],
+  'datove-site': [],
+  vybaveni: [],
+  naklady: [],
+  oblast: [],
+  'dostupnost-v-okoli': [],
+  'hlavni-prednosti': [],
+  'pravni-vady': [],
+  prodej: [],
+  pronajem: [],
+  'cena-najmu': [],
+  'rozpis-sluzeb': [],
+  'doplnkove-informace': [],
+  'informace-do-letaku': [
+    'Hlavní foto',
+    'Neveřejné foto',
+    'Půdorys',
+    'Detailní popis nemovitosti',
+    'Katastr',
+    'Vizualizace',
+    'Inzerát pdf',
+    'Mapa chůze do 30min',
+    'Video',
+    'Virtuální prohlídka',
+    'Územní plán',
+    'Mapa dojezdu do 10min',
+    'Mapa dojezdu do 30min',
+    'Mapa hluková',
+    'Mapa katastrální',
+    'Mapa svažitosti',
+    'Mapa povodňová',
+    'Výpis firem na adrese',
+    'Velikost pokojů',
+    'Okolí s vyznačením kde co je',
+    'Zajímavé a turistické body v okolí',
+    'Za kolik se dá pronajmout',
+    'Foto z dronu',
+    'Mapa katastrální (Ortofoto)',
+    'List vlastnictví',
+    'Rozpis nákladů',
+    'Vyúčtování služeb',
+    'Vyúčtování elektřiny',
+    'Vyúčtování plynu',
+    'Celkový rozpis všech nákladů',
+    'Bezdlužnost (bude doloženo před podpisem sml.)',
+    '3D mapy',
+    'Autobusová a vlaková doprava, zastávky',
+    'Dokumenty REMAX',
+    'Domovní řád',
+    'Elektřina',
+    'GPS',
+    'Mapa geologická',
+    'Mapa CHKO v okolí a omezení',
+    'Mapa kriminality',
+    'Mapa radon',
+    'Mapa skládky',
+    'Orientační hypoteční sazby',
+    'Mapa Panorama',
+    'PENB',
+    'Plyn',
+    'Pojištění.cz',
+    'Pozice v mapě',
+    'Projektová dokumentace stavby',
+    'Směrnice o stanovení úhrad družstvo',
+    'Společenství vlastníků jednotek',
+    'Nejlepší příjezdová cesta',
+    'Stanovy družstva',
+    'Vyjádření od dodavatelů energií',
+    'Vyjádření SVJ/družstva',
+    'Vyjádření z města',
+    'Výpis z Justice, Obchodní rejstřík',
+    'Zástavní věřitel (vyjádření)',
+    'Sídla jiných firem'
+  ],
+  'predavaci-protokol': []
 };
+
+const LEAFLET_FIELD_HINT = 'Vlož soubor z PC nebo odkaz (otevřít v novém okně)';
 
 const AML_SOURCE_OF_FUNDS_OPTIONS: string[] = [
   'Prodej majetku',
@@ -574,6 +1062,7 @@ interface PropertyDirectoryEntry {
   seller: string;
   createdAt: string;
   status: 'Aktivní' | 'Neaktivní';
+  phase: string;
 }
 
 interface NoteCard {
@@ -658,6 +1147,7 @@ interface NewClientDraft {
   actingAsRepresentativeFor: string;
   clientNotes: ClientNote[];
   clientDocuments: Array<{ name: string; type: string; url?: string; fileType?: string; dataBase64?: string }>;
+  linkedPropertyId?: string;
 }
 
 interface AgentProfile {
@@ -686,6 +1176,9 @@ interface SavedPropertyRecord {
   price: string;
   seller: string;
   status: 'active' | 'inactive';
+  phase: string;
+  linkedClientId?: string;
+  linkedClientIds?: string[];
   tabValues?: Partial<Record<NewPropertyTabKey, Record<string, string>>>;
 }
 
@@ -696,21 +1189,17 @@ type NewPropertyTabKey =
   | 'zakladni'
   | 'pozemek'
   | 'stavba'
+  | 'jednotka'
   | 'bezbarierovost'
   | 'socialni-zazemi'
   | 'prostory'
   | 'garaz'
   | 'strecha'
   | 'okna'
-  | 'dvere'
   | 'podlahy'
-  | 'energeticka-trida'
   | 'dotace'
   | 'prijezdova-komunikace'
-  | 'parkovani'
-  | 'samostatna-garaz'
   | 'sluzby'
-  | 'zabezpeceni'
   | 'elektina'
   | 'voda'
   | 'plyn'
@@ -738,6 +1227,9 @@ interface NewPropertyDraft {
   address: string;
   price: string;
   seller: string;
+  phase: string;
+  linkedClientId?: string;
+  linkedClientIds?: string[];
   tabValues: Partial<Record<NewPropertyTabKey, Record<string, string>>>;
 }
 
@@ -946,6 +1438,9 @@ export class App {
   protected readonly savedPropertyRecords = signal<SavedPropertyRecord[]>([]);
   protected readonly newPropertyDraft = signal<NewPropertyDraft>(this.createDefaultNewPropertyDraft());
   protected readonly activeSavedPropertyId = signal('');
+  protected readonly pinnedPropertyId = signal('');
+  protected readonly pinnedPropertyWindowOpen = signal(false);
+  protected readonly propertyClientWindowOpen = signal(false);
   protected readonly activePropertyFormTab = signal<NewPropertyTabKey>('zakladni');
   private readonly highRiskCountries = signal<string[]>(HIGH_RISK_COUNTRIES);
   protected readonly agentProfile = signal<AgentProfile>({
@@ -963,6 +1458,8 @@ export class App {
   private readonly propertyDirectorySort = signal<{ key: PropertyDirectorySortKey; direction: 'asc' | 'desc' } | null>(null);
   private readonly propertyDirectoryView = signal<PropertyDirectoryView>('all');
   protected readonly propertySearchQuery = signal('');
+  protected readonly propertyClientSearchQuery = signal('');
+  protected readonly propertyClientSort = signal<{ key: 'name' | 'role'; direction: 'asc' | 'desc' } | null>(null);
   private readonly activeClientIndex = signal(0);
   private readonly activeLeafletLinkItemId = signal('');
   private readonly printMode = signal<'property' | 'buyer' | 'buyerAlt' | 'buyerCompact' | 'unfilled'>('property');
@@ -1162,7 +1659,8 @@ export class App {
        price: record.price || '',
        seller: record.seller || '',
        createdAt: record.createdAt,
-       status: record.status === 'active' ? 'Aktivní' : 'Neaktivní'
+       status: record.status === 'active' ? 'Aktivní' : 'Neaktivní',
+       phase: record.phase || PROPERTY_SALES_PHASES[0]
      }))
    );
 
@@ -2879,13 +3377,192 @@ export class App {
       address: record.address,
       price: record.price || '',
       seller: record.seller || '',
-      tabValues: {}
+      phase: record.phase || PROPERTY_SALES_PHASES[0],
+      linkedClientId: record.linkedClientId || '',
+      linkedClientIds: this.normalizeLinkedClientIds(record),
+      tabValues: this.clonePropertyTabValues(record.tabValues)
     });
     this.activatePropertyWorkspaceMode('new');
   }
 
   protected closePropertyPreview(): void {
     this.previewPropertyRecordId.set('');
+  }
+
+  protected openPinnedPropertyWindow(): void {
+    this.pinnedPropertyWindowOpen.set(true);
+  }
+
+  protected closePinnedPropertyWindow(): void {
+    this.pinnedPropertyWindowOpen.set(false);
+  }
+
+  protected activePropertyRecordsForPin(): SavedPropertyRecord[] {
+    return this.savedPropertyRecords().filter((record) => record.status === 'active');
+  }
+
+  protected isRecordPinned(recordId: string): boolean {
+    return this.pinnedPropertyId() === recordId;
+  }
+
+  protected toggleCardPin(recordId: string): void {
+    const next = this.pinnedPropertyId() === recordId ? '' : recordId;
+    this.pinnedPropertyId.set(next);
+    this.syncClientLinkedProperty(next);
+  }
+
+  protected pinFromWindow(recordId: string): void {
+    this.toggleCardPin(recordId);
+    this.pinnedPropertyWindowOpen.set(false);
+  }
+
+  private syncClientLinkedProperty(propertyId: string): void {
+    if (!this.isWorkspaceActive('clients') || !this.isClientWorkspaceMode('new')) {
+      return;
+    }
+    const previousPropertyId = this.newClientDraft().linkedPropertyId || '';
+    this.newClientDraft.update((draft) => ({ ...draft, linkedPropertyId: propertyId }));
+    this.syncActiveNewClientToRecords();
+    const clientId = this.activeSavedClientId();
+    if (clientId) {
+      this.syncPropertyRecordsForClientLink(clientId, propertyId, previousPropertyId);
+    }
+  }
+
+  protected linkedClientProperty(): SavedPropertyRecord | null {
+    const id = this.newClientDraft().linkedPropertyId || this.pinnedPropertyId();
+    if (!id) {
+      return null;
+    }
+    return this.savedPropertyRecords().find((record) => record.id === id) || null;
+  }
+
+  protected propertyMainPhotoSrc(record: SavedPropertyRecord | null): string {
+    if (!record) {
+      return '';
+    }
+
+    const values = record.tabValues?.['informace-do-letaku'] || {};
+    const data = (values['Hlavní foto__data'] || '').trim();
+    if (data) {
+      return data;
+    }
+
+    const link = (values['Hlavní foto'] || '').trim();
+    if (!link) {
+      return '';
+    }
+
+    return /^https?:\/\//i.test(link) ? link : `https://${link}`;
+  }
+
+  protected openPropertyClientWindow(): void {
+    this.propertyClientSearchQuery.set('');
+    this.propertyClientSort.set(null);
+    this.propertyClientWindowOpen.set(true);
+  }
+
+  protected closePropertyClientWindow(): void {
+    this.propertyClientSearchQuery.set('');
+    this.propertyClientSort.set(null);
+    this.propertyClientWindowOpen.set(false);
+  }
+
+  protected propertyClientsForLink(): SavedClientRecord[] {
+    const query = this.normalizeForLooseMatch(this.propertyClientSearchQuery());
+    const filtered = !query ? this.savedClientRecords() : this.savedClientRecords().filter((record) =>
+      this.normalizeForLooseMatch([
+        record.draft.fullName,
+        record.draft.companyName,
+        this.displayNewClientPhone(record.draft),
+        record.draft.email,
+        this.newClientInterestLabel(record.draft.clientInterest)
+      ].join(' ')).includes(query)
+    );
+
+    const sort = this.propertyClientSort();
+    if (!sort) {
+      return filtered;
+    }
+
+    return [...filtered].sort((a, b) => {
+      const aValue = sort.key === 'role'
+        ? this.normalizeForLooseMatch(this.newClientInterestLabel(a.draft.clientInterest))
+        : this.normalizeForLooseMatch(this.previewClientPrimaryName(a.draft));
+      const bValue = sort.key === 'role'
+        ? this.normalizeForLooseMatch(this.newClientInterestLabel(b.draft.clientInterest))
+        : this.normalizeForLooseMatch(this.previewClientPrimaryName(b.draft));
+      if (aValue === bValue) {
+        return 0;
+      }
+      const direction = sort.direction === 'asc' ? 1 : -1;
+      return aValue > bValue ? direction : -direction;
+    });
+  }
+
+  protected updatePropertyClientSearchQuery(value: string): void {
+    this.propertyClientSearchQuery.set(value);
+  }
+
+  protected sortPropertyClientsForLinkBy(key: 'name' | 'role'): void {
+    const current = this.propertyClientSort();
+    if (!current || current.key !== key) {
+      this.propertyClientSort.set({ key, direction: 'asc' });
+      return;
+    }
+    this.propertyClientSort.set(current.direction === 'asc' ? { key, direction: 'desc' } : null);
+  }
+
+  protected propertyClientSortDirection(key: 'name' | 'role'): '' | 'asc' | 'desc' {
+    const current = this.propertyClientSort();
+    return current?.key === key ? current.direction : '';
+  }
+
+  protected linkedPropertyClients(): SavedClientRecord[] {
+    const ids = this.resolvedPropertyLinkedClientIds();
+    if (ids.length === 0) {
+      return [];
+    }
+    return ids
+      .map((id) => this.savedClientRecords().find((record) => record.id === id) || null)
+      .filter((record): record is SavedClientRecord => Boolean(record));
+  }
+
+  protected isClientLinkedToProperty(clientId: string): boolean {
+    return this.resolvedPropertyLinkedClientIds().includes(clientId);
+  }
+
+  protected togglePropertyClientLink(clientId: string): void {
+    const current = this.resolvedPropertyLinkedClientIds();
+    const next = current.includes(clientId)
+      ? current.filter((id) => id !== clientId)
+      : [...current, clientId];
+    this.newPropertyDraft.update((draft) => ({ ...draft, linkedClientId: next[0] || '', linkedClientIds: next }));
+  }
+
+  protected linkClientToPropertyFromWindow(clientId: string): void {
+    this.togglePropertyClientLink(clientId);
+  }
+
+  protected linkedPropertyClientRole(client: SavedClientRecord): string {
+    return this.newClientInterestLabel(client.draft.clientInterest);
+  }
+
+  private propertyLinkedClientIds(source: Pick<NewPropertyDraft, 'linkedClientId' | 'linkedClientIds'> = this.newPropertyDraft()): string[] {
+    const ids = Array.isArray(source.linkedClientIds) ? source.linkedClientIds : [];
+    const fallback = source.linkedClientId ? [source.linkedClientId] : [];
+    return Array.from(new Set([...ids, ...fallback].filter(Boolean)));
+  }
+
+  private resolvedPropertyLinkedClientIds(): string[] {
+    const draftIds = this.propertyLinkedClientIds();
+    const activePropertyId = this.activeSavedPropertyId();
+    const clientSideIds = activePropertyId
+      ? this.savedClientRecords()
+          .filter((record) => record.draft.linkedPropertyId === activePropertyId)
+          .map((record) => record.id)
+      : [];
+    return Array.from(new Set([...draftIds, ...clientSideIds]));
   }
 
   protected previewPropertyRecord(): SavedPropertyRecord | null {
@@ -2895,6 +3572,81 @@ export class App {
 
   protected propertyTypeFormOptions(): string[] {
     return PROPERTY_TYPE_OPTIONS;
+  }
+
+  protected readonly propertyCustomOption = PROPERTY_CUSTOM_OPTION;
+
+  protected ownershipFormOptions(): string[] {
+    return PROPERTY_OWNERSHIP_FORM_OPTIONS;
+  }
+
+  protected serviceFormOptions(): string[] {
+    return PROPERTY_SERVICE_FORM_OPTIONS;
+  }
+
+  protected contractFormOptions(): string[] {
+    return PROPERTY_CONTRACT_FORM_OPTIONS;
+  }
+
+  protected landPresentOptions(): string[] {
+    return LAND_PRESENT_OPTIONS;
+  }
+
+  protected landOwnershipOptions(): string[] {
+    return LAND_OWNERSHIP_OPTIONS;
+  }
+
+  protected landParcelTypeOptions(): string[] {
+    return LAND_PARCEL_TYPE_OPTIONS;
+  }
+
+  protected landAppearanceOptions(): string[] {
+    return LAND_APPEARANCE_OPTIONS;
+  }
+
+  protected landRentPeriodOptions(): string[] {
+    return LAND_RENT_PERIOD_OPTIONS;
+  }
+
+  protected landFencingOptions(): string[] {
+    return LAND_FENCING_OPTIONS;
+  }
+
+  protected landFenceOptions(): string[] {
+    return LAND_FENCE_OPTIONS;
+  }
+
+  protected landGardenOptions(): string[] {
+    return LAND_GARDEN_OPTIONS;
+  }
+
+  protected landCultivationOptions(): string[] {
+    return LAND_CULTIVATION_OPTIONS;
+  }
+
+  protected isPropertyTypeCustom(value: string): boolean {
+    const trimmed = value.trim();
+    return value === this.propertyCustomOption || (Boolean(trimmed) && !PROPERTY_TYPE_OPTIONS.includes(trimmed));
+  }
+
+  protected propertyTypeSelectValue(): string {
+    const current = this.newPropertyDraft().propertyType.trim();
+    if (this.isPropertyTypeCustom(current)) {
+      return this.propertyCustomOption;
+    }
+    return current;
+  }
+
+  protected setPropertyTypeSelectValue(value: string): void {
+    if (value === this.propertyCustomOption) {
+      const existing = this.newPropertyDraft().propertyType.trim();
+      if (this.isPropertyTypeCustom(existing)) {
+        return;
+      }
+      this.setNewPropertyDraftField('propertyType', this.propertyCustomOption);
+      return;
+    }
+    this.setNewPropertyDraftField('propertyType', value);
   }
 
   protected setNewPropertyDraftField<K extends keyof NewPropertyDraft>(field: K, value: NewPropertyDraft[K]): void {
@@ -2907,16 +3659,18 @@ export class App {
 
   protected saveCurrentProperty(): void {
     const draft = this.newPropertyDraft();
+    const linkedClientIds = this.propertyLinkedClientIds(draft);
     const activeId = this.activeSavedPropertyId();
 
     if (activeId) {
       this.savedPropertyRecords.update((records) =>
         records.map((record) =>
           record.id === activeId
-            ? { ...record, title: draft.title, propertyType: draft.propertyType, address: draft.address, price: draft.price, seller: draft.seller, tabValues: draft.tabValues }
+          ? { ...record, title: draft.title, propertyType: draft.propertyType, address: draft.address, price: draft.price, seller: draft.seller, phase: draft.phase || record.phase, linkedClientId: linkedClientIds[0] || '', linkedClientIds, tabValues: this.clonePropertyTabValues(draft.tabValues) }
             : record
         )
       );
+      this.syncLinkedClientRecord(activeId, linkedClientIds);
     } else {
       const id = `property-${Date.now()}`;
       this.activeSavedPropertyId.set(id);
@@ -2929,8 +3683,12 @@ export class App {
         price: draft.price,
         seller: draft.seller,
         status: 'active' as const,
-        tabValues: draft.tabValues
+        phase: draft.phase || PROPERTY_SALES_PHASES[0],
+        linkedClientId: linkedClientIds[0] || '',
+        linkedClientIds,
+        tabValues: this.clonePropertyTabValues(draft.tabValues)
       }, ...records]);
+      this.syncLinkedClientRecord(id, linkedClientIds);
     }
 
     const xml = this.buildXmlString();
@@ -2952,7 +3710,10 @@ export class App {
       address: record.address,
       price: record.price || '',
       seller: record.seller || '',
-      tabValues: record.tabValues || {}
+      phase: record.phase || PROPERTY_SALES_PHASES[0],
+      linkedClientId: record.linkedClientId || '',
+      linkedClientIds: this.normalizeLinkedClientIds(record),
+      tabValues: this.clonePropertyTabValues(record.tabValues)
     });
     this.activatePropertyWorkspaceMode('new');
   }
@@ -2964,11 +3725,43 @@ export class App {
     this.activatePropertyWorkspaceMode('new');
   }
 
+  protected propertySalesPhases(): string[] {
+    return PROPERTY_SALES_PHASES;
+  }
+
+  protected currentPropertyPhase(): string {
+    return this.newPropertyDraft().phase || PROPERTY_SALES_PHASES[0];
+  }
+
+  protected setPropertyPhase(phase: string): void {
+    this.newPropertyDraft.update((draft) => ({ ...draft, phase }));
+  }
+
+  protected phaseIndex(phase: string): number {
+    return PROPERTY_SALES_PHASES.indexOf(phase);
+  }
+
+  protected isPhaseActive(entry: PropertyDirectoryEntry, phase: string): boolean {
+    const currentIdx = this.phaseIndex(entry.phase || PROPERTY_SALES_PHASES[0]);
+    const phaseIdx = this.phaseIndex(phase);
+    return phaseIdx <= currentIdx;
+  }
+
+  protected isPhaseCurrent(entry: PropertyDirectoryEntry, phase: string): boolean {
+    return (entry.phase || PROPERTY_SALES_PHASES[0]) === phase;
+  }
+
   protected propertySectionTabs(): Array<{ key: NewPropertyTabKey; label: string }> {
     return PROPERTY_SECTION_TABS;
   }
 
   protected isActivePropertyTab(tab: NewPropertyTabKey): boolean {
+    if (tab === 'jednotka' && !this.isJednotkaTabVisible() && this.activePropertyFormTab() === 'jednotka') {
+      this.activePropertyFormTab.set('zakladni');
+    }
+    if (tab === 'prostory' && !this.isProstoryTabVisible() && this.activePropertyFormTab() === 'prostory') {
+      this.activePropertyFormTab.set('zakladni');
+    }
     return this.activePropertyFormTab() === tab;
   }
 
@@ -2993,6 +3786,1535 @@ export class App {
       tabValues[tab] = currentTab;
       return { ...draft, tabValues };
     });
+  }
+
+  protected leafletFieldLabels(): string[] {
+    return this.propertyTabFieldLabels('informace-do-letaku');
+  }
+
+  protected leafletFieldHint(): string {
+    return LEAFLET_FIELD_HINT;
+  }
+
+  protected isPropertyTabCustomValue(value: string, options: string[]): boolean {
+    const trimmed = value.trim();
+    return value === this.propertyCustomOption || (Boolean(trimmed) && !options.includes(trimmed));
+  }
+
+  protected propertyTabSingleSelectValue(tab: NewPropertyTabKey, field: string, options: string[]): string {
+    const current = this.propertyTabFieldValue(tab, field).trim();
+    return this.isPropertyTabCustomValue(current, options) ? this.propertyCustomOption : current;
+  }
+
+  protected setPropertyTabSingleSelectValue(tab: NewPropertyTabKey, field: string, value: string, options: string[]): void {
+    if (value === this.propertyCustomOption) {
+      const existing = this.propertyTabFieldValue(tab, field).trim();
+      if (this.isPropertyTabCustomValue(existing, options)) {
+        return;
+      }
+      this.setPropertyTabFieldValue(tab, field, this.propertyCustomOption);
+      return;
+    }
+    this.setPropertyTabFieldValue(tab, field, value);
+  }
+
+  protected propertyTabMultiValues(tab: NewPropertyTabKey, field: string): string[] {
+    return this.propertyTabFieldValue(tab, field)
+      .split('|')
+      .map((value) => value.trim())
+      .filter(Boolean);
+  }
+
+  protected hasPropertyTabMultiValue(tab: NewPropertyTabKey, field: string, value: string): boolean {
+    return this.propertyTabMultiValues(tab, field).includes(value);
+  }
+
+  protected togglePropertyTabMultiValue(tab: NewPropertyTabKey, field: string, value: string): void {
+    const values = this.propertyTabMultiValues(tab, field);
+    const next = values.includes(value)
+      ? values.filter((entry) => entry !== value)
+      : [...values, value];
+    this.setPropertyTabFieldValue(tab, field, next.join('|'));
+  }
+
+  protected shouldShowLandRentFields(): boolean {
+    return this.propertyTabFieldValue('pozemek', 'Vlastnictví pozemku') === 'V nájmu';
+  }
+
+  private landParcelCountKey(): string {
+    return '__parcel-count';
+  }
+
+  private landParcelFieldKey(index: number, field: 'parcel' | 'type' | 'area'): string {
+    return `parcel-${index}-${field}`;
+  }
+
+  protected landParcelIndexes(): number[] {
+    const count = Number.parseInt(this.propertyTabFieldValue('pozemek', this.landParcelCountKey()) || '1', 10);
+    const safeCount = Number.isFinite(count) && count > 0 ? count : 1;
+    return Array.from({ length: safeCount }, (_, index) => index);
+  }
+
+  protected addLandParcelRow(): void {
+    const nextCount = this.landParcelIndexes().length + 1;
+    this.setPropertyTabFieldValue('pozemek', this.landParcelCountKey(), String(nextCount));
+  }
+
+  protected removeLandParcelRow(indexToRemove: number): void {
+    const indexes = this.landParcelIndexes();
+    if (indexes.length <= 1) {
+      return;
+    }
+
+    this.newPropertyDraft.update((draft) => {
+      const tabValues = { ...draft.tabValues };
+      const currentTab = { ...(tabValues.pozemek || {}) };
+      const rows = indexes
+        .filter((index) => index !== indexToRemove)
+        .map((index) => ({
+          parcel: currentTab[this.landParcelFieldKey(index, 'parcel')] || '',
+          type: currentTab[this.landParcelFieldKey(index, 'type')] || '',
+          area: currentTab[this.landParcelFieldKey(index, 'area')] || ''
+        }));
+
+      for (const key of Object.keys(currentTab)) {
+        if (key.startsWith('parcel-') || key === this.landParcelCountKey()) {
+          delete currentTab[key];
+        }
+      }
+
+      rows.forEach((row, index) => {
+        currentTab[this.landParcelFieldKey(index, 'parcel')] = row.parcel;
+        currentTab[this.landParcelFieldKey(index, 'type')] = row.type;
+        currentTab[this.landParcelFieldKey(index, 'area')] = row.area;
+      });
+
+      currentTab[this.landParcelCountKey()] = String(Math.max(rows.length, 1));
+      tabValues.pozemek = currentTab;
+      return { ...draft, tabValues };
+    });
+  }
+
+  protected landParcelValue(index: number, field: 'parcel' | 'type' | 'area'): string {
+    return this.propertyTabFieldValue('pozemek', this.landParcelFieldKey(index, field));
+  }
+
+  protected setLandParcelValue(index: number, field: 'parcel' | 'type' | 'area', value: string): void {
+    const normalizedValue = field === 'area' ? this.sanitizePropertyIntegerInput(value) : value;
+    this.setPropertyTabFieldValue('pozemek', this.landParcelFieldKey(index, field), normalizedValue);
+  }
+
+  protected formatLandParcelArea(index: number): void {
+    const formatted = this.formatIntegerWithUnit(this.landParcelValue(index, 'area'), 'm²');
+    this.setPropertyTabFieldValue('pozemek', this.landParcelFieldKey(index, 'area'), formatted);
+  }
+
+  protected landTotalArea(): string {
+    const total = this.landParcelIndexes().reduce((sum, index) => sum + this.parseLocalizedInteger(this.landParcelValue(index, 'area')), 0);
+    return total > 0 ? this.formatIntegerWithUnit(String(total), 'm²') : '';
+  }
+
+  protected formatLandRentPrice(): void {
+    this.setPropertyTabFieldValue(
+      'pozemek',
+      'Cena nájmu',
+      this.formatNumberWithUnit(this.propertyTabFieldValue('pozemek', 'Cena nájmu'), 'Kč')
+    );
+  }
+
+  // --- STAVBA TAB ---
+
+  protected stavbaOnPlotOptions(): string[] { return STAVBA_ON_PLOT_OPTIONS; }
+  protected stavbaOwnershipOptions(): string[] { return STAVBA_OWNERSHIP_OPTIONS; }
+  protected stavbaCadastreOptions(): string[] { return STAVBA_CADASTRE_OPTIONS; }
+  protected stavbaDispositionOptions(): string[] { return STAVBA_DISPOSITION_OPTIONS; }
+  protected stavbaBuildingNumberOptions(): string[] { return STAVBA_BUILDING_NUMBER_OPTIONS; }
+  protected stavbaElevatorOptions(): string[] { return STAVBA_ELEVATOR_OPTIONS; }
+  protected stavbaSplitUnitsOptions(): string[] { return STAVBA_SPLIT_UNITS_OPTIONS; }
+  protected stavbaUnitCountOptions(): string[] { return STAVBA_UNIT_COUNT_OPTIONS; }
+  protected stavbaConstructionOptions(): string[] { return STAVBA_CONSTRUCTION_OPTIONS; }
+  protected stavbaFacadeOptions(): string[] { return STAVBA_FACADE_OPTIONS; }
+  protected stavbaLocationOptions(): string[] { return STAVBA_LOCATION_OPTIONS; }
+  protected stavbaSettlementOptions(): string[] { return STAVBA_SETTLEMENT_OPTIONS; }
+  protected stavbaInsulationActiveOptions(): string[] { return STAVBA_INSULATION_ACTIVE_OPTIONS; }
+  protected stavbaInsulationOptions(): string[] { return STAVBA_INSULATION_OPTIONS; }
+  protected stavbaOrientationOptions(): string[] { return STAVBA_ORIENTATION_OPTIONS; }
+  protected stavbaEnergyClassOptions(): string[] { return STAVBA_ENERGY_CLASS_OPTIONS; }
+
+  protected stavbaYearOptions(): string[] {
+    const currentYear = new Date().getFullYear();
+    const years: string[] = [];
+    for (let year = currentYear; year >= 1900; year -= 1) {
+      years.push(String(year));
+    }
+    return years;
+  }
+
+  private stavbaParcelCountKey(): string {
+    return '__stavba-parcel-count';
+  }
+
+  private stavbaParcelFieldKey(index: number, field: 'parcel' | 'type' | 'area'): string {
+    return `stavba-parcel-${index}-${field}`;
+  }
+
+  protected stavbaParcelIndexes(): number[] {
+    const count = Number.parseInt(this.propertyTabFieldValue('stavba', this.stavbaParcelCountKey()) || '1', 10);
+    const safeCount = Number.isFinite(count) && count > 0 ? count : 1;
+    return Array.from({ length: safeCount }, (_, index) => index);
+  }
+
+  protected addStavbaParcelRow(): void {
+    const nextCount = this.stavbaParcelIndexes().length + 1;
+    this.setPropertyTabFieldValue('stavba', this.stavbaParcelCountKey(), String(nextCount));
+  }
+
+  protected removeStavbaParcelRow(indexToRemove: number): void {
+    const indexes = this.stavbaParcelIndexes();
+    if (indexes.length <= 1) { return; }
+    this.newPropertyDraft.update((draft) => {
+      const tabValues = { ...draft.tabValues };
+      const currentTab = { ...(tabValues.stavba || {}) };
+      const rows = indexes
+        .filter((index) => index !== indexToRemove)
+        .map((index) => ({
+          parcel: currentTab[this.stavbaParcelFieldKey(index, 'parcel')] || '',
+          type: currentTab[this.stavbaParcelFieldKey(index, 'type')] || '',
+          area: currentTab[this.stavbaParcelFieldKey(index, 'area')] || ''
+        }));
+      for (const key of Object.keys(currentTab)) {
+        if (key.startsWith('stavba-parcel-') || key === this.stavbaParcelCountKey()) {
+          delete currentTab[key];
+        }
+      }
+      rows.forEach((row, index) => {
+        currentTab[this.stavbaParcelFieldKey(index, 'parcel')] = row.parcel;
+        currentTab[this.stavbaParcelFieldKey(index, 'type')] = row.type;
+        currentTab[this.stavbaParcelFieldKey(index, 'area')] = row.area;
+      });
+      currentTab[this.stavbaParcelCountKey()] = String(Math.max(rows.length, 1));
+      tabValues.stavba = currentTab;
+      return { ...draft, tabValues };
+    });
+  }
+
+  protected stavbaParcelValue(index: number, field: 'parcel' | 'type' | 'area'): string {
+    return this.propertyTabFieldValue('stavba', this.stavbaParcelFieldKey(index, field));
+  }
+
+  protected setStavbaParcelValue(index: number, field: 'parcel' | 'type' | 'area', value: string): void {
+    const normalizedValue = field === 'area' ? this.sanitizePropertyIntegerInput(value) : value;
+    this.setPropertyTabFieldValue('stavba', this.stavbaParcelFieldKey(index, field), normalizedValue);
+  }
+
+  protected formatStavbaParcelArea(index: number): void {
+    const formatted = this.formatIntegerWithUnit(this.stavbaParcelValue(index, 'area'), 'm²');
+    this.setPropertyTabFieldValue('stavba', this.stavbaParcelFieldKey(index, 'area'), formatted);
+  }
+
+  protected stavbaTotalArea(): string {
+    const total = this.stavbaParcelIndexes().reduce((sum, index) => sum + this.parseLocalizedInteger(this.stavbaParcelValue(index, 'area')), 0);
+    return total > 0 ? this.formatIntegerWithUnit(String(total), 'm²') : '';
+  }
+
+  protected stavbaBuildUpArea(): string {
+    const total = this.stavbaParcelIndexes().reduce((sum, index) => sum + this.parseLocalizedInteger(this.stavbaParcelValue(index, 'area')), 0);
+    return total > 0 ? this.formatIntegerWithUnit(String(total), 'm²') : '';
+  }
+
+  protected formatStavbaDecimalField(field: string): void {
+    this.setPropertyTabFieldValue(
+      'stavba', field,
+      this.formatIntegerWithUnit(this.propertyTabFieldValue('stavba', field), 'm²')
+    );
+  }
+
+  protected stavbaMultiValues(field: string): string[] {
+    return this.propertyTabMultiValues('stavba', field);
+  }
+
+  protected hasStavbaMultiValue(field: string, value: string): boolean {
+    return this.hasPropertyTabMultiValue('stavba', field, value);
+  }
+
+  protected toggleStavbaMultiValue(field: string, value: string): void {
+    this.togglePropertyTabMultiValue('stavba', field, value);
+  }
+
+  protected stavbaSingleSelectValue(field: string, options: string[]): string {
+    return this.propertyTabSingleSelectValue('stavba', field, options);
+  }
+
+  protected setStavbaSingleSelectValue(field: string, value: string, options: string[]): void {
+    this.setPropertyTabSingleSelectValue('stavba', field, value, options);
+  }
+
+  protected isStavbaCustomValue(field: string, options: string[]): boolean {
+    return this.isPropertyTabCustomValue(this.propertyTabFieldValue('stavba', field), options);
+  }
+
+  protected openStavbaEnergyFilePicker(): void {
+    const input = document.getElementById('stavba-energy-file-input') as HTMLInputElement | null;
+    input?.click();
+  }
+
+  protected onStavbaEnergyFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) { return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = typeof reader.result === 'string' ? reader.result : '';
+      this.setPropertyTabFieldValue('stavba', 'Nahrát energetický štítek__name', file.name);
+      this.setPropertyTabFieldValue('stavba', 'Nahrát energetický štítek__data', dataUrl);
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
+  }
+
+  protected stavbaEnergyFileName(): string {
+    return this.propertyTabFieldValue('stavba', 'Nahrát energetický štítek__name');
+  }
+
+  protected removeStavbaEnergyFile(): void {
+    this.setPropertyTabFieldValue('stavba', 'Nahrát energetický štítek__name', '');
+    this.setPropertyTabFieldValue('stavba', 'Nahrát energetický štítek__data', '');
+  }
+
+  protected openStavbaEnergyFile(): void {
+    const data = this.propertyTabFieldValue('stavba', 'Nahrát energetický štítek__data').trim();
+    if (!data) { return; }
+    window.open(data, '_blank');
+  }
+
+  // --- JEDNOTKA TAB ---
+
+  protected jednotkaOwnershipOptions(): string[] { return JEDNOTKA_OWNERSHIP_OPTIONS; }
+  protected jednotkaDispositionOptions(): string[] { return JEDNOTKA_DISPOSITION_OPTIONS; }
+  protected jednotkaElevatorOptions(): string[] { return JEDNOTKA_ELEVATOR_OPTIONS; }
+
+  protected jednotkaSingleSelectValue(field: string, options: string[]): string {
+    return this.propertyTabSingleSelectValue('jednotka', field, options);
+  }
+
+  protected setJednotkaSingleSelectValue(field: string, value: string, options: string[]): void {
+    this.setPropertyTabSingleSelectValue('jednotka', field, value, options);
+  }
+
+  protected isJednotkaCustomValue(field: string, options: string[]): boolean {
+    return this.isPropertyTabCustomValue(this.propertyTabFieldValue('jednotka', field), options);
+  }
+
+  protected bezbarierovostOptions(): string[] {
+    return BEZBARIEROVOST_OPTIONS;
+  }
+
+  protected socialniZazemiCoreOptions(): string[] { return SOCIALNI_ZAZEMI_CORE_OPTIONS; }
+  protected socialniZazemiBathroomOptions(): string[] { return SOCIALNI_ZAZEMI_BATHROOM_OPTIONS; }
+  protected socialniZazemiToiletOptions(): string[] { return SOCIALNI_ZAZEMI_TOILET_OPTIONS; }
+  protected socialniZazemiWashingMachineOptions(): string[] { return SOCIALNI_ZAZEMI_WASHING_MACHINE_OPTIONS; }
+
+  protected hasSocialniZazemiMultiValue(field: string, value: string): boolean {
+    return this.hasPropertyTabMultiValue('socialni-zazemi', field, value);
+  }
+
+  protected toggleSocialniZazemiMultiValue(field: string, value: string): void {
+    this.togglePropertyTabMultiValue('socialni-zazemi', field, value);
+  }
+
+  protected strechaMaterialOptions(): string[] { return STRECHA_MATERIAL_OPTIONS; }
+  protected strechaTypeOptions(): string[] { return STRECHA_TYPE_OPTIONS; }
+  protected strechaInsulationOptions(): string[] { return STRECHA_INSULATION_OPTIONS; }
+  protected strechaInsulationTypeOptions(): string[] { return STRECHA_INSULATION_TYPE_OPTIONS; }
+  protected strechaAccessOptions(): string[] { return STRECHA_ACCESS_OPTIONS; }
+
+  protected hasStrechaMultiValue(field: string, value: string): boolean {
+    return this.hasPropertyTabMultiValue('strecha', field, value);
+  }
+
+  protected toggleStrechaMultiValue(field: string, value: string): void {
+    this.togglePropertyTabMultiValue('strecha', field, value);
+  }
+
+  protected strechaSingleSelectValue(field: string, options: string[]): string {
+    return this.propertyTabSingleSelectValue('strecha', field, options);
+  }
+
+  protected setStrechaSingleSelectValue(field: string, value: string, options: string[]): void {
+    this.setPropertyTabSingleSelectValue('strecha', field, value, options);
+  }
+
+  protected isStrechaCustomValue(field: string, options: string[]): boolean {
+    return this.isPropertyTabCustomValue(this.propertyTabFieldValue('strecha', field), options);
+  }
+
+  protected oknaTypeOptions(): string[] { return OKNA_TYPE_OPTIONS; }
+  protected oknaGlazingOptions(): string[] { return OKNA_GLAZING_OPTIONS; }
+  protected oknaStateOptions(): string[] { return OKNA_STATE_OPTIONS; }
+  protected dvereTypeOptions(): string[] { return DVERE_TYPE_OPTIONS; }
+  protected podlahyOptions(): string[] { return PODLAHY_OPTIONS; }
+  protected prijezdCestaOptions(): string[] { return PRIJEZD_CESTA_OPTIONS; }
+  protected majitelCestyOptions(): string[] { return MAJITEL_CESTY_OPTIONS; }
+  protected parkovaniOptions(): string[] { return PARKOVANI_OPTIONS; }
+
+  protected hasPrijezdMultiValue(field: string, value: string): boolean {
+    return this.hasPropertyTabMultiValue('prijezdova-komunikace', field, value);
+  }
+
+  protected togglePrijezdMultiValue(field: string, value: string): void {
+    this.togglePropertyTabMultiValue('prijezdova-komunikace', field, value);
+  }
+
+  protected prijezdSingleSelectValue(field: string, options: string[]): string {
+    return this.propertyTabSingleSelectValue('prijezdova-komunikace', field, options);
+  }
+
+  protected setPrijezdSingleSelectValue(field: string, value: string, options: string[]): void {
+    this.setPropertyTabSingleSelectValue('prijezdova-komunikace', field, value, options);
+  }
+
+  protected isPrijezdCustomValue(field: string, options: string[]): boolean {
+    return this.isPropertyTabCustomValue(this.propertyTabFieldValue('prijezdova-komunikace', field), options);
+  }
+
+  protected sluzbyOptions(): string[] { return SLUZBY_OPTIONS; }
+
+  protected hasSluzbyMultiValue(field: string, value: string): boolean {
+    return this.hasPropertyTabMultiValue('sluzby', field, value);
+  }
+
+  protected toggleSluzbyMultiValue(field: string, value: string): void {
+    this.togglePropertyTabMultiValue('sluzby', field, value);
+  }
+
+  protected hasSluzbyRole(role: string): boolean {
+    return this.hasPropertyTabMultiValue('sluzby', 'Služby', role);
+  }
+
+  protected appendKsUnit(tab: string, field: string): void {
+    const value = this.propertyTabFieldValue(tab as NewPropertyTabKey, field).trim();
+    if (value && !value.endsWith('ks')) {
+      this.setPropertyTabFieldValue(tab as NewPropertyTabKey, field, value + ' ks');
+    }
+  }
+
+  protected elektroTechOptions(): string[] { return ELEKTRO_TECHNOLOGIE_OPTIONS; }
+  protected elektroJisticeOptions(): string[] { return ELEKTRO_JISTICE_OPTIONS; }
+  protected elektroVeniOptions(): string[] { return ELEKTRO_VENI_OPTIONS; }
+  protected elektroMeterOptions(): string[] { return ELEKTRO_METER_OPTIONS; }
+  protected elektroMeterLocationOptions(): string[] { return ELEKTRO_METER_LOCATION_OPTIONS; }
+  protected elektroSupplierOptions(): string[] { return ELEKTRO_SUPPLIER_OPTIONS; }
+
+  protected hasElektroMultiValue(field: string, value: string): boolean {
+    return this.hasPropertyTabMultiValue('elektina', field, value);
+  }
+
+  protected toggleElektroMultiValue(field: string, value: string): void {
+    this.togglePropertyTabMultiValue('elektina', field, value);
+  }
+
+  protected elektroSingleSelectValue(field: string, options: string[]): string {
+    return this.propertyTabSingleSelectValue('elektina', field, options);
+  }
+
+  protected setElektroSingleSelectValue(field: string, value: string, options: string[]): void {
+    this.setPropertyTabSingleSelectValue('elektina', field, value, options);
+  }
+
+  protected isElektroCustomValue(field: string, options: string[]): boolean {
+    return this.isPropertyTabCustomValue(this.propertyTabFieldValue('elektina', field), options);
+  }
+
+  protected isElektroNezavedena(): boolean {
+    return this.propertyTabFieldValue('elektina', 'Elektřina') === 'Nezavedena';
+  }
+
+  protected isElektroPuvodni(): boolean {
+    return this.propertyTabFieldValue('elektina', 'Stav elektrického vedení') === 'Původní';
+  }
+
+  protected isNewPropertyByt(): boolean {
+    return this.newPropertyDraft().propertyType.trim() === 'Byt';
+  }
+
+  protected appendSvetelUnit(): void {
+    const value = this.propertyTabFieldValue('elektina', 'Počet světel').trim();
+    if (value && !value.endsWith('světel')) {
+      this.setPropertyTabFieldValue('elektina', 'Počet světel', value + ' světel');
+    }
+  }
+
+  protected appendZasuvekUnit(): void {
+    const value = this.propertyTabFieldValue('elektina', 'Počet zásuvek').trim();
+    if (value && !value.endsWith('zásuvek')) {
+      this.setPropertyTabFieldValue('elektina', 'Počet zásuvek', value + ' zásuvek');
+    }
+  }
+
+  protected vodaZdrojOptions(): string[] { return VODA_ZDROJ_OPTIONS; }
+  protected vodaMerakOptions(): string[] { return VODA_MERAK_OPTIONS; }
+  protected vodaVedlejsiOptions(): string[] { return VODA_VEDLEJSI_OPTIONS; }
+  protected vodaDruhStudnyOptions(): string[] { return VODA_DRUH_STUDNY_OPTIONS; }
+  protected vodaKvalitaOptions(): string[] { return VODA_KVALITA_OPTIONS; }
+  protected vodaPrivodOptions(): string[] { return VODA_PRIVOD_OPTIONS; }
+  protected vodaStoupackyOptions(): string[] { return VODA_STOUPACKY_OPTIONS; }
+  protected vodaProvozovatelOptions(): string[] { return VODA_PROVOZOVATEL_OPTIONS; }
+
+  protected hasVodaMultiValue(field: string, value: string): boolean {
+    return this.hasPropertyTabMultiValue('voda', field, value);
+  }
+
+  protected toggleVodaMultiValue(field: string, value: string): void {
+    this.togglePropertyTabMultiValue('voda', field, value);
+  }
+
+  protected vodaSingleSelectValue(field: string, options: string[]): string {
+    return this.propertyTabSingleSelectValue('voda', field, options);
+  }
+
+  protected setVodaSingleSelectValue(field: string, value: string, options: string[]): void {
+    this.setPropertyTabSingleSelectValue('voda', field, value, options);
+  }
+
+  protected isVodaCustomValue(field: string, options: string[]): boolean {
+    return this.isPropertyTabCustomValue(this.propertyTabFieldValue('voda', field), options);
+  }
+
+  protected isVodaNezaveden(): boolean {
+    return this.propertyTabFieldValue('voda', 'Vodovod') === 'Nezaveden';
+  }
+
+  protected isVodaStoupackyPuvodni(): boolean {
+    return this.propertyTabFieldValue('voda', 'Stoupačky') === 'Původní';
+  }
+
+  protected isVodaHasStudna(): boolean {
+    return this.hasVodaMultiValue('Další zdroj vody', 'Studna vlastní') || this.hasVodaMultiValue('Další zdroj vody', 'Studna společná');
+  }
+
+  protected hasVodaAnyDalsiZdroj(): boolean {
+    const val = this.propertyTabFieldValue('voda', 'Další zdroj vody');
+    return !!val.trim();
+  }
+
+  protected KANALIZACE_OPTIONS: string[] = [
+    'Není řešena', 'Splašková městská', 'Dešťová městská', 'Čov', 'Septik',
+    'Septik tříkomorový', 'Trativod', 'Žumpa (bezodtoká jímka)', 'Žumpa s přepadem', 'Žumpa obecní'
+  ];
+
+  protected kanalizaceOptions(): string[] { return this.KANALIZACE_OPTIONS; }
+
+  protected hasKanalizaceMultiValue(field: string, value: string): boolean {
+    return this.hasPropertyTabMultiValue('kanalizace', field, value);
+  }
+
+  protected toggleKanalizaceMultiValue(field: string, value: string): void {
+    this.togglePropertyTabMultiValue('kanalizace', field, value);
+  }
+
+  protected isKanalizaceNeniResena(): boolean {
+    return this.hasKanalizaceMultiValue('Kanalizace', 'Není řešena');
+  }
+
+  protected isKanalizaceObjemHidden(): boolean {
+    return this.isKanalizaceNeniResena() ||
+      this.hasKanalizaceMultiValue('Kanalizace', 'Splašková městská') ||
+      this.hasKanalizaceMultiValue('Kanalizace', 'Dešťová městská');
+  }
+
+  protected TOPENI_STAV_OPTIONS: string[] = ['Není řešeno', 'Původní', 'Rekonstruováno'];
+  protected TOPENI_VYTAPENI_OPTIONS: string[] = ['Plyn', 'Elektřina', 'Tuhá paliva', 'Solární', 'Tepelné čerpadlo', 'Ústřední vytápění', 'Centrální dálkové'];
+  protected TOPENI_TELESO_OPTIONS: string[] = ['Podlahové vytápění', 'Radiátory', 'Elektrický přímotop', 'Infrapanel', 'Krb s výměníkem', 'Krb', 'Kotel na tuhá paliva', 'Vafky', 'Klimatizace', 'Akumulační kamna', 'Kamna (PETRY)', 'S regulací topení'];
+  protected TOPENI_UMISTENI_OPTIONS: string[] = ['V bytě', 'V místnosti', 'V domě (Ústřední vytápění)', 'V chatě', 'Ve sklepě', 'Dálkové'];
+  protected TOPENI_KOMIN_OPTIONS: string[] = ['Není', 'Vyvložkovaný', 'Nevyvložkovaný', 'Dvoukomín'];
+
+  protected topeniStavOptions(): string[] { return this.TOPENI_STAV_OPTIONS; }
+  protected topeniVytapeniOptions(): string[] { return this.TOPENI_VYTAPENI_OPTIONS; }
+  protected topeniTelesoOptions(): string[] { return this.TOPENI_TELESO_OPTIONS; }
+  protected topeniUmisteniOptions(): string[] { return this.TOPENI_UMISTENI_OPTIONS; }
+  protected topeniKominOptions(): string[] { return this.TOPENI_KOMIN_OPTIONS; }
+
+  protected hasTopeniMultiValue(field: string, value: string): boolean {
+    return this.hasPropertyTabMultiValue('topeni', field, value);
+  }
+
+  protected toggleTopeniMultiValue(field: string, value: string): void {
+    this.togglePropertyTabMultiValue('topeni', field, value);
+  }
+
+  protected isTopeniNeniReseno(): boolean {
+    return this.hasTopeniMultiValue('Stav topení', 'Není řešeno');
+  }
+
+  protected isTopeniPuvodni(): boolean {
+    return this.hasTopeniMultiValue('Stav topení', 'Původní');
+  }
+
+  protected isTopeniCentralniDalkove(): boolean {
+    return this.hasTopeniMultiValue('Způsob vytápění objektu', 'Centrální dálkové');
+  }
+
+  protected topeniSingleSelectValue(field: string, options: string[]): string {
+    const val = this.propertyTabFieldValue('topeni', field);
+    return options.includes(val) ? val : '';
+  }
+
+  protected setTopeniSingleSelectValue(field: string, value: string, options: string[]): void {
+    this.setPropertyTabFieldValue('topeni', field, options.includes(value) ? value : '');
+  }
+
+  protected isTopeniCustomValue(field: string, options: string[]): boolean {
+    const val = this.propertyTabFieldValue('topeni', field);
+    return !!val && !options.includes(val);
+  }
+
+  protected topeniIsInfrapanel(): boolean {
+    return this.hasTopeniMultiValue('Topné těleso', 'Infrapanel');
+  }
+
+  protected OHREV_VODY_ZDROJ_OPTIONS: string[] = ['Není řešeno', 'Centrální dálkový ohřev', 'Plyn', 'Elektřina', 'Tuhá paliva', 'Solární', 'Tepelné čerpadlo'];
+  protected OHREV_VODY_ZPUSOB_OPTIONS: string[] = ['Centrální dálkový ohřev', 'Plynový kondenzační kotel', 'Plynový kotel', 'Elektrokotel', 'Tepelné čerpadlo', 'Plynový průtokový (karma)', 'Kotel na tuhá paliva', 'Bojler - elektro', 'Bojler - plyn', 'Průtokový ohřívač'];
+  protected OHREV_VODY_UMISTENI_OPTIONS: string[] = ['V bytě', 'V místnosti', 'V domě', 'V chatě', 'Ve sklepě', 'Dálkové'];
+
+  protected ohrevVodyZdrojOptions(): string[] { return this.OHREV_VODY_ZDROJ_OPTIONS; }
+  protected ohrevVodyZpusobOptions(): string[] { return this.OHREV_VODY_ZPUSOB_OPTIONS; }
+  protected ohrevVodyUmisteniOptions(): string[] { return this.OHREV_VODY_UMISTENI_OPTIONS; }
+
+  protected hasOhrevVodyMultiValue(field: string, value: string): boolean {
+    return this.hasPropertyTabMultiValue('ohrev-vody', field, value);
+  }
+
+  protected toggleOhrevVodyMultiValue(field: string, value: string): void {
+    this.togglePropertyTabMultiValue('ohrev-vody', field, value);
+  }
+
+  protected isOhrevVodyNeniReseno(): boolean {
+    return this.hasOhrevVodyMultiValue('Zdroj teplé vody', 'Není řešeno');
+  }
+
+  protected isOhrevVodyHidden(): boolean {
+    return this.isVodaNezaveden();
+  }
+
+  protected isOhrevVodyZdrojHidden(): boolean {
+    return this.isOhrevVodyHidden();
+  }
+
+  protected isOhrevVodyFieldsHidden(): boolean {
+    return this.isOhrevVodyHidden() || this.isOhrevVodyNeniReseno();
+  }
+
+  protected isOhrevVodyOnlyCentralniDalkovy(): boolean {
+    const values = this.propertyTabMultiValues('ohrev-vody', 'Zdroj teplé vody');
+    return values.length === 1 && values[0] === 'Centrální dálkový ohřev';
+  }
+
+  protected isOhrevVodyContainerFieldsHidden(): boolean {
+    return this.isOhrevVodyFieldsHidden() || this.isOhrevVodyOnlyCentralniDalkovy();
+  }
+
+  // --- DATOVÉ SÍTĚ helpers ---
+  protected datoveSiteTelevizeOptions(): string[] { return ['ANO', 'NE']; }
+  protected datoveSiteInternetOptions(): string[] { return ['ANO', 'NE']; }
+  protected datoveSiteTelefonOptions(): string[] { return ['ANO', 'NE']; }
+  protected datoveSiteZdrojSignaluOptions(): string[] { return ['Satelit', 'Anténa', 'Internetová televize']; }
+  protected datoveSiteUmisteniPripojeniOptions(): string[] { return ['V bytě', 'V domě', 'Před dveřmi']; }
+
+  protected datoveSiteSingleSelectValue(field: string, options: string[]): string {
+    const val = this.propertyTabFieldValue('datove-site', field);
+    return options.includes(val) ? val : '';
+  }
+
+  protected setDatoveSiteSingleSelectValue(field: string, value: string, options: string[]): void {
+    this.setPropertyTabFieldValue('datove-site', field, options.includes(value) ? value : '');
+  }
+
+  protected hasDatoveSiteMultiValue(field: string, value: string): boolean {
+    return this.hasPropertyTabMultiValue('datove-site', field, value);
+  }
+
+  protected toggleDatoveSiteMultiValue(field: string, value: string): void {
+    this.togglePropertyTabMultiValue('datove-site', field, value);
+  }
+
+  // --- VYBAVENÍ helpers ---
+  protected vybaveniStavOptions(): string[] { return ['Zařízeno', 'Nezařízeno', 'Částečně zařízeno']; }
+
+  protected vybaveniSingleSelectValue(field: string, options: string[]): string {
+    const val = this.propertyTabFieldValue('vybaveni', field);
+    return options.includes(val) ? val : '';
+  }
+
+  protected setVybaveniSingleSelectValue(field: string, value: string, options: string[]): void {
+    this.setPropertyTabFieldValue('vybaveni', field, options.includes(value) ? value : '');
+  }
+
+  // --- NÁKLADY helpers ---
+  protected nakladyAnoNeOptions(): string[] { return ['ANO', 'NE']; }
+  protected nakladyPeriodOptions(): string[] { return ['měsíčně za osobu', 'ročně za osobu', 'měsíčně za nemovitost', 'ročně za nemovitost']; }
+  protected nakladyUdrzbaOptions(): string[] { return ['Neplatí se', 'Týdně', 'Měsíčně', 'Za půlrok', 'Ročně']; }
+
+  protected nakladySingleSelectValue(field: string, options: string[]): string {
+    const val = this.propertyTabFieldValue('naklady', field);
+    return options.includes(val) ? val : '';
+  }
+
+  protected setNakladySingleSelectValue(field: string, value: string, options: string[]): void {
+    this.setPropertyTabFieldValue('naklady', field, options.includes(value) ? value : '');
+  }
+
+  protected isNakladyOdvozOdpaduAno(): boolean {
+    return this.nakladySingleSelectValue('Odvoz odpadu', ['ANO', 'NE']) === 'ANO';
+  }
+
+  protected isNakladyUdrzbaCestAno(): boolean {
+    return this.nakladySingleSelectValue('Placená údržba cest a okolí', ['ANO', 'NE']) === 'ANO';
+  }
+
+  // --- OBLAST helpers ---
+  protected oblastZaplavovaOptions(): string[] { return ['ANO', 'NE']; }
+  protected oblastOchranaOptions(): string[] {
+    return [
+      'Národní park', 'Ochranné pásmo', 'Chráněná krajinná oblast',
+      'Chráněná krajinná oblast - I. zóna', 'Chráněná krajinná oblast - II-III. zóna',
+      'Chráněná krajinná oblast - IV. zóna', 'Chráněná ložisková území',
+      'Památková zóna', 'Památková rezervace', 'Ptačí oblast', 'Kulturní památka',
+      'Národní kulturní památka', 'Evropsky významná lokalita'
+    ];
+  }
+
+  protected oblastSingleSelectValue(field: string, options: string[]): string {
+    const val = this.propertyTabFieldValue('oblast', field);
+    return options.includes(val) ? val : '';
+  }
+
+  protected setOblastSingleSelectValue(field: string, value: string, options: string[]): void {
+    this.setPropertyTabFieldValue('oblast', field, options.includes(value) ? value : '');
+  }
+
+  protected hasOblastMultiValue(field: string, value: string): boolean {
+    return this.hasPropertyTabMultiValue('oblast', field, value);
+  }
+
+  protected toggleOblastMultiValue(field: string, value: string): void {
+    this.togglePropertyTabMultiValue('oblast', field, value);
+  }
+
+  // --- DOSTUPNOST V OKOLÍ helpers ---
+  protected dostupnostZajimavostiIndexes(): number[] {
+    const count = Number.parseInt(this.propertyTabFieldValue('dostupnost-v-okoli', 'Zajímavosti v okolí počet') || '1', 10);
+    return Array.from({ length: Math.max(1, Math.min(10, count)) }, (_, index) => index);
+  }
+
+  protected addDostupnostZajimavost(): void {
+    const next = Math.min(10, this.dostupnostZajimavostiIndexes().length + 1);
+    this.setPropertyTabFieldValue('dostupnost-v-okoli', 'Zajímavosti v okolí počet', String(next));
+  }
+
+  protected canAddDostupnostZajimavost(): boolean {
+    return this.dostupnostZajimavostiIndexes().length < 10;
+  }
+
+  protected dostupnostOkoliOptions(): string[] {
+    return ['Dobrá dostupnost do areálu', 'Manipulační plocha u garáže', 'Veřejné osvětlení', 'Kamery', 'Autoopravna', 'Automyčka', 'Rampa', 'Voda'];
+  }
+
+  protected infrastrukturaObceOptions(): string[] {
+    return ['Školka', 'Škola', 'Obchod', 'Obecní úřad', 'Knihovna', 'Lékaři', 'Pošta', 'Restaurace', 'Hospoda'];
+  }
+
+  protected dopravaOptions(): string[] { return ['MHD', 'Autobus', 'Vlak']; }
+  protected dostupnostCasOptions(): string[] { return ['min', 'hod']; }
+  protected dostupnostDopravaTypOptions(): string[] { return ['Pěšky', 'Autem']; }
+
+  protected hasDostupnostMultiValue(field: string, value: string): boolean {
+    return this.hasPropertyTabMultiValue('dostupnost-v-okoli', field, value);
+  }
+
+  protected toggleDostupnostMultiValue(field: string, value: string): void {
+    this.togglePropertyTabMultiValue('dostupnost-v-okoli', field, value);
+  }
+
+  protected dostupnostInfrastructureDistanceFields(): string[] {
+    return ['Školka', 'Škola', 'Obchod', 'Obecní úřad', 'Knihovna', 'Lékaři', 'Pošta', 'Restaurace'];
+  }
+
+  protected shouldShowDostupnostInfrastructureField(field: string): boolean {
+    const selected = field === 'Lékaři' ? this.hasDostupnostMultiValue('Infrastruktura obce', 'Lékaři') : this.hasDostupnostMultiValue('Infrastruktura obce', field);
+    return selected;
+  }
+
+  // --- HLAVNÍ PŘEDNOSTI helpers ---
+  protected hlavniPrednostiOptions(): string[] {
+    return [
+      'Dobrá příjezdová cesta', 'Parkování před domem', 'Parkování před chatou',
+      'Vlastní parkování', 'Sídliště', 'Klid', 'Samota', 'Polosamota', 'Zahrada u domu',
+      'Krajina / okolí', 'Zeleň v okolí', 'Výhled', 'Dostupnost služeb', 'Rekonstrukce',
+      'Prostor pro pračku', 'Možnost trvalého pobytu', 'Úklid společných prostor',
+      'Kamery v domě', 'Koupání', 'Ráj houbařů', 'Rybářské lokality'
+    ];
+  }
+
+  protected hasHlavniPrednostiMultiValue(field: string, value: string): boolean {
+    return this.hasPropertyTabMultiValue('hlavni-prednosti', field, value);
+  }
+
+  protected toggleHlavniPrednostiMultiValue(field: string, value: string): void {
+    this.togglePropertyTabMultiValue('hlavni-prednosti', field, value);
+  }
+
+  // --- PRÁVNÍ VADY A OMEZENÍ helpers ---
+  protected pravniVadyOptions(): string[] {
+    return [
+      'Nejsou známa žádná', 'Dluh na družstvu', 'Břemena chůze, jízdy',
+      'Břemena elektřina', 'Břemena vodovod', 'Břemena kanalizace', 'Bankovní zástavy',
+      'Předkupní právo', 'Památková zóna', 'Chráněná krajinná oblast', 'Podnájemník do:',
+      'Dluh na bytě nájemník'
+    ];
+  }
+
+  protected hasPravniVadyMultiValue(field: string, value: string): boolean {
+    return this.hasPropertyTabMultiValue('pravni-vady', field, value);
+  }
+
+  protected togglePravniVadyMultiValue(field: string, value: string): void {
+    this.togglePropertyTabMultiValue('pravni-vady', field, value);
+  }
+
+  // --- PRODEJ helpers ---
+  protected prodejAnoNeOptions(): string[] { return ['ANO', 'NE']; }
+  protected prodejDostupnostOptions(): string[] { return ['Volný ihned', 'Volný od']; }
+  protected prodejPodnajemPeriodOptions(): string[] { return ['Týdně', 'Měsíčně', 'Za půlrok', 'Ročně']; }
+
+  protected prodejSingleSelectValue(field: string, options: string[]): string {
+    const val = this.propertyTabFieldValue('prodej', field);
+    return options.includes(val) ? val : '';
+  }
+
+  protected setProdejSingleSelectValue(field: string, value: string, options: string[]): void {
+    this.setPropertyTabFieldValue('prodej', field, options.includes(value) ? value : '');
+  }
+
+  protected isProdejDostupnostVolnyOd(): boolean {
+    return this.prodejSingleSelectValue('Dostupnost', this.prodejDostupnostOptions()) === 'Volný od';
+  }
+
+  protected isProdejPrevodDoOvNe(): boolean {
+    return this.prodejSingleSelectValue('Lze převést do osobního vlastnictví', this.prodejAnoNeOptions()) === 'NE';
+  }
+
+  protected isProdejPoplatekPrevodAno(): boolean {
+    return this.prodejSingleSelectValue('Poplatek za převod podílu', this.prodejAnoNeOptions()) === 'ANO';
+  }
+
+  protected isProdejPodnajimatNe(): boolean {
+    return this.prodejSingleSelectValue('Lze podnajímat', this.prodejAnoNeOptions()) === 'NE';
+  }
+
+  protected prodejRepeatIndexes(field: string): number[] {
+    const count = Number.parseInt(this.propertyTabFieldValue('prodej', `${field} počet`) || '1', 10);
+    return Array.from({ length: Math.max(1, Math.min(10, count)) }, (_, index) => index);
+  }
+
+  protected addProdejRepeat(field: string): void {
+    const next = Math.min(10, this.prodejRepeatIndexes(field).length + 1);
+    this.setPropertyTabFieldValue('prodej', `${field} počet`, String(next));
+  }
+
+  protected canAddProdejRepeat(field: string): boolean {
+    return this.prodejRepeatIndexes(field).length < 10;
+  }
+
+  protected formatProdejCurrencyField(field: string): void {
+    const normalized = this.propertyTabFieldValue('prodej', field)
+      .replace(/\s/g, '')
+      .replace(/Kč/gi, '')
+      .replace(/\./g, '')
+      .replace(',', '.');
+    const value = Number.parseFloat(normalized);
+    this.setPropertyTabFieldValue('prodej', field, Number.isFinite(value) && value > 0 ? `${Math.round(value).toLocaleString('cs-CZ')} Kč` : '');
+  }
+
+  // --- PRONÁJEM helpers ---
+  protected pronajemAnoNeOptions(): string[] { return ['ANO', 'NE']; }
+  protected pronajemDostupnostOptions(): string[] { return ['Volný ihned', 'Volný od']; }
+  protected pronajemPlatbaOptions(): string[] { return ['Převodem na účet', 'Hotově']; }
+
+  protected pronajemSingleSelectValue(field: string, options: string[]): string {
+    const val = this.propertyTabFieldValue('pronajem', field);
+    return options.includes(val) ? val : '';
+  }
+
+  protected setPronajemSingleSelectValue(field: string, value: string, options: string[]): void {
+    this.setPropertyTabFieldValue('pronajem', field, options.includes(value) ? value : '');
+  }
+
+  protected isPronajemDostupnostVolnyOd(): boolean {
+    return this.pronajemSingleSelectValue('Dostupnost', this.pronajemDostupnostOptions()) === 'Volný od';
+  }
+
+  protected isPronajemDlouhodobyAno(): boolean {
+    return this.pronajemSingleSelectValue('Dlouhodobý pronájem', this.pronajemAnoNeOptions()) === 'ANO';
+  }
+
+  protected isPronajemDobaUrcitaAno(): boolean {
+    return this.pronajemSingleSelectValue('Pronájem na dobu určitou', this.pronajemAnoNeOptions()) === 'ANO';
+  }
+
+  protected isPronajemZvirataNe(): boolean {
+    return this.pronajemSingleSelectValue('Zvířata v domácnosti', this.pronajemAnoNeOptions()) === 'NE';
+  }
+
+  protected pronajemPoznamkaIndexes(): number[] {
+    const count = Number.parseInt(this.propertyTabFieldValue('pronajem', 'Poznámka k pronájmu počet') || '1', 10);
+    return Array.from({ length: Math.max(1, Math.min(10, count)) }, (_, index) => index);
+  }
+
+  protected addPronajemPoznamka(): void {
+    const next = Math.min(10, this.pronajemPoznamkaIndexes().length + 1);
+    this.setPropertyTabFieldValue('pronajem', 'Poznámka k pronájmu počet', String(next));
+  }
+
+  protected canAddPronajemPoznamka(): boolean {
+    return this.pronajemPoznamkaIndexes().length < 10;
+  }
+
+  // --- CENA NÁJMU helpers ---
+  protected cenaNajmuPeriodOptions(): string[] { return ['Týdně', 'Měsíčně', 'Za půlrok', 'Ročně']; }
+  protected cenaNajmuSluzbyNajemceOptions(): string[] { return ['Elektřina', 'Voda', 'Plyn', 'Odpady', 'Vše zůstává na pronajímateli']; }
+  protected cenaNajmuOsobyOptions(): string[] { return ['pro 1 osobu', 'pro 2 osoby', 'pro 3 osoby', 'pro 4 osoby', 'pro 5 osob', 'pro 6 osob']; }
+  protected cenaNajmuKauceOptions(): string[] {
+    return ['1x Nájem + služby', '1x Nájem bez služeb', '2x Nájem + služby', '2x Nájem bez služeb', '3x Nájem + služby', '3x Nájem bez služeb'];
+  }
+
+  protected hasCenaNajmuMultiValue(field: string, value: string): boolean {
+    return this.hasPropertyTabMultiValue('cena-najmu', field, value);
+  }
+
+  protected toggleCenaNajmuMultiValue(field: string, value: string): void {
+    this.togglePropertyTabMultiValue('cena-najmu', field, value);
+  }
+
+  protected cenaNajmuSingleSelectValue(field: string, options: string[]): string {
+    const val = this.propertyTabFieldValue('cena-najmu', field);
+    return options.includes(val) ? val : '';
+  }
+
+  protected setCenaNajmuSingleSelectValue(field: string, value: string, options: string[]): void {
+    this.setPropertyTabFieldValue('cena-najmu', field, options.includes(value) ? value : '');
+  }
+
+  protected cenaNajmuNumberValue(field: string): number {
+    const normalized = this.propertyTabFieldValue('cena-najmu', field)
+      .replace(/\s/g, '')
+      .replace(/\./g, '')
+      .replace(',', '.');
+    const value = Number.parseFloat(normalized);
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  protected cenaNajmuCurrencyValue(value: number): string {
+    return value !== 0 ? `${Math.round(value).toLocaleString('cs-CZ')} Kč` : '';
+  }
+
+  protected cenaNajmuKompletniNaklady(): string {
+    return this.cenaNajmuCurrencyValue(
+      this.cenaNajmuNumberValue('Celková výše nákladů dle Rozpisu služeb') +
+      this.cenaNajmuNumberValue('Poplatek družstvu za podnájem')
+    );
+  }
+
+  protected cenaNajmuDoporucenaKauce(): string {
+    const option = this.cenaNajmuSingleSelectValue('Složení kauce', this.cenaNajmuKauceOptions());
+    const multiplier = option.startsWith('2x') ? 2 : option.startsWith('3x') ? 3 : option.startsWith('1x') ? 1 : 0;
+    const rent = this.cenaNajmuNumberValue('Požadovaná cena nájmu');
+    const services = option.includes('+ služby') ? this.cenaNajmuNumberValue('Výše služeb celkem') : 0;
+    return this.cenaNajmuCurrencyValue(multiplier * (rent + services));
+  }
+
+  protected cenaNajmuZisk(): string {
+    return this.cenaNajmuCurrencyValue(
+      this.cenaNajmuNumberValue('Požadovaná cena nájmu') -
+      this.cenaNajmuNumberValue('Celková výše nákladů dle Rozpisu služeb') -
+      this.cenaNajmuNumberValue('Poplatek družstvu za podnájem')
+    );
+  }
+
+  // --- ROZPIS SLUŽEB helpers ---
+  protected rozpisSluzebBytOptions(): string[] {
+    return [
+      'Záloha na teplo', 'Záloha na teplou vodu', 'Záloha na studenou vodu',
+      'Záloha na elektřinu', 'Záloha na plyn',
+      'Zajištění příjmu rozhlasového a televizního vysílání', 'Odvoz komunálního odpadu',
+      'Odvoz a odvádění odpadních vod včetně čištění jímek', 'Provoz a čištění komínů',
+      'Provoz výtahu', 'Internet', 'Osvětlení společných prostor',
+      'Elektrická energie společných prostor', 'Úklid společných částí domu', 'Odečty měřičů'
+    ];
+  }
+
+  protected rozpisSluzebOstatniOptions(): string[] {
+    return [
+      'Záloha na vodu', 'Záloha na elektřinu', 'Záloha na plyn',
+      'Zajištění příjmu rozhlasového a televizního vysílání', 'Odvoz komunálního odpadu',
+      'Odvoz a odvádění odpadních vod včetně čištění jímek', 'Provoz a čištění komínů',
+      'Provoz výtahu', 'Internet', 'Osvětlení společných prostor',
+      'Úklid společných částí domu', 'Odečty měřičů'
+    ];
+  }
+
+  protected rozpisSluzebIsByt(): boolean {
+    return this.newPropertyDraft().propertyType.trim() === 'Byt';
+  }
+
+  protected rozpisSluzebActiveOptions(): string[] {
+    return this.rozpisSluzebIsByt() ? this.rozpisSluzebBytOptions() : this.rozpisSluzebOstatniOptions();
+  }
+
+  protected rozpisSluzebExcludedOptions(): string[] {
+    return [
+      'Anuita (splátka dluhu za převod bytu do OV)', 'Příspěvek na činnost SČMBD',
+      'Fond oprav', 'Daň z nemovitosti', 'Splátka půjčky',
+      'Pojištění domu/budovy nebo majetku majitele', 'Správa nemovitosti nebo odměna správci',
+      'Revize (velké revize, např. elektroinstalace v domě)'
+    ];
+  }
+
+  protected rozpisSluzebCustomIndexes(group: string): number[] {
+    const count = Number.parseInt(this.propertyTabFieldValue('rozpis-sluzeb', `${group} vlastní počet`) || '0', 10);
+    return Array.from({ length: Math.max(0, Math.min(10, count)) }, (_, index) => index);
+  }
+
+  protected addRozpisSluzebCustom(group: string): void {
+    const next = Math.min(10, this.rozpisSluzebCustomIndexes(group).length + 1);
+    this.setPropertyTabFieldValue('rozpis-sluzeb', `${group} vlastní počet`, String(next));
+  }
+
+  protected canAddRozpisSluzebCustom(group: string): boolean {
+    return this.rozpisSluzebCustomIndexes(group).length < 10;
+  }
+
+  protected doplnkoveInformaceKlientAkceptujeOptions(): string[] {
+    return ['Vyvěšení plachty', 'Letáky do vchodu'];
+  }
+
+  protected hasDoplnkoveInformaceMultiValue(field: string, value: string): boolean {
+    return this.hasPropertyTabMultiValue('doplnkove-informace', field, value);
+  }
+
+  protected toggleDoplnkoveInformaceMultiValue(field: string, value: string): void {
+    this.togglePropertyTabMultiValue('doplnkove-informace', field, value);
+  }
+
+  protected plynTypOptions(): string[] { return PLYN_TYP_OPTIONS; }
+  protected plynUmisteniOptions(): string[] { return PLYN_UMISTENI_OPTIONS; }
+  protected plynPoskytovatelOptions(): string[] { return PLYN_POSKYTOVATEL_OPTIONS; }
+
+  protected hasPlynMultiValue(field: string, value: string): boolean {
+    return this.hasPropertyTabMultiValue('plyn', field, value);
+  }
+
+  protected togglePlynMultiValue(field: string, value: string): void {
+    this.togglePropertyTabMultiValue('plyn', field, value);
+  }
+
+  protected plynSingleSelectValue(field: string, options: string[]): string {
+    return this.propertyTabSingleSelectValue('plyn', field, options);
+  }
+
+  protected setPlynSingleSelectValue(field: string, value: string, options: string[]): void {
+    this.setPropertyTabSingleSelectValue('plyn', field, value, options);
+  }
+
+  protected isPlynCustomValue(field: string, options: string[]): boolean {
+    return this.isPropertyTabCustomValue(this.propertyTabFieldValue('plyn', field), options);
+  }
+
+  protected isPlynNezaveden(): boolean {
+    return this.propertyTabFieldValue('plyn', 'Plyn') === 'Nezaveden';
+  }
+
+
+  protected hasOknaMultiValue(field: string, value: string): boolean {
+    return this.hasPropertyTabMultiValue('okna', field, value);
+  }
+
+  protected toggleOknaMultiValue(field: string, value: string): void {
+    this.togglePropertyTabMultiValue('okna', field, value);
+  }
+
+  protected oknaSingleSelectValue(field: string, options: string[]): string {
+    return this.propertyTabSingleSelectValue('okna', field, options);
+  }
+
+  protected setOknaSingleSelectValue(field: string, value: string, options: string[]): void {
+    this.setPropertyTabSingleSelectValue('okna', field, value, options);
+  }
+
+  protected isOknaCustomValue(field: string, options: string[]): boolean {
+    return this.isPropertyTabCustomValue(this.propertyTabFieldValue('okna', field), options);
+  }
+
+  protected hasNoWindowsSelected(): boolean {
+    return this.hasOknaMultiValue('Druh oken', 'bez oken');
+  }
+
+  protected handoverResolvedParties(role: 'predavajici' | 'prebirajici'): Array<{ name: string; birthDate: string; address: string; phone: string; email: string }> {
+    const allowed = role === 'predavajici' ? new Set(['prodavajici', 'pronajimatel']) : new Set(['kupujici', 'najemce']);
+    return this.handoverLinkedClients()
+      .filter((record) => allowed.has(record.draft.clientInterest))
+      .map((record) => ({
+        name: this.handoverClientName(record.draft),
+        birthDate: record.draft.birthDate.trim(),
+        address: this.handoverClientAddress(record.draft),
+        phone: this.displayNewClientPhone(record.draft),
+        email: record.draft.email.trim()
+      }));
+  }
+
+  protected handoverExtraPartyIndexes(role: 'predavajici' | 'prebirajici'): number[] {
+    const count = Number.parseInt(this.propertyTabFieldValue('predavaci-protokol', `${role}-count`) || '0', 10);
+    const safeCount = Number.isFinite(count) && count > 0 ? count : 0;
+    return Array.from({ length: safeCount }, (_, index) => index);
+  }
+
+  protected addHandoverExtraParty(role: 'predavajici' | 'prebirajici'): void {
+    this.setPropertyTabFieldValue('predavaci-protokol', `${role}-count`, String(this.handoverExtraPartyIndexes(role).length + 1));
+  }
+
+  protected removeHandoverExtraParty(role: 'predavajici' | 'prebirajici', indexToRemove: number): void {
+    const indexes = this.handoverExtraPartyIndexes(role);
+    this.newPropertyDraft.update((draft) => {
+      const tabValues = { ...draft.tabValues };
+      const currentTab = { ...(tabValues['predavaci-protokol'] || {}) };
+      const rows = indexes
+        .filter((index) => index !== indexToRemove)
+        .map((index) => ({
+          name: currentTab[`${role}-${index}-name`] || '',
+          birthDate: currentTab[`${role}-${index}-birthDate`] || '',
+          address: currentTab[`${role}-${index}-address`] || '',
+          phone: currentTab[`${role}-${index}-phone`] || '',
+          email: currentTab[`${role}-${index}-email`] || ''
+        }));
+      for (const key of Object.keys(currentTab)) {
+        if (key.startsWith(`${role}-`)) {
+          delete currentTab[key];
+        }
+      }
+      rows.forEach((row, index) => {
+        currentTab[`${role}-${index}-name`] = row.name;
+        currentTab[`${role}-${index}-birthDate`] = row.birthDate;
+        currentTab[`${role}-${index}-address`] = row.address;
+        currentTab[`${role}-${index}-phone`] = row.phone;
+        currentTab[`${role}-${index}-email`] = row.email;
+      });
+      currentTab[`${role}-count`] = String(rows.length);
+      tabValues['predavaci-protokol'] = currentTab;
+      return { ...draft, tabValues };
+    });
+  }
+
+  protected handoverExtraPartyField(role: 'predavajici' | 'prebirajici', index: number, field: 'name' | 'birthDate' | 'address' | 'phone' | 'email'): string {
+    return this.propertyTabFieldValue('predavaci-protokol', `${role}-${index}-${field}`);
+  }
+
+  protected setHandoverExtraPartyField(role: 'predavajici' | 'prebirajici', index: number, field: 'name' | 'birthDate' | 'address' | 'phone' | 'email', value: string): void {
+    this.setPropertyTabFieldValue('predavaci-protokol', `${role}-${index}-${field}`, value);
+  }
+
+  protected handoverPropertyDescriptionValue(): string {
+    return this.propertyTabFieldValue('predavaci-protokol', 'propertyDescription') || this.defaultHandoverPropertyDescription();
+  }
+
+  protected handoverCityValue(): string {
+    return this.propertyTabFieldValue('predavaci-protokol', 'city');
+  }
+
+  protected handoverDateValue(): string {
+    return this.propertyTabFieldValue('predavaci-protokol', 'date');
+  }
+
+  private handoverLinkedClients(): SavedClientRecord[] {
+    const propertyId = this.activeSavedPropertyId();
+    const directClientIds = this.propertyLinkedClientIds();
+    const seen = new Set<string>();
+    return this.savedClientRecords().filter((record) => {
+      const matches = (propertyId && record.draft.linkedPropertyId === propertyId) || directClientIds.includes(record.id);
+      if (!matches || seen.has(record.id)) {
+        return false;
+      }
+      seen.add(record.id);
+      return true;
+    });
+  }
+
+  private handoverClientName(draft: NewClientDraft): string {
+    return draft.fullName.trim() || draft.companyName.trim();
+  }
+
+  private handoverClientAddress(draft: NewClientDraft): string {
+    return [draft.permanentResidence.trim(), draft.permanentResidenceState.trim()].filter(Boolean).join(', ');
+  }
+
+  private defaultHandoverPropertyDescription(): string {
+    const type = this.newPropertyDraft().propertyType.trim() || 'nemovitost';
+    const parcelNumbers = this.landParcelIndexes()
+      .map((index) => this.landParcelValue(index, 'parcel').trim())
+      .filter(Boolean)
+      .join(', ');
+    const area = this.landTotalArea().trim();
+    const parcelType = this.landParcelIndexes().map((index) => this.landParcelValue(index, 'type').trim()).filter(Boolean)[0] || '';
+    const buildingNumber = this.propertyTabFieldValue('stavba', 'Označení budovy').trim();
+    const buildingNumberType = this.propertyTabFieldValue('stavba', 'Označení budovy typ').trim();
+    const buildingTypeText = buildingNumberType === 'Číslo evidenční' ? 'č. ev.' : buildingNumberType === 'Číslo popisné' ? 'č. p.' : '';
+    const parts = [type];
+    if (parcelNumbers) {
+      parts.push(`na pozemku parcela ${parcelNumbers}`);
+    }
+    if (area) {
+      parts.push(`o výměře ${area}`);
+    }
+    if (parcelType) {
+      parts.push(parcelType.toLowerCase());
+    }
+    if (buildingNumber) {
+      parts.push(`součástí je stavba ${buildingTypeText} ${buildingNumber}`.trim());
+    }
+    return parts.join(', ');
+  }
+
+  protected isCurrentPropertyInTypes(types: string[]): boolean {
+    const type = this.newPropertyDraft().propertyType.trim();
+    if (!type) {
+      return false;
+    }
+    return types.some((entry) => entry === 'Jiná' ? !PROPERTY_TYPE_OPTIONS.includes(type) : entry === type);
+  }
+
+  protected isProstoryTabVisible(): boolean {
+    return this.isCurrentPropertyInTypes(PROSTORY_GENERAL_TYPES) || this.isCurrentPropertyInTypes(PROSTORY_LODGING_TYPES);
+  }
+
+  protected shouldShowProstoryLodgingFields(): boolean {
+    return this.isCurrentPropertyInTypes(PROSTORY_LODGING_TYPES);
+  }
+
+  protected shouldShowProstoryGeneralFields(): boolean {
+    return this.isCurrentPropertyInTypes(PROSTORY_GENERAL_TYPES);
+  }
+
+  protected prostoryAdditionalOptions(): string[] { return PROSTORY_ADDITIONAL_OPTIONS; }
+  protected prostoryRoomEquipmentOptions(): string[] { return PROSTORY_ROOM_EQUIPMENT_OPTIONS; }
+  protected prostoryRoomListOptions(): string[] { return PROSTORY_ROOM_LIST_OPTIONS; }
+  protected prostoryCellarTypeOptions(): string[] { return PROSTORY_CELLAR_TYPE_OPTIONS; }
+  protected prostoryCellarSidesOptions(): string[] { return PROSTORY_CELLAR_SIDES_OPTIONS; }
+  protected prostoryGarageDoorMaterialOptions(): string[] { return PROSTORY_GARAGE_DOOR_MATERIAL_OPTIONS; }
+  protected prostoryGarageDoorOpeningOptions(): string[] { return PROSTORY_GARAGE_DOOR_OPENING_OPTIONS; }
+
+  protected hasProstoryMultiValue(field: string, value: string): boolean {
+    if (field === 'Seznam místností') {
+      return this.hasSelectedProstoryListOption(value);
+    }
+    return this.hasPropertyTabMultiValue('prostory', field, value);
+  }
+
+  protected toggleProstoryMultiValue(field: string, value: string): void {
+    if (field === 'Seznam místností') {
+      this.toggleProstoryRoomSelection(value);
+      return;
+    }
+    this.togglePropertyTabMultiValue('prostory', field, value);
+  }
+
+  protected prostorySingleSelectValue(field: string, options: string[]): string {
+    return this.propertyTabSingleSelectValue('prostory', field, options);
+  }
+
+  protected setProstorySingleSelectValue(field: string, value: string, options: string[]): void {
+    this.setPropertyTabSingleSelectValue('prostory', field, value, options);
+  }
+
+  protected isProstoryCustomValue(field: string, options: string[]): boolean {
+    return this.isPropertyTabCustomValue(this.propertyTabFieldValue('prostory', field), options);
+  }
+
+  protected selectedProstoryRooms(): string[] {
+    return Array.from(new Set(this.propertyTabMultiValues('prostory', 'Seznam místností').map((room) => this.normalizeLegacyProstoryRoom(room))));
+  }
+
+  protected hasSelectedProstoryRoom(room: string): boolean {
+    return this.selectedProstoryRooms().includes(room);
+  }
+
+  protected hasSelectedProstoryListOption(room: string): boolean {
+    const selected = this.propertyTabMultiValues('prostory', 'Seznam místností');
+    const aliases = this.prostoryRoomAliases(room);
+    return selected.some((entry) => aliases.includes(entry) || this.normalizeLegacyProstoryRoom(entry) === room);
+  }
+
+  private prostoryRoomCountKey(room: string): string {
+    return `${room}__count`;
+  }
+
+  protected selectedProstoryRoomEntries(): Array<{ room: string; index: number; primary: boolean }> {
+    return this.selectedProstoryRooms().flatMap((room) =>
+      this.prostoryRoomInstanceIndexes(room).map((index) => ({ room, index, primary: index === 0 }))
+    );
+  }
+
+  protected prostoryRoomInstanceIndexes(room: string): number[] {
+    const count = Number.parseInt(this.propertyTabFieldValue('prostory', this.prostoryRoomCountKey(room)) || '1', 10);
+    const safeCount = Number.isFinite(count) && count > 0 ? count : 1;
+    return Array.from({ length: safeCount }, (_, index) => index);
+  }
+
+  protected addProstoryRoomInstance(room: string): void {
+    this.setPropertyTabFieldValue('prostory', this.prostoryRoomCountKey(room), String(this.prostoryRoomInstanceIndexes(room).length + 1));
+  }
+
+  protected removeProstoryRoomInstance(room: string, indexToRemove: number): void {
+    const indexes = this.prostoryRoomInstanceIndexes(room);
+    if (indexes.length <= 1) {
+      return;
+    }
+    this.newPropertyDraft.update((draft) => {
+      const tabValues = { ...draft.tabValues };
+      const currentTab = { ...(tabValues.prostory || {}) };
+      const rows = indexes
+        .filter((index) => index !== indexToRemove)
+        .map((index) => ({
+          width: currentTab[`${room}__${index}__width`] || '',
+          length: currentTab[`${room}__${index}__length`] || ''
+        }));
+      for (const key of Object.keys(currentTab)) {
+        if (key.startsWith(`${room}__`) && (key.endsWith('__width') || key.endsWith('__length'))) {
+          delete currentTab[key];
+        }
+      }
+      rows.forEach((row, index) => {
+        currentTab[`${room}__${index}__width`] = row.width;
+        currentTab[`${room}__${index}__length`] = row.length;
+      });
+      currentTab[this.prostoryRoomCountKey(room)] = String(rows.length);
+      tabValues.prostory = currentTab;
+      return { ...draft, tabValues };
+    });
+  }
+
+  protected prostoryRoomDimensionValue(room: string, index: number, key: 'width' | 'length'): string {
+    return this.propertyTabFieldValue('prostory', `${room}__${index}__${key}`);
+  }
+
+  protected setProstoryRoomDimensionValue(room: string, index: number, key: 'width' | 'length', value: string): void {
+    this.setPropertyTabFieldValue('prostory', `${room}__${index}__${key}`, this.sanitizePropertyNumberInput(value));
+  }
+
+  protected formatProstoryRoomDimensionValue(room: string, index: number, key: 'width' | 'length'): void {
+    this.setPropertyTabFieldValue('prostory', `${room}__${index}__${key}`, this.formatMeterValue(this.prostoryRoomDimensionValue(room, index, key)));
+  }
+
+  protected prostoryRoomArea(room: string, index: number): string {
+    const width = this.parseLocalizedNumber(this.prostoryRoomDimensionValue(room, index, 'width').replace(/\s*m\s*$/i, ''));
+    const length = this.parseLocalizedNumber(this.prostoryRoomDimensionValue(room, index, 'length').replace(/\s*m\s*$/i, ''));
+    const total = width * length;
+    return total > 0 ? this.formatDecimalNumber(total, 'm²') : '';
+  }
+
+  protected prostoryAreaTotal(kind: 'podlahova' | 'obytna' | 'uzitna' | 'celkovaUzitna'): string {
+    const total = this.selectedProstoryRooms()
+      .filter((room) => this.shouldIncludeRoomInProstoryTotal(room, kind))
+      .flatMap((room) => this.prostoryRoomInstanceIndexes(room).map((index) => this.parseLocalizedNumber(this.prostoryRoomArea(room, index).replace(/\s*m²\s*$/i, ''))))
+      .filter((value) => value > 0)
+      .reduce((sum, value) => sum + value, 0);
+    return total > 0 ? this.formatDecimalNumber(total, 'm²') : '';
+  }
+
+  protected prostoryDimensionValue(field: string, side: 'first' | 'second'): string {
+    return this.propertyTabFieldValue('prostory', `${field}__${side}`);
+  }
+
+  protected setProstoryDimensionValue(field: string, side: 'first' | 'second', value: string): void {
+    this.setPropertyTabFieldValue('prostory', `${field}__${side}`, this.sanitizePropertyNumberInput(value));
+  }
+
+  protected formatProstoryDimensionValue(field: string, side: 'first' | 'second'): void {
+    this.setPropertyTabFieldValue('prostory', `${field}__${side}`, this.formatMeterValue(this.prostoryDimensionValue(field, side)));
+  }
+
+  private shouldIncludeRoomInProstoryTotal(room: string, kind: 'podlahova' | 'obytna' | 'uzitna' | 'celkovaUzitna'): boolean {
+    if (kind === 'celkovaUzitna') {
+      return true;
+    }
+    if (kind === 'obytna') {
+      return PROSTORY_OBYTNA_ROOMS.includes(room);
+    }
+    if (kind === 'podlahova') {
+      return !PROSTORY_PODLAHOVA_EXCLUDED_ROOMS.includes(room);
+    }
+    return !PROSTORY_UZITNA_EXCLUDED_ROOMS.includes(room);
+  }
+
+  private normalizeLegacyProstoryRoom(room: string): string {
+    if (/^Obytná místnost [2-5]$/u.test(room)) {
+      return 'Obytná místnost';
+    }
+    if (room === 'Obytná místnost 1') {
+      return 'Obytná místnost';
+    }
+    return room;
+  }
+
+  private prostoryRoomAliases(room: string): string[] {
+    if (room === 'Obytná místnost') {
+      return ['Obytná místnost', 'Obytná místnost 1', 'Obytná místnost 2', 'Obytná místnost 3', 'Obytná místnost 4', 'Obytná místnost 5'];
+    }
+    return [room];
+  }
+
+  private toggleProstoryRoomSelection(room: string): void {
+    const current = this.propertyTabMultiValues('prostory', 'Seznam místností');
+    const aliases = this.prostoryRoomAliases(room);
+    const hasAny = current.some((entry) => aliases.includes(entry) || this.normalizeLegacyProstoryRoom(entry) === room);
+    const filtered = current.filter((entry) => !aliases.includes(entry) && this.normalizeLegacyProstoryRoom(entry) !== room);
+    const next = hasAny ? filtered : [...filtered, room];
+    this.setPropertyTabFieldValue('prostory', 'Seznam místností', next.join('|'));
+  }
+
+  private formatMeterValue(value: string): string {
+    const parsed = this.parseLocalizedNumber(value.replace(/\s*m\s*$/i, ''));
+    if (parsed <= 0) {
+      return '';
+    }
+    return `${parsed.toLocaleString('cs-CZ', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} m`;
+  }
+
+  protected isJednotkaTabVisible(): boolean {
+    const type = this.newPropertyDraft().propertyType.trim();
+    if (!type) { return false; }
+    const allowed = ['Dům', 'Byt', 'Ubytovací zařízení'];
+    return allowed.includes(type) || !PROPERTY_TYPE_OPTIONS.includes(type);
+  }
+
+  protected isCurrentPropertyType(type: string): boolean {
+    return this.newPropertyDraft().propertyType.trim() === type;
+  }
+
+  protected visiblePropertySectionTabs(): Array<{ key: NewPropertyTabKey; label: string }> {
+    return this.propertySectionTabs().filter((tab) => {
+      if (tab.key === 'jednotka') {
+        return this.isJednotkaTabVisible();
+      }
+      if (tab.key === 'prostory') {
+        return this.isProstoryTabVisible();
+      }
+      return true;
+    });
+  }
+
+  private sanitizePropertyDecimalInput(value: string): string {
+    return value.replace(/[^0-9,.\s]/g, '');
+  }
+
+  private parseLocalizedDecimal(value: string): number {
+    const normalized = value.replace(/\s/g, '').replace(/m²/gi, '').replace(/\./g, '').replace(',', '.').trim();
+    const parsed = Number.parseFloat(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  private formatDecimalWithUnit(value: string, unit: string): string {
+    const parsed = this.parseLocalizedDecimal(value);
+    return parsed > 0 ? this.formatDecimalNumber(parsed, unit) : '';
+  }
+
+  private sanitizePropertyNumberInput(value: string): string {
+    return value.replace(/[^0-9,\.\s]/g, '');
+  }
+
+  private sanitizePropertyIntegerInput(value: string): string {
+    return value.replace(/\D/g, '');
+  }
+
+  private parseLocalizedNumber(value: string): number {
+    const normalized = value.replace(/\s/g, '').replace(/m²|Kč/gi, '').replace(/\./g, '').replace(',', '.').trim();
+    const parsed = Number.parseFloat(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  private parseLocalizedInteger(value: string): number {
+    const normalized = value.replace(/\D/g, '');
+    const parsed = Number.parseInt(normalized, 10);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  private formatDecimalNumber(value: number, unit: string): string {
+    const formatted = value.toLocaleString('cs-CZ', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    return `${formatted} ${unit}`;
+  }
+
+  private formatNumberWithUnit(value: string, unit: string): string {
+    const parsed = this.parseLocalizedNumber(value);
+    return parsed > 0 ? this.formatDecimalNumber(parsed, unit) : '';
+  }
+
+  private formatIntegerWithUnit(value: string, unit: string): string {
+    const parsed = this.parseLocalizedInteger(value);
+    return parsed > 0 ? `${parsed.toLocaleString('cs-CZ')} ${unit}` : '';
+  }
+
+  private leafletFileKey(label: string, suffix: 'name' | 'data'): string {
+    return `${label}__${suffix}`;
+  }
+
+  protected leafletFileName(label: string): string {
+    return this.propertyTabFieldValue('informace-do-letaku', this.leafletFileKey(label, 'name'));
+  }
+
+  protected leafletHasValue(label: string): boolean {
+    return Boolean(this.propertyTabFieldValue('informace-do-letaku', label).trim() || this.leafletFileName(label));
+  }
+
+  protected openLeafletFilePicker(index: number): void {
+    const input = document.getElementById(`leaflet-file-input-${index}`) as HTMLInputElement | null;
+    input?.click();
+  }
+
+  protected onLeafletFileSelected(event: Event, label: string): void {    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = typeof reader.result === 'string' ? reader.result : '';
+      this.setPropertyTabFieldValue('informace-do-letaku', this.leafletFileKey(label, 'name'), file.name);
+      this.setPropertyTabFieldValue('informace-do-letaku', this.leafletFileKey(label, 'data'), dataUrl);
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
+  }
+
+  protected removeLeafletFile(label: string): void {
+    this.setPropertyTabFieldValue('informace-do-letaku', this.leafletFileKey(label, 'name'), '');
+    this.setPropertyTabFieldValue('informace-do-letaku', this.leafletFileKey(label, 'data'), '');
+  }
+
+  protected openLeafletItem(label: string, event?: Event): void {
+    event?.stopPropagation();
+    const link = this.propertyTabFieldValue('informace-do-letaku', label).trim();
+    const data = this.propertyTabFieldValue('informace-do-letaku', this.leafletFileKey(label, 'data')).trim();
+    const target = link || data;
+    if (!target) {
+      return;
+    }
+
+    let url = target;
+    if (!/^data:/i.test(target)) {
+      url = /^https?:\/\//i.test(target) ? target : `https://${target}`;
+    }
+    window.open(url, '_blank', 'noopener');
   }
 
   protected propertyCreatedRelative(createdAt: string): string {
@@ -3070,15 +5392,133 @@ export class App {
       address: '',
       price: '',
       seller: '',
+      phase: PROPERTY_SALES_PHASES[0],
+      linkedClientId: '',
+      linkedClientIds: [],
       tabValues: {}
     };
   }
 
-  private clientRecordStatus(_record: SavedClientRecord): 'Aktivní' | 'Neaktivní' {
-    // Klient je aktivní pouze při reálné vazbě na nemovitost v prodeji.
-    // Tato vazba ani pole "Ukončení projektu" zatím v klientském záznamu neukládáme,
-    // proto je bezpečný výchozí stav neaktivní, dokud nedoplníme skutečné propojení.
+  private clonePropertyTabValues(
+    tabValues?: Partial<Record<NewPropertyTabKey, Record<string, string>>>
+  ): Partial<Record<NewPropertyTabKey, Record<string, string>>> {
+    const clone: Partial<Record<NewPropertyTabKey, Record<string, string>>> = {};
+    if (!tabValues) {
+      return clone;
+    }
+
+    for (const [tabKey, values] of Object.entries(tabValues)) {
+      if (!values || typeof values !== 'object') {
+        continue;
+      }
+      clone[tabKey as NewPropertyTabKey] = this.normalizePropertyTabValues(tabKey as NewPropertyTabKey, { ...(values as Record<string, string>) });
+    }
+
+    return clone;
+  }
+
+  private normalizePropertyTabValues(tabKey: NewPropertyTabKey, values: Record<string, string>): Record<string, string> {
+    if (tabKey !== 'prostory') {
+      return values;
+    }
+    const next = { ...values };
+    if (next['Seznam místností']) {
+      next['Seznam místností'] = Array.from(
+        new Set(
+          next['Seznam místností']
+            .split('|')
+            .map((room) => this.normalizeLegacyProstoryRoom(room.trim()))
+            .filter(Boolean)
+        )
+      ).join('|');
+    }
+    return next;
+  }
+
+  private normalizeLinkedClientIds(source: { linkedClientId?: string; linkedClientIds?: string[] }): string[] {
+    const ids = Array.isArray(source.linkedClientIds) ? source.linkedClientIds : [];
+    const fallback = source.linkedClientId ? [source.linkedClientId] : [];
+    return Array.from(new Set([...ids, ...fallback].filter(Boolean)));
+  }
+
+  private cloneSavedPropertyRecord(record: SavedPropertyRecord): SavedPropertyRecord {
+    return {
+      ...record,
+      phase: record.phase || PROPERTY_SALES_PHASES[0],
+      linkedClientIds: this.normalizeLinkedClientIds(record),
+      tabValues: this.clonePropertyTabValues(record.tabValues)
+    };
+  }
+
+  private syncLinkedClientRecord(propertyId: string, linkedClientIds: string[]): void {
+    this.savedClientRecords.update((records) =>
+      records.map((record) => {
+        const currentLinkedPropertyId = record.draft.linkedPropertyId || '';
+        if (linkedClientIds.includes(record.id)) {
+          return { ...record, draft: this.cloneNewClientDraft({ ...record.draft, linkedPropertyId: propertyId }) };
+        }
+        if (currentLinkedPropertyId === propertyId) {
+          return { ...record, draft: this.cloneNewClientDraft({ ...record.draft, linkedPropertyId: '' }) };
+        }
+        return record;
+      })
+    );
+  }
+
+  private syncPropertyRecordsForClientLink(clientId: string, nextPropertyId: string, previousPropertyId: string): void {
+    this.savedPropertyRecords.update((records) =>
+      records.map((record) => {
+        const currentIds = this.normalizeLinkedClientIds(record);
+
+        if (record.id === previousPropertyId && previousPropertyId !== nextPropertyId) {
+          const nextIds = currentIds.filter((id) => id !== clientId);
+          return { ...record, linkedClientId: nextIds[0] || '', linkedClientIds: nextIds };
+        }
+
+        if (record.id === nextPropertyId) {
+          const nextIds = Array.from(new Set([...currentIds, clientId]));
+          return { ...record, linkedClientId: nextIds[0] || '', linkedClientIds: nextIds };
+        }
+
+        return record;
+      })
+    );
+
+    const activePropertyId = this.activeSavedPropertyId();
+    if (activePropertyId && (activePropertyId === nextPropertyId || activePropertyId === previousPropertyId)) {
+      this.newPropertyDraft.update((draft) => {
+        const currentIds = this.propertyLinkedClientIds(draft);
+        if (activePropertyId === previousPropertyId && previousPropertyId !== nextPropertyId) {
+          const nextIds = currentIds.filter((id) => id !== clientId);
+          return { ...draft, linkedClientId: nextIds[0] || '', linkedClientIds: nextIds };
+        }
+        if (activePropertyId === nextPropertyId) {
+          const nextIds = Array.from(new Set([...currentIds, clientId]));
+          return { ...draft, linkedClientId: nextIds[0] || '', linkedClientIds: nextIds };
+        }
+        return draft;
+      });
+    }
+  }
+
+  private clientRecordStatus(record: SavedClientRecord): 'Aktivní' | 'Neaktivní' {
+    const linkedId = this.resolvedClientLinkedPropertyId(record);
+    if (linkedId) {
+      const property = this.savedPropertyRecords().find((entry) => entry.id === linkedId);
+      if (property && property.status === 'active') {
+        return 'Aktivní';
+      }
+    }
     return 'Neaktivní';
+  }
+
+  private resolvedClientLinkedPropertyId(record: SavedClientRecord): string {
+    const directId = record.draft.linkedPropertyId || '';
+    if (directId) {
+      return directId;
+    }
+    const linkedProperty = this.savedPropertyRecords().find((entry) => this.normalizeLinkedClientIds(entry).includes(record.id));
+    return linkedProperty?.id || '';
   }
 
   protected hasNewClientDraftListValue(
@@ -7071,21 +9511,46 @@ export class App {
   }
 
   private syncActivePropertyToRecords(): void {
-    if (!this.activeSavedPropertyId()) {
-      return;
-    }
     if (this.propertyWorkspaceMode() !== 'new') {
       return;
     }
     const draft = this.newPropertyDraft();
+    const linkedClientIds = this.propertyLinkedClientIds(draft);
     const activeId = this.activeSavedPropertyId();
+
+    if (!activeId) {
+      const hasContent = Boolean(draft.title.trim() || draft.address.trim() || draft.propertyType.trim());
+      if (!hasContent) {
+        return;
+      }
+      const id = `property-${Date.now()}`;
+      this.activeSavedPropertyId.set(id);
+      this.savedPropertyRecords.update((records) => [{
+        id,
+        createdAt: new Date().toLocaleDateString('cs-CZ'),
+        title: draft.title,
+        propertyType: draft.propertyType,
+        address: draft.address,
+        price: draft.price,
+        seller: draft.seller,
+        status: 'active' as const,
+        phase: draft.phase || PROPERTY_SALES_PHASES[0],
+        linkedClientId: linkedClientIds[0] || '',
+        linkedClientIds,
+        tabValues: this.clonePropertyTabValues(draft.tabValues)
+      }, ...records]);
+      this.syncLinkedClientRecord(id, linkedClientIds);
+      return;
+    }
+
     this.savedPropertyRecords.update((records) =>
       records.map((record) =>
         record.id === activeId
-          ? { ...record, title: draft.title, propertyType: draft.propertyType, address: draft.address, price: draft.price, seller: draft.seller, tabValues: draft.tabValues }
+          ? { ...record, title: draft.title, propertyType: draft.propertyType, address: draft.address, price: draft.price, seller: draft.seller, phase: draft.phase || record.phase, linkedClientId: linkedClientIds[0] || '', linkedClientIds, tabValues: this.clonePropertyTabValues(draft.tabValues) }
           : record
       )
     );
+    this.syncLinkedClientRecord(activeId, linkedClientIds);
   }
 
   protected saveToXml(): void {
@@ -7175,6 +9640,7 @@ export class App {
       activeSavedClientId: this.activeSavedClientId(),
       notes: this.notes(),
       savedPropertyRecords: this.savedPropertyRecords(),
+      pinnedPropertyId: this.pinnedPropertyId(),
       states: Array.from(this.states.entries()).map(([itemId, state]) => ({
         itemId,
         itemKey: this.itemPersistenceKeyById(itemId),
@@ -7495,25 +9961,91 @@ ${sections.map((section) => `<section class="section"><div class="section-title"
       return;
     }
 
-    const seller = this.handoverEmptyPartyData();
+    const delivering = this.handoverProtocolParties('predavajici');
+    const receiving = this.handoverProtocolParties('prebirajici');
+    const city = this.handoverCityValue().trim();
+    const date = this.handoverDateValue().trim();
+    const propertyDescription = this.handoverPropertyDescriptionValue().trim();
+    const propertyAddress = (this.propertyTabFieldValue('predavaci-protokol', 'address') || this.newPropertyDraft().address).trim();
+    const remains = this.propertyTabFieldValue('predavaci-protokol', 'remainsInProperty').trim();
+    const keysDescription = this.propertyTabFieldValue('predavaci-protokol', 'keysDescription').trim();
+    const photoRecorded = this.propertyTabFieldValue('predavaci-protokol', 'photoRecorded') === 'ANO';
+    const keysCount = this.propertyTabFieldValue('predavaci-protokol', 'keysCount').trim();
+    const chipsCount = this.propertyTabFieldValue('predavaci-protokol', 'chipsCount').trim();
+    const keyCardsCount = this.propertyTabFieldValue('predavaci-protokol', 'keyCardsCount').trim();
+    const meters = [
+      { label: 'Elektřina', number: this.propertyTabFieldValue('predavaci-protokol', 'electricMeterNumber').trim(), state: this.propertyTabFieldValue('predavaci-protokol', 'electricMeterState').trim(), unit: 'kWh' },
+      { label: 'Voda teplá', number: this.propertyTabFieldValue('predavaci-protokol', 'hotWaterMeterNumber').trim(), state: this.propertyTabFieldValue('predavaci-protokol', 'hotWaterMeterState').trim(), unit: 'm3' },
+      { label: 'Voda studená', number: this.propertyTabFieldValue('predavaci-protokol', 'coldWaterMeterNumber').trim(), state: this.propertyTabFieldValue('predavaci-protokol', 'coldWaterMeterState').trim(), unit: 'm3' },
+      { label: 'Plyn', number: this.propertyTabFieldValue('predavaci-protokol', 'gasMeterNumber').trim(), state: this.propertyTabFieldValue('predavaci-protokol', 'gasMeterState').trim(), unit: 'm3' }
+    ];
 
     const html = `<!doctype html>
 <html lang="cs"><head><meta charset="utf-8" /><title>Předávací protokol</title>
 <style>
 @page { size: A4; margin: 12mm; }
 body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; }
-.banner { background:#0c59a5; color:#fff; border-radius:6px; padding:10px 14px; font-weight:700; font-size:28px; }
-.persons-grid { display:grid; grid-template-columns:1fr; gap:10px; margin-top:12px; }
-.card { border:1px solid #cfdbe8; border-radius:6px; padding:12px; }
-.title { font-weight:700; font-size:22px; margin:0 0 10px; }
-.row { margin:6px 0; }
-.row-value { width:100%; border:0; border-bottom:1px dotted #8ea2b5; min-height:24px; font-size:12px; padding:2px 0; outline:none; }
+.banner { background:#0c59a5; color:#fff; border-radius:6px; padding:10px 14px; font-weight:700; font-size:28px; margin-bottom:12px; }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.card { border:1px solid #cfdbe8; border-radius:8px; padding:12px; break-inside:avoid; page-break-inside:avoid; }
+.title { font-weight:700; font-size:16px; margin:0 0 10px; text-transform:uppercase; color:#0c59a5; }
+.party { margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #d9e4ef; }
+.party:last-child { margin-bottom:0; padding-bottom:0; border-bottom:0; }
+.party-name { font-weight:700; margin-bottom:4px; }
+.meta { margin:3px 0; }
+.property-box,.text-box { border:1px solid #d9e4ef; border-radius:6px; padding:10px; min-height:48px; white-space:pre-wrap; }
+.meter { margin:0 0 8px; }
+.line { border-bottom:1px dotted #8ea2b5; min-height:18px; display:inline-block; min-width:120px; }
+.notice { margin-top:12px; line-height:1.5; }
+.signature-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:18px; }
+.sign-city { margin-bottom:16px; }
+.sign-row { margin-bottom:18px; }
+.sign-box { height:48px; border-bottom:1px solid #8ea2b5; margin-bottom:6px; }
+.sign-role { color:#4d6478; font-size:11px; text-transform:uppercase; }
 </style></head><body>
   <div class="banner">PŘEDÁVACÍ PROTOKOL</div>
-  <div class="persons-grid">
+  <div class="grid2">
     <div class="card">
-      <div class="title">SMLUVNÍ STRANY - PŘEDÁVAJÍCÍ 1</div>
-      ${this.renderHandoverPartyRows(seller)}
+      <div class="title">Předávající</div>
+      ${this.renderHandoverProtocolPartyList(delivering, 'Předávající')}
+    </div>
+    <div class="card">
+      <div class="title">Přebírající</div>
+      ${this.renderHandoverProtocolPartyList(receiving, 'Přebírající')}
+    </div>
+    <div class="card" style="grid-column:1 / -1;">
+      <div class="title">Nemovitost</div>
+      <div class="property-box">${this.escapeHtml(propertyDescription || '—')}</div>
+      <div style="margin-top:8px;"><strong>Adresní místo:</strong> ${this.escapeHtml(propertyAddress || '—')}</div>
+    </div>
+    <div class="card" style="grid-column:1 / -1;">
+      <div class="title">Stavy měřičů</div>
+      ${meters.map((meter) => `<div class="meter"><strong>${this.escapeHtml(meter.label)}:</strong> č. měřiče <span class="line">${this.escapeHtml(meter.number)}</span> stav <span class="line">${this.escapeHtml(meter.state)}</span> ${this.escapeHtml(meter.unit)}</div>`).join('')}
+    </div>
+    <div class="card" style="grid-column:1 / -1;">
+      <div class="title">Klíče a přístupy</div>
+      <div><strong>Klíče celkem</strong> ${this.escapeHtml(keysCount || '—')} ks</div>
+      <div><strong>Přístupové čipy celkem</strong> ${this.escapeHtml(chipsCount || '—')} ks</div>
+      <div><strong>Výrobní karty klíčů celkem</strong> ${this.escapeHtml(keyCardsCount || '—')} ks</div>
+      <div class="text-box" style="margin-top:8px;">${this.escapeHtml(keysDescription || '—')}</div>
+    </div>
+    <div class="card" style="grid-column:1 / -1;">
+      <div class="title">V nemovitosti zůstává</div>
+      <div class="text-box">${this.escapeHtml(remains || '—')}</div>
+      <div style="margin-top:8px;">${photoRecorded ? 'Vše zaznamenáno na fotografiích.' : ''}</div>
+    </div>
+  </div>
+  <div class="notice">Kupující se podpisem kupní smlouvy zavázal, že nejpozději do 10-ti pracovních dnů od protokolárního předání a převzetí předmětné nemovité věci, bude mít na svou osobu přepsány smlouvy o dodávkách veškerých energií a služeb, které se týkají předmětné nemovité věci, přičemž k přepisu energií je prodávající povinna poskytnout kupujícímu potřebnou a nezbytnou součinnost.</div>
+  <div class="notice">Předávající i přebírající svými podpisy stvrzují, že specifikovaná, výše uvedená nemovitost byla řádně předána ve stavu odpovídajícím smluvní dohodě, s výše uvedenými konečnými stavy měřidel a zároveň byly předány klíče od nemovitosti.</div>
+  <div class="notice">Tento Předávací protokol bude společně s fotografiemi pořízenými při předání nemovitosti zaslán na emaily uvedené v záhlaví stránky.</div>
+  <div class="signature-grid">
+    <div>
+      <div class="sign-city">V ${this.escapeHtml(city || '................')} dne ${this.escapeHtml(date || '................')}</div>
+      ${this.renderHandoverSignatureList(delivering, 'Předávající')}
+    </div>
+    <div>
+      <div class="sign-city">V ${this.escapeHtml(city || '................')} dne ${this.escapeHtml(date || '................')}</div>
+      ${this.renderHandoverSignatureList(receiving, 'Přebírající')}
     </div>
   </div>
 </body></html>`;
@@ -7524,24 +10056,30 @@ body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; 
     setTimeout(() => win.print(), 250);
   }
 
-  private handoverEmptyPartyData(): { name: string; address: string; email: string; phone: string; account: string; marital: string } {
-    return { name: '', address: '', email: '', phone: '', account: '', marital: '' };
+  private handoverProtocolParties(role: 'predavajici' | 'prebirajici'): Array<{ name: string; birthDate: string; address: string; phone: string; email: string }> {
+    const resolved = this.handoverResolvedParties(role);
+    const extras = this.handoverExtraPartyIndexes(role)
+      .map((index) => ({
+        name: this.handoverExtraPartyField(role, index, 'name').trim(),
+        birthDate: this.handoverExtraPartyField(role, index, 'birthDate').trim(),
+        address: this.handoverExtraPartyField(role, index, 'address').trim(),
+        phone: this.handoverExtraPartyField(role, index, 'phone').trim(),
+        email: this.handoverExtraPartyField(role, index, 'email').trim()
+      }))
+      .filter((entry) => Object.values(entry).some(Boolean));
+    return [...resolved, ...extras];
   }
 
-  private renderHandoverPartyRows(data: { name: string; address: string; email: string; phone: string; account: string; marital: string }): string {
-    const line = (placeholder: string, value: string): string => `
-      <div class="row">
-        <input class="row-value" type="text" value="${this.escapeHtml(value)}" placeholder="${this.escapeHtml(placeholder)}" />
-      </div>`;
+  private renderHandoverProtocolPartyList(parties: Array<{ name: string; birthDate: string; address: string; phone: string; email: string }>, label: string): string {
+    if (parties.length === 0) {
+      return `<div class="party"><div class="party-name">${this.escapeHtml(label)} 1</div><div class="meta">Jméno: ................................</div><div class="meta">Datum nar.: ................................</div><div class="meta">Bytem: ................................</div><div class="meta">Telefon: ................................</div><div class="meta">Email: ................................</div></div>`;
+    }
+    return parties.map((party, index) => `<div class="party"><div class="party-name">${this.escapeHtml(label)} ${index + 1}</div><div class="meta">Jméno: ${this.escapeHtml(party.name || '—')}</div><div class="meta">Datum nar.: ${this.escapeHtml(party.birthDate || '—')}</div><div class="meta">Bytem: ${this.escapeHtml(party.address || '—')}</div><div class="meta">Telefon: ${this.escapeHtml(party.phone || '—')}</div><div class="meta">Email: ${this.escapeHtml(party.email || '—')}</div></div>`).join('');
+  }
 
-    return [
-      line('Jméno', data.name),
-      line('Bytem', data.address),
-      line('E-mail', data.email),
-      line('Telefon', data.phone),
-      line('Bankovní spojení', data.account),
-      line('Rodinný stav', data.marital)
-    ].join('');
+  private renderHandoverSignatureList(parties: Array<{ name: string; birthDate: string; address: string; phone: string; email: string }>, role: string): string {
+    const list = parties.length > 0 ? parties : [{ name: `${role} 1`, birthDate: '', address: '', phone: '', email: '' }];
+    return list.map((party) => `<div class="sign-row"><div class="sign-box"></div><div>${this.escapeHtml(party.name || '................')}</div><div class="sign-role">${this.escapeHtml(role)}</div></div>`).join('');
   }
 
   protected loadFromXmlFile(event: Event): void {
@@ -7594,6 +10132,7 @@ body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; 
       activeSavedClientId?: string;
       notes?: NoteCard[];
       savedPropertyRecords?: SavedPropertyRecord[];
+      pinnedPropertyId?: string;
       agentProfile?: Partial<AgentProfile>;
       states?: Array<{ itemId?: string; itemKey?: string; state: Partial<ItemState> & { selectedOptions?: string[] } }>;
     };
@@ -7611,7 +10150,12 @@ body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; 
     this.newClientDraft.set(payload.newClientDraft ? this.cloneNewClientDraft(payload.newClientDraft) : this.createDefaultNewClientDraft());
     this.activeSavedClientId.set(payload.activeSavedClientId || '');
     this.notes.set(Array.isArray(payload.notes) ? payload.notes : []);
-    this.savedPropertyRecords.set(Array.isArray(payload.savedPropertyRecords) ? payload.savedPropertyRecords : []);
+    this.savedPropertyRecords.set(
+      Array.isArray(payload.savedPropertyRecords)
+        ? payload.savedPropertyRecords.map((record) => this.cloneSavedPropertyRecord(record))
+        : []
+    );
+    this.pinnedPropertyId.set(payload.pinnedPropertyId || '');
     if (payload.agentProfile) {
       this.agentProfile.set({ ...this.agentProfile(), ...payload.agentProfile });
     }
