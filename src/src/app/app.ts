@@ -3809,6 +3809,44 @@ export class App {
     return LEAFLET_FIELD_HINT;
   }
 
+  protected leafletCustomLinkIndexes(): number[] {
+    const count = Number.parseInt(this.propertyTabFieldValue('informace-do-letaku', 'Vlastní odkazy počet') || '1', 10);
+    return Array.from({ length: Math.max(1, Math.min(10, count || 1)) }, (_, index) => index);
+  }
+
+  protected canAddLeafletCustomLink(): boolean {
+    return this.leafletCustomLinkIndexes().length < 10;
+  }
+
+  protected addLeafletCustomLink(): void {
+    this.setPropertyTabFieldValue('informace-do-letaku', 'Vlastní odkazy počet', String(this.leafletCustomLinkIndexes().length + 1));
+  }
+
+  protected removeLeafletCustomLink(index: number): void {
+    const indexes = this.leafletCustomLinkIndexes();
+    const tabValues = { ...(this.newPropertyDraft().tabValues || {}) };
+    const currentTab = { ...(tabValues['informace-do-letaku'] || {}) };
+    for (let i = index; i < indexes.length - 1; i++) {
+      currentTab[`Vlastní odkaz ${i + 1} popis`] = currentTab[`Vlastní odkaz ${i + 2} popis`] || '';
+      currentTab[`Vlastní odkaz ${i + 1} URL`] = currentTab[`Vlastní odkaz ${i + 2} URL`] || '';
+    }
+    delete currentTab[`Vlastní odkaz ${indexes.length} popis`];
+    delete currentTab[`Vlastní odkaz ${indexes.length} URL`];
+    currentTab['Vlastní odkazy počet'] = String(Math.max(1, indexes.length - 1));
+    tabValues['informace-do-letaku'] = currentTab;
+    this.newPropertyDraft.update((draft) => ({ ...draft, tabValues }));
+  }
+
+  protected leafletCustomLinkValue(index: number, field: 'description' | 'url'): string {
+    const suffix = field === 'description' ? 'popis' : 'URL';
+    return this.propertyTabFieldValue('informace-do-letaku', `Vlastní odkaz ${index + 1} ${suffix}`);
+  }
+
+  protected setLeafletCustomLinkValue(index: number, field: 'description' | 'url', value: string): void {
+    const suffix = field === 'description' ? 'popis' : 'URL';
+    this.setPropertyTabFieldValue('informace-do-letaku', `Vlastní odkaz ${index + 1} ${suffix}`, value);
+  }
+
   protected isPropertyTabCustomValue(value: string, options: string[]): boolean {
     const trimmed = value.trim();
     return value === this.propertyCustomOption || (Boolean(trimmed) && !options.includes(trimmed));
@@ -4685,6 +4723,14 @@ export class App {
     return value || '5%';
   }
 
+  protected cenaNemovitostiRangeMilestones(): string[] {
+    return ['5 mil.', '10 mil.', '15 mil.', '20 mil.'];
+  }
+
+  protected cenaNemovitostiRangeProgress(value: number): number {
+    return Math.max(0, Math.min(100, (value / 20000000) * 100));
+  }
+
   protected formatCenaNemovitostiPercentField(): void {
     const value = this.parsePercentLikeNumber(this.propertyTabFieldValue('cena-nemovitosti', 'Smluvené % z prodeje bez DPH'));
     if (value <= 0) {
@@ -4752,8 +4798,25 @@ export class App {
     return value > 0 ? `${value.toLocaleString('cs-CZ')} Kč` : '0 Kč';
   }
 
+  protected cenaNemovitostiOfferPriceBubbleLabel(): string {
+    const value = this.cenaNemovitostiOfferPriceSlider();
+    return value > 0 ? `${value.toLocaleString('cs-CZ')} Kč` : '0 Kč';
+  }
+
+  protected cenaNemovitostiDemandDifferenceLabel(): string {
+    const difference = this.cenaNemovitostiClientDemandSlider() - this.cenaNemovitostiOfferPrice();
+    return difference >= 0 ? 'NAVÝŠENÍ OPROTI DOPORUČENÉ CENĚ:' : 'SNÍŽENÍ OPROTI DOPORUČENÉ CENĚ:';
+  }
+
+  protected cenaNemovitostiDemandDifference(): string {
+    const demand = this.cenaNemovitostiClientDemandSlider();
+    const recommended = this.cenaNemovitostiOfferPrice();
+    if (demand <= 0 || recommended <= 0 || demand === recommended) { return ''; }
+    return this.formatCurrencyResult(Math.abs(demand - recommended));
+  }
+
   protected setCenaNemovitostiSliderCurrencyField(field: string, value: string | number): void {
-    const numericValue = Number(value);
+    const numericValue = this.snapCenaNemovitostiSliderValue(Number(value));
     this.setPropertyTabFieldValue('cena-nemovitosti', field, Number.isFinite(numericValue) && numericValue > 0 ? `${Math.round(numericValue).toLocaleString('cs-CZ')} Kč` : '');
   }
 
@@ -4797,6 +4860,14 @@ export class App {
     const normalized = value.replace(/\s/g, '').replace('%', '').replace(',', '.');
     const parsed = Number.parseFloat(normalized);
     return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  private snapCenaNemovitostiSliderValue(value: number): number {
+    if (!Number.isFinite(value)) { return 0; }
+    const milestones = [5000000, 10000000, 15000000, 20000000];
+    const snapDistance = 150000;
+    const nearest = milestones.find((milestone) => Math.abs(value - milestone) <= snapDistance);
+    return nearest || value;
   }
 
   private formatCurrencyResult(value: number): string {
@@ -5538,6 +5609,13 @@ export class App {
       url = /^https?:\/\//i.test(target) ? target : `https://${target}`;
     }
     window.open(url, '_blank', 'noopener');
+  }
+
+  protected openLeafletCustomLink(index: number, event?: Event): void {
+    event?.stopPropagation();
+    const link = this.leafletCustomLinkValue(index, 'url').trim();
+    if (!link) { return; }
+    window.open(/^https?:\/\//i.test(link) ? link : `https://${link}`, '_blank', 'noopener');
   }
 
   protected propertyCreatedRelative(createdAt: string): string {
@@ -10596,11 +10674,7 @@ body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; 
 
   protected leafletPrintEntries(): LeafletPrintEntry[] {
     const leafletSection = this.sections().find((section) => this.normalize(section.name) === 'INFORMACE DO LETAKU');
-    if (!leafletSection) {
-      return [];
-    }
-
-    return leafletSection.items
+    const entries = leafletSection ? leafletSection.items
       .map((item) => {
         if (this.isMainPhotoField(item)) {
           return null;
@@ -10627,7 +10701,23 @@ body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; 
           documentName
         } satisfies LeafletPrintEntry;
       })
+      .filter((entry): entry is LeafletPrintEntry => entry !== null) : [];
+
+    const customLinks: LeafletPrintEntry[] = this.leafletCustomLinkIndexes()
+      .map((index) => {
+        const link = this.leafletCustomLinkValue(index, 'url').trim();
+        if (!link) { return null; }
+        const description = this.leafletCustomLinkValue(index, 'description').trim();
+        return {
+          label: description || `Vlastní odkaz ${index + 1}`,
+          images: [] as UploadedAsset[],
+          link,
+          documentName: ''
+        } satisfies LeafletPrintEntry;
+      })
       .filter((entry): entry is LeafletPrintEntry => entry !== null);
+
+    return [...entries, ...customLinks];
   }
 
   private isImageAsset(asset: UploadedAsset | null): boolean {

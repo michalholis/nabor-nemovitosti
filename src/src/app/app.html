@@ -2316,14 +2316,36 @@
                   <button type="button" class="new-client-leaflet-btn remove" (click)="removeLeafletFile(label)">✕</button>
                 </div>
               </article>
+
+              <article class="new-client-field-card new-client-leaflet-card" *ngFor="let index of leafletCustomLinkIndexes(); trackBy: trackByIndex">
+                <div class="new-client-leaflet-head">
+                  <div class="new-client-label">{{ leafletFieldLabels().length + index + 1 }}. Přidat vlastní odkaz</div>
+                  <div class="new-client-leaflet-hint">Popište, k čemu odkaz je, a vložte URL adresu.</div>
+                </div>
+                <div class="new-client-leaflet-custom-link-row">
+                  <input type="text" class="new-client-input" [ngModel]="leafletCustomLinkValue(index, 'description')" (ngModelChange)="setLeafletCustomLinkValue(index, 'description', $event)" placeholder="popis odkazu" />
+                  <input type="text" class="new-client-input new-client-leaflet-link" [ngModel]="leafletCustomLinkValue(index, 'url')" (ngModelChange)="setLeafletCustomLinkValue(index, 'url', $event)" placeholder="odkaz (https://...)" />
+                  <button type="button" class="new-client-leaflet-btn open" *ngIf="leafletCustomLinkValue(index, 'url')" (click)="openLeafletCustomLink(index, $event)">otevřít ↗</button>
+                  <button type="button" class="new-client-leaflet-btn remove" *ngIf="index > 0" (click)="removeLeafletCustomLink(index)">-</button>
+                </div>
+              </article>
+
+              <article class="new-client-field-card new-client-leaflet-card" *ngIf="canAddLeafletCustomLink()">
+                <button type="button" class="new-client-leaflet-btn new-client-land-add-btn" (click)="addLeafletCustomLink()">+</button>
+              </article>
             </div>
 
             <div class="new-client-grid two-up new-client-price-columns" *ngIf="isActivePropertyTab('cena-nemovitosti')">
               <div class="new-client-price-column">
                 <article class="new-client-field-card">
                   <div class="new-client-price-slider-title">NABÍDKOVÁ CENA</div>
-                  <div class="new-client-slider-value">{{ cenaNemovitostiOfferPriceLabel() }}</div>
-                  <input type="range" class="new-client-range" min="0" max="20000000" step="10000" [ngModel]="cenaNemovitostiOfferPriceSlider()" (ngModelChange)="setCenaNemovitostiSliderCurrencyField('Doporučená nabídková cena vč. DPH', $event)" />
+                  <div class="new-client-range-wrap" [style.--range-progress.%]="cenaNemovitostiRangeProgress(cenaNemovitostiOfferPriceSlider())">
+                    <div class="new-client-slider-bubble">{{ cenaNemovitostiOfferPriceBubbleLabel() }}</div>
+                    <input type="range" class="new-client-range" min="0" max="20000000" step="10000" [style.--range-progress.%]="cenaNemovitostiRangeProgress(cenaNemovitostiOfferPriceSlider())" [ngModel]="cenaNemovitostiOfferPriceSlider()" (ngModelChange)="setCenaNemovitostiSliderCurrencyField('Doporučená nabídková cena vč. DPH', $event)" />
+                  </div>
+                  <div class="new-client-range-milestones">
+                    <span *ngFor="let value of cenaNemovitostiRangeMilestones(); trackBy: trackByValue">{{ value }}</span>
+                  </div>
                 </article>
 
                 <article class="new-client-field-card">
@@ -2374,12 +2396,21 @@
                 <article class="new-client-field-card">
                   <div class="new-client-price-slider-title">KLIENT POŽADUJE ČÁSTKU</div>
                   <div class="new-client-slider-value">{{ cenaNemovitostiClientDemandLabel() }}</div>
-                  <input type="range" class="new-client-range" min="0" max="20000000" step="10000" [ngModel]="cenaNemovitostiClientDemandSlider()" (ngModelChange)="setCenaNemovitostiSliderCurrencyField('Požadovaná částka vč. DPH', $event)" />
+                  <input type="range" class="new-client-range" min="0" max="20000000" step="10000" [style.--range-progress.%]="cenaNemovitostiRangeProgress(cenaNemovitostiClientDemandSlider())" [ngModel]="cenaNemovitostiClientDemandSlider()" (ngModelChange)="setCenaNemovitostiSliderCurrencyField('Požadovaná částka vč. DPH', $event)" />
+                  <div class="new-client-range-milestones">
+                    <span *ngFor="let value of cenaNemovitostiRangeMilestones(); trackBy: trackByValue">{{ value }}</span>
+                  </div>
                 </article>
 
                 <article class="new-client-field-card">
                   <div class="new-client-label">Požadovaná částka vč. DPH</div>
                   <input type="text" class="new-client-input new-client-room-area-result" [ngModel]="propertyTabFieldValue('cena-nemovitosti', 'Požadovaná částka vč. DPH')" (ngModelChange)="setPropertyTabFieldValue('cena-nemovitosti', 'Požadovaná částka vč. DPH', $event.replace(/[^0-9,.\sKč]/g, ''))" (blur)="formatCenaNemovitostiCurrencyField('Požadovaná částka vč. DPH')" placeholder="Kč" inputmode="decimal" />
+                </article>
+
+                <article class="new-client-field-card new-client-price-offset-row" *ngIf="cenaNemovitostiDemandDifference()">
+                  <div class="new-client-label">ROZDÍL MEZI CENOU POŽADOVANOU VS CENOU DOPORUČENOU</div>
+                  <div class="new-client-price-difference-label">{{ cenaNemovitostiDemandDifferenceLabel() }}</div>
+                  <div class="new-client-price-difference-result">{{ cenaNemovitostiDemandDifference() }}</div>
                 </article>
 
                 <article class="new-client-field-card new-client-price-offset-row">
