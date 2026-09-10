@@ -774,6 +774,7 @@ const PROPERTY_SECTION_TABS: Array<{ key: NewPropertyTabKey; label: string }> = 
   { key: 'pravni-vady', label: 'PRÁVNÍ VADY A OMEZENÍ' },
   { key: 'prodej', label: 'PRODEJ' },
   { key: 'pronajem', label: 'PRONÁJEM' },
+  { key: 'podnajem', label: 'PODNÁJEM' },
   { key: 'cena-najmu', label: 'CENA NÁJMU' },
   { key: 'rozpis-sluzeb', label: 'ROZPIS SLUŽEB' },
   { key: 'doplnkove-informace', label: 'DOPLŇKOVÉ INFORMACE' },
@@ -811,6 +812,7 @@ const PROPERTY_TAB_FIELDS: Partial<Record<NewPropertyTabKey, string[]>> = {
   'pravni-vady': [],
   prodej: [],
   pronajem: [],
+  podnajem: [],
   'cena-najmu': [],
   'rozpis-sluzeb': [],
   'doplnkove-informace': [],
@@ -879,6 +881,13 @@ const PROPERTY_TAB_FIELDS: Partial<Record<NewPropertyTabKey, string[]>> = {
 };
 
 const LEAFLET_FIELD_HINT = 'Vlož soubor z PC nebo odkaz (otevřít v novém okně)';
+
+const BUYER_INFO_EXCLUDED_FIELDS = new Set<string>([
+  'Smlouva',
+  'Pozemek ano/ne',
+  'Pozice bytu',
+  'Sklep číslo'
+]);
 
 const AML_SOURCE_OF_FUNDS_OPTIONS: string[] = [
   'Prodej majetku',
@@ -1215,6 +1224,7 @@ type NewPropertyTabKey =
   | 'pravni-vady'
   | 'prodej'
   | 'pronajem'
+  | 'podnajem'
   | 'cena-najmu'
   | 'rozpis-sluzeb'
   | 'doplnkove-informace'
@@ -4599,6 +4609,34 @@ export class App {
     return this.prodejSingleSelectValue('Dostupnost', this.prodejDostupnostOptions()) === 'Volný od';
   }
 
+  protected isProdejDruzstevniVlastnictvi(): boolean {
+    return this.propertyTabFieldValue('zakladni', 'Vlastnictví') === 'Družstevní';
+  }
+
+  protected isProdejOwnershipOneOf(options: string[]): boolean {
+    return options.includes(this.propertyTabFieldValue('zakladni', 'Vlastnictví'));
+  }
+
+  protected shouldShowProdejPrevodDoOv(): boolean {
+    const ownership = this.propertyTabFieldValue('zakladni', 'Vlastnictví');
+    return !ownership || ownership === 'Družstevní';
+  }
+
+  protected shouldShowProdejPoplatekPrevod(): boolean {
+    const ownership = this.propertyTabFieldValue('zakladni', 'Vlastnictví');
+    return !ownership || this.isProdejOwnershipOneOf(['Družstevní', 'Podílové', 'Kombinované']);
+  }
+
+  protected shouldShowProdejPronajimat(): boolean {
+    const ownership = this.propertyTabFieldValue('zakladni', 'Vlastnictví');
+    return !ownership || this.isProdejOwnershipOneOf(['Osobní', 'Kombinované', 'Podílové']);
+  }
+
+  protected shouldShowProdejPodnajimat(): boolean {
+    const ownership = this.propertyTabFieldValue('zakladni', 'Vlastnictví');
+    return !ownership || this.isProdejOwnershipOneOf(['Družstevní', 'Kombinované']);
+  }
+
   protected isProdejPrevodDoOvNe(): boolean {
     return this.prodejSingleSelectValue('Lze převést do osobního vlastnictví', this.prodejAnoNeOptions()) === 'NE';
   }
@@ -4609,6 +4647,10 @@ export class App {
 
   protected isProdejPodnajimatNe(): boolean {
     return this.prodejSingleSelectValue('Lze podnajímat', this.prodejAnoNeOptions()) === 'NE';
+  }
+
+  protected isProdejPodnajimatAno(): boolean {
+    return this.prodejSingleSelectValue('Lze podnajímat', this.prodejAnoNeOptions()) === 'ANO';
   }
 
   protected prodejRepeatIndexes(field: string): number[] {
@@ -4677,6 +4719,45 @@ export class App {
 
   protected canAddPronajemPoznamka(): boolean {
     return this.pronajemPoznamkaIndexes().length < 10;
+  }
+
+  protected podnajemSingleSelectValue(field: string, options: string[]): string {
+    const val = this.propertyTabFieldValue('podnajem', field);
+    return options.includes(val) ? val : '';
+  }
+
+  protected setPodnajemSingleSelectValue(field: string, value: string, options: string[]): void {
+    this.setPropertyTabFieldValue('podnajem', field, options.includes(value) ? value : '');
+  }
+
+  protected isPodnajemDostupnostVolnyOd(): boolean {
+    return this.podnajemSingleSelectValue('Dostupnost', this.pronajemDostupnostOptions()) === 'Volný od';
+  }
+
+  protected isPodnajemDlouhodobyAno(): boolean {
+    return this.podnajemSingleSelectValue('Dlouhodobý podnájem', this.pronajemAnoNeOptions()) === 'ANO';
+  }
+
+  protected isPodnajemDobaUrcitaAno(): boolean {
+    return this.podnajemSingleSelectValue('Podnájem na dobu určitou', this.pronajemAnoNeOptions()) === 'ANO';
+  }
+
+  protected isPodnajemZvirataNe(): boolean {
+    return this.podnajemSingleSelectValue('Zvířata v domácnosti', this.pronajemAnoNeOptions()) === 'NE';
+  }
+
+  protected podnajemPoznamkaIndexes(): number[] {
+    const count = Number.parseInt(this.propertyTabFieldValue('podnajem', 'Poznámka k podnájmu počet') || '1', 10);
+    return Array.from({ length: Math.max(1, Math.min(10, count)) }, (_, index) => index);
+  }
+
+  protected addPodnajemPoznamka(): void {
+    const next = Math.min(10, this.podnajemPoznamkaIndexes().length + 1);
+    this.setPropertyTabFieldValue('podnajem', 'Poznámka k podnájmu počet', String(next));
+  }
+
+  protected canAddPodnajemPoznamka(): boolean {
+    return this.podnajemPoznamkaIndexes().length < 10;
   }
 
   // --- CENA NÁJMU helpers ---
@@ -5198,6 +5279,10 @@ export class App {
     return this.newPropertyDraft().propertyType.trim() === type;
   }
 
+  protected isPropertyService(service: string): boolean {
+    return this.propertyTabFieldValue('zakladni', 'Služba') === service;
+  }
+
   protected visiblePropertySectionTabs(): Array<{ key: NewPropertyTabKey; label: string }> {
     return this.propertySectionTabs().filter((tab) => {
       if (tab.key === 'jednotka') {
@@ -5205,6 +5290,15 @@ export class App {
       }
       if (tab.key === 'prostory') {
         return this.isProstoryTabVisible();
+      }
+      if (tab.key === 'pronajem') {
+        return !this.propertyTabFieldValue('zakladni', 'Služba') || this.isPropertyService('Pronájem');
+      }
+      if (tab.key === 'podnajem') {
+        return !this.propertyTabFieldValue('zakladni', 'Služba') || this.isPropertyService('Podnájem');
+      }
+      if (tab.key === 'cena-najmu') {
+        return !this.propertyTabFieldValue('zakladni', 'Služba') || this.isPropertyService('Pronájem');
       }
       return true;
     });
@@ -9473,6 +9567,43 @@ export class App {
 
   protected printBuyerInfo(): void {
     this.printWithMode('buyer');
+  }
+
+  protected generateCurrentPropertyBuyerInfo(): void {
+    const draft = this.newPropertyDraft();
+    const skippedKeys = new Set(['informace-do-letaku', 'predavaci-protokol']);
+    const sections = this.propertySectionTabs()
+      .filter((tab) => !skippedKeys.has(tab.key))
+      .map((tab) => {
+        const values = draft.tabValues?.[tab.key] || {};
+        const rows = Object.entries(values)
+          .filter(([key, value]) => !BUYER_INFO_EXCLUDED_FIELDS.has(key) && !key.includes('__') && !key.endsWith(' počet') && Boolean(String(value).trim()))
+          .map(([key, value]) => `<div class="info-row"><div class="info-label">${this.escapeHtml(key)}</div><div class="info-value">${this.escapeHtml(String(value).replace(/\|/g, ', '))}</div></div>`)
+          .join('');
+        return rows ? `<section class="info-card"><h2>${this.escapeHtml(tab.label)}</h2><div class="info-card-body">${rows}</div></section>` : '';
+      })
+      .filter(Boolean)
+      .join('');
+    const service = this.propertyTabFieldValue('zakladni', 'Služba') || 'Prodej';
+    const propertyType = draft.propertyType || this.propertyTabFieldValue('zakladni', 'Nemovitost') || 'nemovitosti';
+    const title = [service, propertyType.toLowerCase(), draft.address || this.propertyTabFieldValue('zakladni', 'Adresa nemovitosti')].filter(Boolean).join(' ');
+    const agent = this.agentProfile();
+    const phone = agent.phone || '775 946 596';
+    const email = agent.email || 'eliska.petrasova@re-max.cz';
+
+    const html = `<!doctype html><html lang="cs"><head><meta charset="utf-8"><title>Informace pro zájemce</title><style>
+      @page{size:A4;margin:12mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#334155;margin:0;background:#fff;font-size:11px}.page{min-height:273mm;position:relative;padding-bottom:22mm}.top{background:#075da8;color:#fff;border-radius:4px;padding:7px 60px 7px 18px;margin-bottom:14px;position:relative}.top h1{font-size:18px;letter-spacing:2px;margin:0;line-height:1}.top .subtitle{font-size:11px;margin-top:3px}.logo-mark{position:absolute;right:13px;top:-3px;width:44px;height:44px;border-radius:50%;background:linear-gradient(#e21b23 0 34%,#fff 34% 43%,#0b4fa3 43%);border:2px solid #fff}.grid{columns:2 310px;column-gap:14px}.info-card{break-inside:avoid;margin:0 0 12px;border:1px solid #dce5ee;border-radius:5px;overflow:hidden;background:#fff}.info-card h2{margin:0;background:#2f8ed3;color:#fff;font-size:13px;letter-spacing:.4px;padding:6px 10px;text-transform:uppercase}.info-card-body{padding:7px 10px}.info-row{display:grid;grid-template-columns:48% 52%;gap:6px;border-bottom:1px solid #edf2f7;padding:3px 0}.info-row:last-child{border-bottom:0}.info-label{font-weight:700;color:#2f3f50}.info-value{text-align:right;color:#7b8794;white-space:pre-wrap}.footer{position:fixed;left:12mm;right:12mm;bottom:7mm;border-top:1px solid #9aa4b2;padding-top:8px;display:flex;justify-content:space-between;align-items:flex-end}.remax{font-size:26px;font-weight:900;color:#777}.contact{text-align:right;font-size:11px;color:#2f3f50}.contact strong{display:block;font-size:13px}.empty{color:#7b8794;font-size:13px}@media print{button{display:none}}
+    </style></head><body><div class="page"><header class="top"><h1>INFORMACE PRO ZÁJEMCE</h1><div class="subtitle">${this.escapeHtml(title)}</div><div class="logo-mark"></div></header><main class="grid">${sections || '<p class="empty">Nejsou vyplněné žádné informace k nemovitosti.</p>'}</main><footer class="footer"><div class="remax">RE/MAX</div><div class="contact"><strong>${this.escapeHtml(agent.fullName || 'Eliška Petrášová')}</strong><div>${this.escapeHtml(phone)}</div><div>${this.escapeHtml(email)}</div></div></footer></div><script>window.onload=()=>setTimeout(()=>window.print(),200)</script></body></html>`;
+
+    const win = window.open('', '_blank', 'width=1100,height=1200');
+    if (!win) {
+      window.alert('Nepodařilo se otevřít okno pro informace pro zájemce. Zkontrolujte blokování vyskakovacích oken.');
+      return;
+    }
+
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
   }
 
   protected printBuyerInfoAlternative(): void {

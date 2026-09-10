@@ -1032,6 +1032,10 @@
   gap: 0.35rem;
 }
 
+.new-client-room-area-result {
+  font-weight: 800;
+}
+
 .service-breakdown-list {
   display: grid;
   gap: 0.3rem;
@@ -1597,6 +1601,14 @@
   font-weight: 800;
   text-transform: uppercase;
   line-height: 1.2;
+}
+
+.buyer-info-excluded-icon {
+  color: var(--client-accent-ink);
+  cursor: help;
+  font-size: 0.8rem;
+  margin-left: 0.25rem;
+  text-transform: none;
 }
 
 .new-client-title-check {
