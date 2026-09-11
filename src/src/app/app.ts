@@ -408,6 +408,26 @@ const STAVBA_OWNERSHIP_OPTIONS: string[] = ['Osobní', 'Družstevní', 'Podílov
 
 const STAVBA_CADASTRE_OPTIONS: string[] = ['Ano', 'Ne'];
 
+const STAVBA_BUILDING_TYPE_OPTIONS: string[] = [
+  'rodinný dům',
+  'bytový dům',
+  'stavba pro rodinnou rekreaci',
+  'zemědělská usedlost',
+  'stavba pro shromažďování většího počtu osob',
+  'stavba pro obchod',
+  'stavba ubytovacího zařízení',
+  'stavba pro výrobu a skladování',
+  'zemědělská stavba',
+  'stavba pro administrativu',
+  'stavba občanského vybavení',
+  'stavba technického vybavení',
+  'stavba pro dopravu',
+  'garáž',
+  'jiná stavba',
+  'víceúčelová stavba',
+  'skleník'
+];
+
 const STAVBA_DISPOSITION_OPTIONS: string[] = [
   '1+0', '1+1', '1+kk', '2+1', '2+kk', '3+1', '3+kk',
   '4+1', '4+kk', '5+1', '5+kk', '6+1', '6+kk'
@@ -475,7 +495,7 @@ const STAVBA_INSULATION_OPTIONS: string[] = [
 ];
 
 const STAVBA_ORIENTATION_OPTIONS: string[] = [
-  'S', 'J', 'V', 'Z', 'SV', 'JV', 'SZ', 'JZ'
+  'Sever', 'Jih', 'Východ', 'Západ', 'SV', 'JV', 'SZ', 'JZ'
 ];
 
 const STAVBA_ENERGY_CLASS_OPTIONS: string[] = [
@@ -517,6 +537,14 @@ const SOCIALNI_ZAZEMI_BATHROOM_OPTIONS: string[] = [
 
 const SOCIALNI_ZAZEMI_TOILET_OPTIONS: string[] = ['Samostatné', 'V koupelně', 'Na pozemku', 'V chatce'];
 
+const SOCIALNI_ZAZEMI_TOILET_TYPE_OPTIONS: string[] = [
+  'Bidet',
+  'Splachovací WC',
+  'Chemické WC',
+  'Suché WC',
+  'Improvizované WC'
+];
+
 const SOCIALNI_ZAZEMI_WASHING_MACHINE_OPTIONS: string[] = [
   'Bez pračky',
   'V koupelně',
@@ -526,7 +554,7 @@ const SOCIALNI_ZAZEMI_WASHING_MACHINE_OPTIONS: string[] = [
   'Šíře dveří 40 cm',
   'Šíře dveří 50 cm',
   'Šíře dveří 60 cm',
-  'Zásuvka na pračku i myčku',
+  'Zásuvka na pračku i sušičku',
   'Zásuvka pouze na pračku'
 ];
 
@@ -628,6 +656,7 @@ const MAJITEL_CESTY_OPTIONS: string[] = [
 
 const PARKOVANI_OPTIONS: string[] = [
   'Bez parkování',
+  'Bez vlastního parkování',
   'Veřejné venkovní',
   'Ve dvoře',
   'Na pozemku',
@@ -688,18 +717,20 @@ const PROSTORY_ROOM_EQUIPMENT_OPTIONS: string[] = [
   'Kuchyňka'
 ];
 
+const PROSTORY_ROOM_GROUP_SEPARATOR_PREFIX = '__separator__';
+
 const PROSTORY_ROOM_LIST_OPTIONS: string[] = [
-  'Garáž',
   'Kočárkárna',
   'Kolárna',
   'Společná chodba',
-  'Jiné společné prostory',
-  'Schodiště (RD)',
   'Výtah',
+  'Jiné společné prostory',
+  `${PROSTORY_ROOM_GROUP_SEPARATOR_PREFIX}1`,
   'Balkon',
   'Lodžie',
   'Terasa',
-  'Sklep',
+  `${PROSTORY_ROOM_GROUP_SEPARATOR_PREFIX}2`,
+  'Schodiště (RD)',
   'Spíž',
   'Předsíň (zádveří)',
   'Chodba (uvnitř bytu/domu)',
@@ -717,6 +748,9 @@ const PROSTORY_ROOM_LIST_OPTIONS: string[] = [
   'Obývací pokoj',
   'Obývací pokoj + kuchyně',
   'Obytná místnost',
+  `${PROSTORY_ROOM_GROUP_SEPARATOR_PREFIX}3`,
+  'Sklep',
+  'Garáž',
   'Bazén'
 ];
 
@@ -730,7 +764,7 @@ const PROSTORY_GARAGE_DOOR_OPENING_OPTIONS: string[] = ['Klasické', 'Doleva', '
 
 const PROSTORY_LODGING_TYPES: string[] = ['Jiná', 'Ubytovací zařízení'];
 
-const PROSTORY_GENERAL_TYPES: string[] = ['Dům', 'Byt', 'Chata', 'Zahrada', 'Pozemek', 'Pole', 'Nebytový prostor', 'Jiná', 'Ubytovací zařízení', 'Chatka'];
+const PROSTORY_GENERAL_TYPES: string[] = ['Dům', 'Byt', 'Chata', 'Zahrada', 'Pozemek', 'Pole', 'Nebytový prostor', 'Jiná', 'Ubytovací zařízení', 'Chatka', 'Garáž'];
 
 const PROSTORY_OBYTNA_ROOMS: string[] = [
   'Jídelna',
@@ -1068,6 +1102,7 @@ interface PropertyDirectoryEntry {
   index: number;
   title: string;
   type: string;
+  service: string;
   address: string;
   price: string;
   seller: string;
@@ -1665,10 +1700,11 @@ export class App {
 
    protected readonly allPropertyDirectoryEntries = computed<PropertyDirectoryEntry[]>(() =>
      this.savedPropertyRecords().map((record, index) => ({
-       index,
-       title: record.title,
-       type: record.propertyType,
-       address: record.address,
+        index,
+        title: record.title,
+        type: record.propertyType,
+        service: record.tabValues?.zakladni?.['Služba'] || '',
+        address: record.address,
        price: record.price || '',
        seller: record.seller || '',
        createdAt: record.createdAt,
@@ -1715,16 +1751,51 @@ export class App {
      });
    }
 
-   protected propertyDirectorySortDirection(key: PropertyDirectorySortKey): 'asc' | 'desc' | '' {
-     const current = this.propertyDirectorySort();
-     if (!current || current.key !== key) {
-       return '';
-     }
+    protected propertyDirectorySortDirection(key: PropertyDirectorySortKey): 'asc' | 'desc' | '' {
+      const current = this.propertyDirectorySort();
+      if (!current || current.key !== key) {
+        return '';
+      }
 
-     return current.direction;
-   }
+      return current.direction;
+    }
 
-   protected setPropertyDirectoryView(view: PropertyDirectoryView): void {
+    protected propertyDirectoryDisplayTitle(entry: PropertyDirectoryEntry): string {
+      const title = entry.title.trim();
+      const service = entry.service.trim();
+      const type = entry.type.trim();
+      const suffix = [service, type ? this.propertyTypeAccusativeLabel(type) : ''].filter(Boolean).join(' ');
+      if (title && suffix) { return `${title} - ${suffix}`; }
+      return title || suffix;
+    }
+
+    protected propertyFormHeaderPropertyLabel(): string {
+      const draft = this.newPropertyDraft();
+      const service = this.propertyTabFieldValue('zakladni', 'Služba').trim();
+      const type = this.propertyTypeAccusativeLabel(draft.propertyType.trim());
+      const address = draft.address.trim();
+      return [service, type, address].filter(Boolean).join(' ');
+    }
+
+    private propertyTypeAccusativeLabel(type: string): string {
+      const normalized = type.toLocaleLowerCase('cs-CZ');
+      const labels: Record<string, string> = {
+        'byt': 'bytu',
+        'dům': 'domu',
+        'chata': 'chaty',
+        'chatka': 'chatky',
+        'zahrada': 'zahrady',
+        'pozemek': 'pozemku',
+        'pole': 'pole',
+        'nebytový prostor': 'nebytového prostoru',
+        'ubytovací zařízení': 'ubytovacího zařízení',
+        'garáž': 'garáže',
+        'garaz': 'garáže'
+      };
+      return labels[normalized] || normalized;
+    }
+
+    protected setPropertyDirectoryView(view: PropertyDirectoryView): void {
      this.propertyDirectoryView.set(view);
    }
 
@@ -2343,10 +2414,14 @@ export class App {
       ];
 
       if (riskFields.includes(field)) {
+        const previousRiskSource = this.highRiskSourceDetail(draft);
         const riskSource = this.highRiskSourceDetail(nextDraft);
         if (riskSource) {
           nextDraft.sanctionsApplied = 'ANO';
           nextDraft.sanctionsDetails = riskSource;
+        } else if (nextDraft.sanctionsApplied === 'ANO' && nextDraft.sanctionsDetails === previousRiskSource) {
+          nextDraft.sanctionsApplied = 'NE';
+          nextDraft.sanctionsDetails = '';
         }
       }
 
@@ -3172,7 +3247,7 @@ export class App {
     ];
 
     return rows
-      .filter((row) => (row.value || '').trim())
+      .filter((row) => this.isHighRiskCountryValue(row.value))
       .map((row) => `${row.label}: ${row.value.trim()}`)
       .join('\n');
   }
@@ -3510,6 +3585,17 @@ export class App {
       }
       const direction = sort.direction === 'asc' ? 1 : -1;
       return aValue > bValue ? direction : -direction;
+    });
+  }
+
+  protected insertAtSymbolToPropertyField(input: HTMLInputElement, tab: NewPropertyTabKey, field: string): void {
+    const current = this.propertyTabFieldValue(tab, field);
+    const caret = input.selectionStart ?? current.length;
+    const next = current.slice(0, caret) + '@' + current.slice(caret);
+    this.setPropertyTabFieldValue(tab, field, next);
+    requestAnimationFrame(() => {
+      input.focus();
+      input.setSelectionRange(caret + 1, caret + 1);
     });
   }
 
@@ -3978,6 +4064,7 @@ export class App {
   protected stavbaOnPlotOptions(): string[] { return STAVBA_ON_PLOT_OPTIONS; }
   protected stavbaOwnershipOptions(): string[] { return STAVBA_OWNERSHIP_OPTIONS; }
   protected stavbaCadastreOptions(): string[] { return STAVBA_CADASTRE_OPTIONS; }
+  protected stavbaBuildingTypeOptions(): string[] { return STAVBA_BUILDING_TYPE_OPTIONS; }
   protected stavbaDispositionOptions(): string[] { return STAVBA_DISPOSITION_OPTIONS; }
   protected stavbaBuildingNumberOptions(): string[] { return STAVBA_BUILDING_NUMBER_OPTIONS; }
   protected stavbaElevatorOptions(): string[] { return STAVBA_ELEVATOR_OPTIONS; }
@@ -3991,6 +4078,13 @@ export class App {
   protected stavbaInsulationOptions(): string[] { return STAVBA_INSULATION_OPTIONS; }
   protected stavbaOrientationOptions(): string[] { return STAVBA_ORIENTATION_OPTIONS; }
   protected stavbaEnergyClassOptions(): string[] { return STAVBA_ENERGY_CLASS_OPTIONS; }
+
+  protected adjustStavbaFloorsByWheel(event: WheelEvent): void {
+    event.preventDefault();
+    const current = Number.parseInt(this.propertyTabFieldValue('stavba', 'Podlaží celkem'), 10) || 0;
+    const next = Math.max(0, current + (event.deltaY < 0 ? 1 : -1));
+    this.setPropertyTabFieldValue('stavba', 'Podlaží celkem', next > 0 ? String(next) : '');
+  }
 
   protected stavbaYearOptions(): string[] {
     const currentYear = new Date().getFullYear();
@@ -4160,9 +4254,18 @@ export class App {
     return BEZBARIEROVOST_OPTIONS;
   }
 
+  protected hasBezbarierovostRearEntrance(): boolean {
+    return this.propertyTabFieldValue('bezbarierovost', 'Zadní vchod ano/ne') !== 'Ne';
+  }
+
+  protected hasStavbaElevator(): boolean {
+    return this.propertyTabFieldValue('stavba', 'Výtah v budově') === 'Ano';
+  }
+
   protected socialniZazemiCoreOptions(): string[] { return SOCIALNI_ZAZEMI_CORE_OPTIONS; }
   protected socialniZazemiBathroomOptions(): string[] { return SOCIALNI_ZAZEMI_BATHROOM_OPTIONS; }
   protected socialniZazemiToiletOptions(): string[] { return SOCIALNI_ZAZEMI_TOILET_OPTIONS; }
+  protected socialniZazemiToiletTypeOptions(): string[] { return SOCIALNI_ZAZEMI_TOILET_TYPE_OPTIONS; }
   protected socialniZazemiWashingMachineOptions(): string[] { return SOCIALNI_ZAZEMI_WASHING_MACHINE_OPTIONS; }
 
   protected hasSocialniZazemiMultiValue(field: string, value: string): boolean {
@@ -4444,7 +4547,7 @@ export class App {
   }
 
   protected isOhrevVodyHidden(): boolean {
-    return this.isVodaNezaveden();
+    return false;
   }
 
   protected isOhrevVodyZdrojHidden(): boolean {
@@ -4576,7 +4679,7 @@ export class App {
 
   protected dopravaOptions(): string[] { return ['MHD', 'Autobus', 'Vlak']; }
   protected dostupnostCasOptions(): string[] { return ['min', 'hod']; }
-  protected dostupnostDopravaTypOptions(): string[] { return ['Pěšky', 'Autem']; }
+  protected dostupnostDopravaTypOptions(): string[] { return ['pěšky', 'autem']; }
 
   protected hasDostupnostMultiValue(field: string, value: string): boolean {
     return this.hasPropertyTabMultiValue('dostupnost-v-okoli', field, value);
@@ -4602,7 +4705,7 @@ export class App {
       'Vlastní parkování', 'Sídliště', 'Klid', 'Samota', 'Polosamota', 'Zahrada u domu',
       'Krajina / okolí', 'Zeleň v okolí', 'Výhled', 'Dostupnost služeb', 'Rekonstrukce',
       'Prostor pro pračku', 'Možnost trvalého pobytu', 'Úklid společných prostor',
-      'Kamery v domě', 'Koupání', 'Ráj houbařů', 'Rybářské lokality'
+      'Kamery v domě', 'Koupání', 'Ráj houbařů', 'Rybářské lokality', 'dostatek úložného prostoru'
     ];
   }
 
@@ -4731,6 +4834,11 @@ export class App {
     return Math.max(0, Math.min(100, (value / 20000000) * 100));
   }
 
+  protected cenaNemovitostiRangeBubbleLeft(value: number): string {
+    const progress = Math.max(0, Math.min(1, value / 20000000));
+    return `calc(16px + (100% - 32px) * ${progress})`;
+  }
+
   protected formatCenaNemovitostiPercentField(): void {
     const value = this.parsePercentLikeNumber(this.propertyTabFieldValue('cena-nemovitosti', 'Smluvené % z prodeje bez DPH'));
     if (value <= 0) {
@@ -4833,22 +4941,39 @@ export class App {
   }
 
   private cenaNemovitostiCommissionWithVatValue(priceWithVat: number): number {
+    const fixedCommission = this.cenaNemovitostiFixedCommissionValue();
+    if (fixedCommission > 0) { return fixedCommission * 1.21; }
     return priceWithVat * this.cenaNemovitostiCommissionRate() * 1.21;
   }
 
+  private cenaNemovitostiCommissionWithoutVatValue(priceWithVat: number): number {
+    const fixedCommission = this.cenaNemovitostiFixedCommissionValue();
+    if (fixedCommission > 0) { return fixedCommission; }
+    return priceWithVat * this.cenaNemovitostiCommissionRate();
+  }
+
   private cenaNemovitostiVatAmountValue(): number {
-    return this.cenaNemovitostiCommissionWithVatValue(this.cenaNemovitostiOfferPrice()) - (this.cenaNemovitostiOfferPrice() * this.cenaNemovitostiCommissionRate());
+    const price = this.cenaNemovitostiOfferPrice();
+    return this.cenaNemovitostiCommissionWithVatValue(price) - this.cenaNemovitostiCommissionWithoutVatValue(price);
   }
 
   private cenaNemovitostiResultSaleWithVatValue(): number {
     const clientDemand = this.cenaNemovitostiClientDemandSlider();
+    const fixedCommission = this.cenaNemovitostiFixedCommissionValue();
+    if (clientDemand > 0 && fixedCommission > 0) {
+      return clientDemand + (fixedCommission * 1.21);
+    }
     const rateWithVat = this.cenaNemovitostiCommissionRate() * 1.21;
     return clientDemand > 0 && rateWithVat < 1 ? clientDemand / (1 - rateWithVat) : 0;
   }
 
   private cenaNemovitostiResultVatAmountValue(): number {
     const priceWithVat = this.cenaNemovitostiResultSaleWithVatValue();
-    return this.cenaNemovitostiCommissionWithVatValue(priceWithVat) - (priceWithVat * this.cenaNemovitostiCommissionRate());
+    return this.cenaNemovitostiCommissionWithVatValue(priceWithVat) - this.cenaNemovitostiCommissionWithoutVatValue(priceWithVat);
+  }
+
+  private cenaNemovitostiFixedCommissionValue(): number {
+    return this.parseCurrencyLikeNumber(this.propertyTabFieldValue('cena-nemovitosti', 'Pevná provize z prodeje v Kč'));
   }
 
   private cenaNemovitostiCommissionRate(): number {
@@ -5286,9 +5411,14 @@ export class App {
     return this.isCurrentPropertyInTypes(PROSTORY_GENERAL_TYPES);
   }
 
+  protected shouldShowProstoryGarageFields(): boolean {
+    return this.isCurrentPropertyType('Garáž') || (this.shouldShowProstoryGeneralFields() && this.hasSelectedProstoryRoom('Garáž'));
+  }
+
   protected prostoryAdditionalOptions(): string[] { return PROSTORY_ADDITIONAL_OPTIONS; }
   protected prostoryRoomEquipmentOptions(): string[] { return PROSTORY_ROOM_EQUIPMENT_OPTIONS; }
   protected prostoryRoomListOptions(): string[] { return PROSTORY_ROOM_LIST_OPTIONS; }
+  protected isProstoryRoomGroupSeparator(option: string): boolean { return option.startsWith(PROSTORY_ROOM_GROUP_SEPARATOR_PREFIX); }
   protected prostoryCellarTypeOptions(): string[] { return PROSTORY_CELLAR_TYPE_OPTIONS; }
   protected prostoryCellarSidesOptions(): string[] { return PROSTORY_CELLAR_SIDES_OPTIONS; }
   protected prostoryGarageDoorMaterialOptions(): string[] { return PROSTORY_GARAGE_DOOR_MATERIAL_OPTIONS; }
@@ -9787,7 +9917,8 @@ export class App {
           .filter(([key, value]) => !BUYER_INFO_EXCLUDED_FIELDS.has(key) && !key.includes('__') && !key.endsWith(' počet') && Boolean(String(value).trim()))
           .map(([key, value]) => `<div class="info-row"><div class="info-label">${this.escapeHtml(key)}</div><div class="info-value">${this.escapeHtml(String(value).replace(/\|/g, ', '))}</div></div>`)
           .join('');
-        return rows ? `<section class="info-card"><h2>${this.escapeHtml(tab.label)}</h2><div class="info-card-body">${rows}</div></section>` : '';
+        const note = tab.key === 'prostory' && rows ? '<div class="info-row"><div class="info-label">Poznámka</div><div class="info-value">*Rozměry místností jsou orientační</div></div>' : '';
+        return rows ? `<section class="info-card"><h2>${this.escapeHtml(tab.label)}</h2><div class="info-card-body">${rows}${note}</div></section>` : '';
       })
       .filter(Boolean)
       .join('');
