@@ -1750,6 +1750,24 @@
   flex-wrap: wrap;
 }
 
+.property-form-phase-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid #d9e1ea;
+}
+
+.property-form-phase-label {
+  flex: 0 0 100%;
+  color: #6b7785;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .property-phase-btn {
   border: 1px solid #d9e1ea;
   border-radius: 999px;
@@ -1772,6 +1790,10 @@
   background: var(--client-accent, #1976d2);
   border-color: var(--client-accent, #1976d2);
   color: #fff;
+}
+
+.property-phase-btn.active:not(.current) {
+  opacity: 0.62;
 }
 
 .new-client-field-card {
@@ -2953,6 +2975,88 @@
   display: flex;
   gap: 0.4rem;
   flex-wrap: wrap;
+}
+
+.new-client-checkbox-line {
+  align-items: center;
+  color: #183751;
+  display: inline-flex;
+  font-size: 0.82rem;
+  gap: 0.4rem;
+  margin: 0 0 0.45rem;
+}
+
+.handover-meter-row {
+  gap: 5px;
+}
+
+.handover-meter-label {
+  align-items: center;
+  display: inline-flex;
+  gap: 5px;
+}
+
+.handover-meter-input {
+  flex: 0 0 40ch;
+  max-width: 40ch;
+}
+
+.handover-form-two-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.handover-extra-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.handover-extra-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.handover-extra-full {
+  grid-column: 1 / -1;
+}
+
+.handover-form-column {
+  display: grid;
+  align-content: start;
+  gap: 0.65rem;
+}
+
+.handover-form-column:first-child {
+  justify-items: start;
+}
+
+.handover-form-row {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.handover-obligation-card {
+  border-top: 1px solid #d9e1ea;
+  padding-top: 0.9rem;
+}
+
+.handover-full-row-block {
+  margin-top: 1rem;
+}
+
+.handover-obligation-row {
+  align-items: flex-start;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 5px;
+}
+
+.handover-photo-notice-row {
+  margin-top: 0.65rem;
 }
 
 .new-client-toggle-row.triple .new-client-toggle-btn {

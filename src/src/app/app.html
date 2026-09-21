@@ -166,6 +166,10 @@
           <div class="client-directory-head-text">
             <h2>{{ activeSavedPropertyId() ? 'Upravit nemovitost' : 'Nová nemovitost' }}</h2>
             <div class="new-client-title-name" *ngIf="propertyFormHeaderPropertyLabel()">{{ propertyFormHeaderPropertyLabel() }}</div>
+            <div class="property-form-phase-inline" *ngIf="activeSavedPropertyId()">
+              <div class="property-form-phase-label">Fáze prodeje</div>
+              <button type="button" class="property-phase-btn" *ngFor="let phase of propertySalesPhases()" [class.active]="isCurrentPropertyPhaseActive(phase)" [class.current]="currentPropertyPhase() === phase" (click)="setPropertyPhase(phase)">{{ phase }}</button>
+            </div>
           </div>
           <div class="new-client-head-actions">
             <button type="button" class="new-client-head-btn" (click)="activatePropertyWorkspaceMode('directory')">Odejít</button>
@@ -179,12 +183,6 @@
         <div class="new-client-layout">
           <section class="new-client-block">
             <div class="new-client-grid two-up" *ngIf="isActivePropertyTab('zakladni')">
-              <article class="new-client-field-card new-client-field-card-full">
-                <div class="new-client-label">Fáze prodeje</div>
-                <div class="property-phase-selector">
-                  <button type="button" class="property-phase-btn" *ngFor="let phase of propertySalesPhases()" [class.active]="currentPropertyPhase() === phase" (click)="setPropertyPhase(phase)">{{ phase }}</button>
-                </div>
-              </article>
               <article class="new-client-field-card" *ngIf="!isCurrentPropertyType('Garáž')">
                 <div class="new-client-label">Číslo případu</div>
                 <input type="text" class="new-client-input" [ngModel]="newPropertyDraft().title" (ngModelChange)="setNewPropertyDraftField('title', $event)" placeholder="např. 2026-001" />
@@ -2176,10 +2174,19 @@
 
             <div class="new-client-grid two-up" *ngIf="isActivePropertyTab('predavaci-protokol')">
               <article class="new-client-field-card new-client-field-card-full">
-                <div class="new-client-label">Předávací protokol</div>
+                <div class="new-client-label">Doklady</div>
+                <div class="new-client-toggle-row">
+                  <button type="button" class="new-client-toggle-btn active" (click)="generateCurrentPropertyBuyerInfo()">Vygenerovat informace pro zájemce</button>
+                  <button type="button" class="new-client-toggle-btn" [class.active]="propertyTabFieldValue('predavaci-protokol', 'handoverFormOpen') === 'ANO'" (click)="setPropertyTabFieldValue('predavaci-protokol', 'handoverFormOpen', propertyTabFieldValue('predavaci-protokol', 'handoverFormOpen') === 'ANO' ? '' : 'ANO')">Předávací protokol</button>
+                </div>
+              </article>
+
+              <ng-container *ngIf="propertyTabFieldValue('predavaci-protokol', 'handoverFormOpen') === 'ANO'">
+
+              <article class="new-client-field-card new-client-field-card-full">
+                <div class="new-client-label">Formulář předávací protokol</div>
                 <div class="new-client-toggle-row">
                   <button type="button" class="new-client-toggle-btn active" (click)="generateHandoverProtocol()">Vygenerovat předávací protokol</button>
-                  <button type="button" class="new-client-toggle-btn active" (click)="generateCurrentPropertyBuyerInfo()">Vygenerovat informace pro zájemce</button>
                 </div>
               </article>
 
@@ -2233,60 +2240,80 @@
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'address') || newPropertyDraft().address" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'address', $event)" placeholder="adresní místo" />
               </article>
 
-              <article class="new-client-field-card">
-                <div class="new-client-label">Elektřina</div>
-                <div class="new-client-room-pair-row">
-                  <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'electricMeterNumber')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'electricMeterNumber', $event)" placeholder="č. měřiče" />
-                  <div class="new-client-room-times">/</div>
-                  <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'electricMeterState')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'electricMeterState', $event)" placeholder="stav kWh" />
+              <article class="new-client-field-card new-client-field-card-full">
+                <label class="new-client-label handover-meter-label"><input type="checkbox" class="new-client-checklist-box" [checked]="handoverOptionalGroupVisible('cellarVisible')" (change)="toggleHandoverOptionalGroupVisibility('cellarVisible')" /> Sklep</label>
+                <div class="handover-extra-grid">
+                  <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'cellar')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'cellar', $event)" placeholder="Označení sklepu" />
+                  <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'cellarNumber')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'cellarNumber', $event)" placeholder="Č. sklepa" />
+                  <textarea class="new-client-input new-client-textarea auto-grow-textarea handover-extra-full" rows="2" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'cellarRemains')" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'cellarRemains', $event)" placeholder="Ve sklepě zůstává"></textarea>
                 </div>
-              </article>
-
-              <article class="new-client-field-card">
-                <div class="new-client-label">Voda teplá</div>
-                <div class="new-client-room-pair-row">
-                  <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'hotWaterMeterNumber')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'hotWaterMeterNumber', $event)" placeholder="č. měřiče" />
-                  <div class="new-client-room-times">/</div>
-                  <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'hotWaterMeterState')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'hotWaterMeterState', $event)" placeholder="stav m3" />
-                </div>
-              </article>
-
-              <article class="new-client-field-card">
-                <div class="new-client-label">Voda studená</div>
-                <div class="new-client-room-pair-row">
-                  <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'coldWaterMeterNumber')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'coldWaterMeterNumber', $event)" placeholder="č. měřiče" />
-                  <div class="new-client-room-times">/</div>
-                  <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'coldWaterMeterState')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'coldWaterMeterState', $event)" placeholder="stav m3" />
-                </div>
-              </article>
-
-              <article class="new-client-field-card">
-                <div class="new-client-label">Plyn</div>
-                <div class="new-client-room-pair-row">
-                  <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'gasMeterNumber')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'gasMeterNumber', $event)" placeholder="č. měřiče" />
-                  <div class="new-client-room-times">/</div>
-                  <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'gasMeterState')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'gasMeterState', $event)" placeholder="stav m3" />
-                </div>
-              </article>
-
-              <article class="new-client-field-card">
-                <div class="new-client-label">Klíče celkem</div>
-                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'keysCount')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'keysCount', $event.replace(/\D/g, ''))" placeholder="počet klíčů" inputmode="numeric" />
-              </article>
-
-              <article class="new-client-field-card">
-                <div class="new-client-label">Přístupové čipy celkem</div>
-                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'chipsCount')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'chipsCount', $event.replace(/\D/g, ''))" placeholder="počet čipů" inputmode="numeric" />
-              </article>
-
-              <article class="new-client-field-card">
-                <div class="new-client-label">Výrobní karty klíčů celkem</div>
-                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'keyCardsCount')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'keyCardsCount', $event.replace(/\D/g, ''))" placeholder="počet karet" inputmode="numeric" />
               </article>
 
               <article class="new-client-field-card new-client-field-card-full">
-                <div class="new-client-label">Přesný popis klíčů a jejich počet</div>
-                <textarea class="new-client-input new-client-textarea auto-grow-textarea" rows="2" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'keysDescription')" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'keysDescription', $event)" placeholder="popis klíčů"></textarea>
+                <div class="handover-form-two-columns">
+                  <section class="handover-form-column">
+                    <div class="new-client-label">STAVY MĚŘIČŮ</div>
+                    <div class="handover-form-row">
+                      <label class="new-client-label handover-meter-label"><input type="checkbox" class="new-client-checklist-box" [checked]="handoverMeterVisible('electricMeterVisible')" (change)="toggleHandoverMeterVisibility('electricMeterVisible')" /> Elektřina</label>
+                      <div class="new-client-room-pair-row handover-meter-row">
+                        <input type="text" class="new-client-input handover-meter-input" maxlength="40" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'electricMeterNumber')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'electricMeterNumber', $event)" placeholder="č. měřiče" />
+                        <div class="new-client-room-times">/</div>
+                        <input type="text" class="new-client-input handover-meter-input" maxlength="40" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'electricMeterState')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'electricMeterState', $event)" placeholder="stav kWh" />
+                      </div>
+                    </div>
+                    <div class="handover-form-row">
+                      <label class="new-client-label handover-meter-label"><input type="checkbox" class="new-client-checklist-box" [checked]="handoverMeterVisible('hotWaterMeterVisible')" (change)="toggleHandoverMeterVisibility('hotWaterMeterVisible')" /> Voda teplá</label>
+                      <div class="new-client-room-pair-row handover-meter-row">
+                        <input type="text" class="new-client-input handover-meter-input" maxlength="40" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'hotWaterMeterNumber')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'hotWaterMeterNumber', $event)" placeholder="č. měřiče" />
+                        <div class="new-client-room-times">/</div>
+                        <input type="text" class="new-client-input handover-meter-input" maxlength="40" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'hotWaterMeterState')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'hotWaterMeterState', $event)" placeholder="stav m3" />
+                      </div>
+                    </div>
+                    <div class="handover-form-row">
+                      <label class="new-client-label handover-meter-label"><input type="checkbox" class="new-client-checklist-box" [checked]="handoverMeterVisible('coldWaterMeterVisible')" (change)="toggleHandoverMeterVisibility('coldWaterMeterVisible')" /> Voda studená</label>
+                      <div class="new-client-room-pair-row handover-meter-row">
+                        <input type="text" class="new-client-input handover-meter-input" maxlength="40" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'coldWaterMeterNumber')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'coldWaterMeterNumber', $event)" placeholder="č. měřiče" />
+                        <div class="new-client-room-times">/</div>
+                        <input type="text" class="new-client-input handover-meter-input" maxlength="40" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'coldWaterMeterState')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'coldWaterMeterState', $event)" placeholder="stav m3" />
+                      </div>
+                    </div>
+                    <div class="handover-form-row">
+                      <label class="new-client-label handover-meter-label"><input type="checkbox" class="new-client-checklist-box" [checked]="handoverMeterVisible('gasMeterVisible')" (change)="toggleHandoverMeterVisibility('gasMeterVisible')" /> Plyn</label>
+                      <div class="new-client-room-pair-row handover-meter-row">
+                        <input type="text" class="new-client-input handover-meter-input" maxlength="40" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'gasMeterNumber')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'gasMeterNumber', $event)" placeholder="č. měřiče" />
+                        <div class="new-client-room-times">/</div>
+                        <input type="text" class="new-client-input handover-meter-input" maxlength="40" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'gasMeterState')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'gasMeterState', $event)" placeholder="stav m3" />
+                      </div>
+                    </div>
+                  </section>
+                  <section class="handover-form-column">
+                    <div class="new-client-label">KLÍČE</div>
+                    <div class="handover-form-row">
+                      <div class="new-client-label">Klíče celkem</div>
+                      <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'keysCount')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'keysCount', $event.replace(/\D/g, ''))" placeholder="počet klíčů" inputmode="numeric" />
+                    </div>
+                    <div class="handover-form-row">
+                      <div class="new-client-label">Přístupové čipy</div>
+                      <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'chipsCount')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'chipsCount', $event.replace(/\D/g, ''))" placeholder="počet čipů" inputmode="numeric" />
+                    </div>
+                    <div class="handover-form-row">
+                      <div class="new-client-label">Výrobní karty klíčů</div>
+                      <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'keyCardsCount')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'keyCardsCount', $event.replace(/\D/g, ''))" placeholder="počet karet" inputmode="numeric" />
+                    </div>
+                    <div class="handover-form-row">
+                      <div class="new-client-label">Přesný popis klíčů a jejich počet</div>
+                      <textarea class="new-client-input new-client-textarea auto-grow-textarea" rows="2" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'keysDescription')" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'keysDescription', $event)" placeholder="popis klíčů"></textarea>
+                    </div>
+                    <label class="new-client-label handover-meter-label"><input type="checkbox" class="new-client-checklist-box" [checked]="handoverMeterConfirmationVisible()" (change)="toggleHandoverMeterConfirmationVisibility()" /> Text o předání nemovitosti a klíčů</label>
+                  </section>
+                </div>
+                <div class="handover-form-row handover-obligation-card handover-full-row-block">
+                  <div class="new-client-label">Text k přepisu energií</div>
+                  <div class="handover-obligation-row">
+                    <input type="checkbox" class="new-client-checklist-box" [checked]="handoverBuyerObligationVisible()" (change)="toggleHandoverBuyerObligationVisibility()" />
+                    <textarea class="new-client-input new-client-textarea auto-grow-textarea" rows="3" [ngModel]="handoverBuyerObligationText()" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'buyerObligationText', $event)" placeholder="text k přepisu energií"></textarea>
+                  </div>
+                </div>
               </article>
 
               <article class="new-client-field-card new-client-field-card-full">
@@ -2294,6 +2321,28 @@
                 <textarea class="new-client-input new-client-textarea auto-grow-textarea" rows="2" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'remainsInProperty')" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'remainsInProperty', $event)" placeholder="co v nemovitosti zůstává"></textarea>
                 <div class="new-client-toggle-row">
                   <button type="button" class="new-client-toggle-btn" [class.active]="propertyTabFieldValue('predavaci-protokol', 'photoRecorded') === 'ANO'" (click)="setPropertyTabFieldValue('predavaci-protokol', 'photoRecorded', propertyTabFieldValue('predavaci-protokol', 'photoRecorded') === 'ANO' ? '' : 'ANO')">Vše zaznamenáno na fotografiích</button>
+                </div>
+                <div class="handover-obligation-row handover-photo-notice-row">
+                  <input type="checkbox" class="new-client-checklist-box" [checked]="handoverPhotoNoticeVisible()" (change)="toggleHandoverPhotoNoticeVisibility()" />
+                  <textarea class="new-client-input new-client-textarea auto-grow-textarea" rows="2" [ngModel]="handoverPhotoNoticeText()" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'photoNoticeText', $event)" placeholder="text o zaslání protokolu"></textarea>
+                </div>
+              </article>
+
+              <article class="new-client-field-card new-client-field-card-full">
+                <label class="new-client-label handover-meter-label"><input type="checkbox" class="new-client-checklist-box" [checked]="handoverOptionalGroupVisible('doorbellVisible')" (change)="toggleHandoverOptionalGroupVisibility('doorbellVisible')" /> Doplňující informace</label>
+                <div class="handover-extra-grid">
+                  <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'mailbox')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'mailbox', $event)" placeholder="Schránka" />
+                  <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'doorbell')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'doorbell', $event)" placeholder="Zvonek" />
+                  <input type="text" class="new-client-input handover-extra-full" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'doorbellLabel')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'doorbellLabel', $event)" placeholder="Označení zvonku" />
+                </div>
+              </article>
+
+              <article class="new-client-field-card new-client-field-card-full">
+                <label class="new-client-label handover-meter-label"><input type="checkbox" class="new-client-checklist-box" [checked]="handoverOptionalGroupVisible('managerVisible')" (change)="toggleHandoverOptionalGroupVisibility('managerVisible')" /> Správce</label>
+                <div class="handover-extra-grid">
+                  <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'managerName')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'managerName', $event)" placeholder="Jméno správce" />
+                  <input type="tel" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'managerPhone')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'managerPhone', $event)" placeholder="Telefon správce" />
+                  <input type="email" class="new-client-input handover-extra-full" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'managerEmail')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'managerEmail', $event)" placeholder="E-mail správce" />
                 </div>
               </article>
 
@@ -2306,6 +2355,7 @@
                 <div class="new-client-label">Datum</div>
                 <input type="text" class="new-client-input" [ngModel]="handoverDateValue()" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'date', $event)" placeholder="dd.mm.rrrr" />
               </article>
+              </ng-container>
             </div>
 
             <div class="new-client-grid two-up" *ngIf="isActivePropertyTab('informace-do-letaku')">

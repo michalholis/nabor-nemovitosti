@@ -508,7 +508,8 @@ const PROPERTY_SALES_PHASES: string[] = [
   'Rezervace',
   'Kupní smlouva',
   'Katastr',
-  'Předání'
+  'Předání',
+  'Uzavřeno'
 ];
 
 const JEDNOTKA_OWNERSHIP_OPTIONS: string[] = ['Osobní', 'Družstevní', 'Podílové', 'V nájmu'];
@@ -3836,6 +3837,12 @@ export class App {
     this.newPropertyDraft.update((draft) => ({ ...draft, phase }));
   }
 
+  protected isCurrentPropertyPhaseActive(phase: string): boolean {
+    const currentIdx = this.phaseIndex(this.currentPropertyPhase());
+    const phaseIdx = this.phaseIndex(phase);
+    return phaseIdx >= 0 && currentIdx >= 0 && phaseIdx <= currentIdx;
+  }
+
   protected phaseIndex(phase: string): number {
     return PROPERTY_SALES_PHASES.indexOf(phase);
   }
@@ -5342,6 +5349,58 @@ export class App {
     return this.propertyTabFieldValue('predavaci-protokol', 'date');
   }
 
+  protected handoverBuyerObligationText(): string {
+    const defaultText = this.defaultHandoverBuyerObligationText();
+    const value = this.propertyTabFieldValue('predavaci-protokol', 'buyerObligationText');
+    return this.sameTextIgnoringWhitespace(value, defaultText) ? defaultText : value || defaultText;
+  }
+
+  protected handoverBuyerObligationVisible(): boolean {
+    return this.propertyTabFieldValue('predavaci-protokol', 'buyerObligationVisible') !== 'NE';
+  }
+
+  protected toggleHandoverBuyerObligationVisibility(): void {
+    this.setPropertyTabFieldValue('predavaci-protokol', 'buyerObligationVisible', this.handoverBuyerObligationVisible() ? 'NE' : 'ANO');
+  }
+
+  protected handoverPhotoNoticeText(): string {
+    const defaultText = this.defaultHandoverPhotoNoticeText();
+    const value = this.propertyTabFieldValue('predavaci-protokol', 'photoNoticeText');
+    return this.sameTextIgnoringWhitespace(value, defaultText) ? defaultText : value || defaultText;
+  }
+
+  protected handoverPhotoNoticeVisible(): boolean {
+    return this.propertyTabFieldValue('predavaci-protokol', 'photoNoticeVisible') !== 'NE';
+  }
+
+  protected toggleHandoverPhotoNoticeVisibility(): void {
+    this.setPropertyTabFieldValue('predavaci-protokol', 'photoNoticeVisible', this.handoverPhotoNoticeVisible() ? 'NE' : 'ANO');
+  }
+
+  protected handoverMeterVisible(field: 'electricMeterVisible' | 'hotWaterMeterVisible' | 'coldWaterMeterVisible' | 'gasMeterVisible'): boolean {
+    return this.propertyTabFieldValue('predavaci-protokol', field) !== 'NE';
+  }
+
+  protected toggleHandoverMeterVisibility(field: 'electricMeterVisible' | 'hotWaterMeterVisible' | 'coldWaterMeterVisible' | 'gasMeterVisible'): void {
+    this.setPropertyTabFieldValue('predavaci-protokol', field, this.handoverMeterVisible(field) ? 'NE' : 'ANO');
+  }
+
+  protected handoverMeterConfirmationVisible(): boolean {
+    return this.propertyTabFieldValue('predavaci-protokol', 'meterConfirmationVisible') !== 'NE';
+  }
+
+  protected toggleHandoverMeterConfirmationVisibility(): void {
+    this.setPropertyTabFieldValue('predavaci-protokol', 'meterConfirmationVisible', this.handoverMeterConfirmationVisible() ? 'NE' : 'ANO');
+  }
+
+  protected handoverOptionalGroupVisible(field: 'cellarVisible' | 'doorbellVisible' | 'managerVisible'): boolean {
+    return this.propertyTabFieldValue('predavaci-protokol', field) === 'ANO';
+  }
+
+  protected toggleHandoverOptionalGroupVisibility(field: 'cellarVisible' | 'doorbellVisible' | 'managerVisible'): void {
+    this.setPropertyTabFieldValue('predavaci-protokol', field, this.handoverOptionalGroupVisible(field) ? 'NE' : 'ANO');
+  }
+
   private handoverLinkedClients(): SavedClientRecord[] {
     const propertyId = this.activeSavedPropertyId();
     const directClientIds = this.propertyLinkedClientIds();
@@ -5389,6 +5448,18 @@ export class App {
       parts.push(`součástí je stavba ${buildingTypeText} ${buildingNumber}`.trim());
     }
     return parts.join(', ');
+  }
+
+  private defaultHandoverBuyerObligationText(): string {
+    return 'Kupující se podpisem kupní smlouvy zavázal, že nejpozději do 10-ti pracovních dnů od protokolárního předání a převzetí předmětné nemovité věci, bude mít na svou osobu přepsány smlouvy o dodávkách veškerých energií a služeb, které se týkají předmětné nemovité věci, přičemž k přepisu energií je prodávající povinna poskytnout kupujícímu potřebnou a nezbytnou součinnost.';
+  }
+
+  private defaultHandoverPhotoNoticeText(): string {
+    return 'Tento Předávací protokol bude společně s fotografiemi pořízenými při předání nemovitosti zaslán na emaily uvedené v záhlaví stránky.';
+  }
+
+  private sameTextIgnoringWhitespace(first: string, second: string): boolean {
+    return first.replace(/\s+/g, ' ').trim() === second.replace(/\s+/g, ' ').trim();
   }
 
   protected isCurrentPropertyInTypes(types: string[]): boolean {
@@ -10176,7 +10247,8 @@ export class App {
       ...(d.amlProofEmployment || []),
       ...(d.amlProofBusiness || []),
       ...(d.amlProofBankLoan || []),
-      ...(d.amlProofOther || [])
+      ...(d.amlProofOther || []),
+      ...(d.deliveredDocuments || [])
     ].filter(Boolean).join(', ');
   }
 
@@ -10432,91 +10504,208 @@ ${sections.map((section) => `<section class="section"><div class="section-title"
 
     const delivering = this.handoverProtocolParties('predavajici');
     const receiving = this.handoverProtocolParties('prebirajici');
+    const documentTitle = this.handoverProtocolDocumentTitle(delivering, receiving);
     const city = this.handoverCityValue().trim();
     const date = this.handoverDateValue().trim();
     const propertyDescription = this.handoverPropertyDescriptionValue().trim();
     const propertyAddress = (this.propertyTabFieldValue('predavaci-protokol', 'address') || this.newPropertyDraft().address).trim();
+    const cellarVisible = this.handoverOptionalGroupVisible('cellarVisible');
+    const doorbellVisible = this.handoverOptionalGroupVisible('doorbellVisible');
+    const managerVisible = this.handoverOptionalGroupVisible('managerVisible');
+    const cellar = this.propertyTabFieldValue('predavaci-protokol', 'cellar').trim();
+    const mailbox = this.propertyTabFieldValue('predavaci-protokol', 'mailbox').trim();
+    const cellarNumber = this.propertyTabFieldValue('predavaci-protokol', 'cellarNumber').trim();
+    const doorbell = this.propertyTabFieldValue('predavaci-protokol', 'doorbell').trim();
+    const doorbellLabel = this.propertyTabFieldValue('predavaci-protokol', 'doorbellLabel').trim();
+    const cellarRemains = this.propertyTabFieldValue('predavaci-protokol', 'cellarRemains').trim();
+    const managerName = this.propertyTabFieldValue('predavaci-protokol', 'managerName').trim();
+    const managerEmail = this.propertyTabFieldValue('predavaci-protokol', 'managerEmail').trim();
+    const managerPhone = this.propertyTabFieldValue('predavaci-protokol', 'managerPhone').trim();
+    const cellarSection = cellarVisible ? `<div class="section">
+      <div class="section-title">SKLEP</div>
+      <div class="handover-details-grid single-column">
+        <div class="handover-detail"><div class="handover-detail-label">Označení sklepu:</div><div class="handover-detail-value">${this.escapeHtml(cellar || cellarNumber)}</div></div>
+        <div class="handover-detail"><div class="handover-detail-label">Ve sklepě zůstává:</div><div class="handover-detail-value">${this.escapeHtml(cellarRemains)}</div></div>
+      </div>
+    </div>` : '';
+    const supplementalRows = [
+      doorbellVisible ? `<div class="handover-detail"><div class="handover-detail-label">Schránka:</div><div class="handover-detail-value">${this.escapeHtml(mailbox)}</div></div><div class="handover-detail"><div class="handover-detail-label">Zvonek:</div><div class="handover-detail-value">${this.escapeHtml(doorbell)}</div></div><div class="handover-detail"><div class="handover-detail-label">Označení:</div><div class="handover-detail-value">${this.escapeHtml(doorbellLabel)}</div></div>` : ''
+    ].filter(Boolean).join('');
+    const supplementalSection = supplementalRows ? `<div class="section">
+      <div class="section-title">DOPLŇUJÍCÍ INFORMACE</div>
+      <div class="handover-details-grid single-column">${supplementalRows}</div>
+    </div>` : '';
+    const managerSection = managerVisible ? `<div class="section">
+      <div class="section-title">SPRÁVCE</div>
+      <div class="handover-details-grid manager-grid">
+        <div class="handover-detail"><div class="handover-detail-label">Jméno:</div><div class="handover-detail-value">${this.escapeHtml(managerName)}</div></div>
+        <div class="handover-detail"><div class="handover-detail-label">Telefon:</div><div class="handover-detail-value">${this.escapeHtml(managerPhone)}</div></div>
+        <div class="handover-detail handover-detail-full"><div class="handover-detail-label">Email:</div><div class="handover-detail-value">${this.escapeHtml(managerEmail)}</div></div>
+      </div>
+    </div>` : '';
     const remains = this.propertyTabFieldValue('predavaci-protokol', 'remainsInProperty').trim();
     const keysDescription = this.propertyTabFieldValue('predavaci-protokol', 'keysDescription').trim();
     const photoRecorded = this.propertyTabFieldValue('predavaci-protokol', 'photoRecorded') === 'ANO';
     const keysCount = this.propertyTabFieldValue('predavaci-protokol', 'keysCount').trim();
     const chipsCount = this.propertyTabFieldValue('predavaci-protokol', 'chipsCount').trim();
     const keyCardsCount = this.propertyTabFieldValue('predavaci-protokol', 'keyCardsCount').trim();
+    const buyerObligationText = this.handoverBuyerObligationText().trim();
+    const photoNoticeText = this.handoverPhotoNoticeText().trim();
     const meters = [
-      { label: 'Elektřina', number: this.propertyTabFieldValue('predavaci-protokol', 'electricMeterNumber').trim(), state: this.propertyTabFieldValue('predavaci-protokol', 'electricMeterState').trim(), unit: 'kWh' },
-      { label: 'Voda teplá', number: this.propertyTabFieldValue('predavaci-protokol', 'hotWaterMeterNumber').trim(), state: this.propertyTabFieldValue('predavaci-protokol', 'hotWaterMeterState').trim(), unit: 'm3' },
-      { label: 'Voda studená', number: this.propertyTabFieldValue('predavaci-protokol', 'coldWaterMeterNumber').trim(), state: this.propertyTabFieldValue('predavaci-protokol', 'coldWaterMeterState').trim(), unit: 'm3' },
-      { label: 'Plyn', number: this.propertyTabFieldValue('predavaci-protokol', 'gasMeterNumber').trim(), state: this.propertyTabFieldValue('predavaci-protokol', 'gasMeterState').trim(), unit: 'm3' }
-    ];
+      { visible: this.handoverMeterVisible('electricMeterVisible'), label: 'Elektřina', number: this.propertyTabFieldValue('predavaci-protokol', 'electricMeterNumber').trim(), state: this.propertyTabFieldValue('predavaci-protokol', 'electricMeterState').trim(), unit: 'kWh' },
+      { visible: this.handoverMeterVisible('hotWaterMeterVisible'), label: 'Voda teplá', number: this.propertyTabFieldValue('predavaci-protokol', 'hotWaterMeterNumber').trim(), state: this.propertyTabFieldValue('predavaci-protokol', 'hotWaterMeterState').trim(), unit: 'm3' },
+      { visible: this.handoverMeterVisible('coldWaterMeterVisible'), label: 'Voda studená', number: this.propertyTabFieldValue('predavaci-protokol', 'coldWaterMeterNumber').trim(), state: this.propertyTabFieldValue('predavaci-protokol', 'coldWaterMeterState').trim(), unit: 'm3' },
+      { visible: this.handoverMeterVisible('gasMeterVisible'), label: 'Plyn', number: this.propertyTabFieldValue('predavaci-protokol', 'gasMeterNumber').trim(), state: this.propertyTabFieldValue('predavaci-protokol', 'gasMeterState').trim(), unit: 'm3' }
+    ].filter((meter) => meter.visible);
+    const agent = this.agentProfile();
+    const agentName = agent.fullName || 'Petrášová Eliška';
+    const agentPhone = agent.phone || '+420 775 946 596';
 
     const html = `<!doctype html>
-<html lang="cs"><head><meta charset="utf-8" /><title>Předávací protokol</title>
+<html lang="cs"><head><meta charset="utf-8" /><title>${this.escapeHtml(documentTitle)}</title>
 <style>
-@page { size: A4; margin: 12mm; }
-body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; }
-.banner { background:#0c59a5; color:#fff; border-radius:6px; padding:10px 14px; font-weight:700; font-size:28px; margin-bottom:12px; }
-.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-.card { border:1px solid #cfdbe8; border-radius:8px; padding:12px; break-inside:avoid; page-break-inside:avoid; }
-.title { font-weight:700; font-size:16px; margin:0 0 10px; text-transform:uppercase; color:#0c59a5; }
-.party { margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #d9e4ef; }
-.party:last-child { margin-bottom:0; padding-bottom:0; border-bottom:0; }
-.party-name { font-weight:700; margin-bottom:4px; }
-.meta { margin:3px 0; }
-.property-box,.text-box { border:1px solid #d9e4ef; border-radius:6px; padding:10px; min-height:48px; white-space:pre-wrap; }
-.meter { margin:0 0 8px; }
-.line { border-bottom:1px dotted #8ea2b5; min-height:18px; display:inline-block; min-width:120px; }
-.notice { margin-top:12px; line-height:1.5; }
-.signature-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:18px; }
-.sign-city { margin-bottom:16px; }
-.sign-row { margin-bottom:18px; }
-.sign-box { height:48px; border-bottom:1px solid #8ea2b5; margin-bottom:6px; }
-.sign-role { color:#4d6478; font-size:11px; text-transform:uppercase; }
+@page { size: A4; margin: 10mm 12mm; @bottom-right { color:#17476f; content: counter(page) "/" counter(pages); font-family: Arial, sans-serif; font-size:10px; font-weight:800; } }
+* { box-sizing: border-box; }
+html, body { min-height:277mm; }
+body { font-family: Arial, sans-serif; margin: 0; color: #0b2138; font-size: 11px; line-height: 1.28; background:#fff; }
+.page { display:flex; flex-direction:column; min-height:277mm; position:relative; padding:0 4mm 18mm; }
+.hero { align-items:center; display:grid; grid-template-columns:1fr; margin:0 0 13px; }
+.hero-mark { display:none; }
+.hero-title { color:#082b4f; font-size:22px; font-weight:900; letter-spacing:.4px; line-height:1; text-align:center; }
+.hero-note { display:none; }
+.agent-line { display:none; }
+.section { background:linear-gradient(135deg,#f4f9ff,#ffffff); border:1px solid #cfe0ef; border-radius:8px; box-shadow:0 1px 0 rgba(8,43,79,.03); margin:0 0 9px; padding:9px 12px; position:relative; break-inside:avoid; page-break-inside:avoid; }
+.parties-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.section-icon { display:none; }
+.property-section { margin-bottom: 12px; }
+.section-title { color:#082b4f; font-weight:900; font-size:17px; text-transform:uppercase; text-decoration:none; letter-spacing:.01em; margin:0 0 8px; }
+.party { margin:0 0 7px 0; }
+.party + .party { border-top:1px solid #b9cbdc; margin-top:9px; padding-top:9px; }
+.party-line { margin:4px 0; }
+.party-line-icon { display:none; }
+.party-name { font-weight:900; margin-bottom:3px; }
+.meta { margin:2px 0; }
+.property-text { margin:4px 0 0; font-weight:700; }
+.property-card { display:grid; grid-template-columns:1fr 1px 1fr; gap:22px; align-items:center; }
+.property-divider { background:#bdd0e2; height:54px; }
+.property-address { margin:0; }
+.address-pin { display:none; }
+.property-address-label { font-weight:400; }
+.property-address-value { display:block; font-size:12px; font-weight:900; margin-top:2px; }
+.handover-details-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px 18px; }
+.handover-details-grid.single-column { grid-template-columns:1fr; }
+.handover-detail { align-items:center; display:grid; grid-template-columns:130px 1fr; gap:7px; margin-bottom:6px; }
+.handover-detail-label { color:#0b2138; font-weight:400; text-transform:none; }
+.handover-detail-value { background:#f0f5fa; border-radius:4px; min-height:20px; padding:2px 6px; white-space:pre-wrap; }
+.handover-detail-full { grid-column:1 / -1; }
+.manager-grid { grid-template-columns:1fr 1fr; }
+.meter-table { border:1px solid #c4d7e8; border-collapse:separate; border-radius:6px; border-spacing:0; overflow:hidden; width:100%; }
+.meter-source-col { width:38%; }
+.meter-number-col, .meter-state-col { width:26%; }
+.meter-unit-col { width:10%; }
+.meter-table th { background:#dceaf6; border:0; border-bottom:1px solid #c4d7e8; border-right:1px solid #c4d7e8; color:#082b4f; font-weight:900; padding:7px 10px; text-align:center; }
+.meter-table th:first-child { text-align:left; }
+.meter-table th:last-child, .meter-table td:last-child { border-right:0; }
+.meter-table td { background:#fff; border:0; border-bottom:1px solid #d6e4f0; border-right:1px solid #d6e4f0; padding:7px 10px; }
+.meter-table tbody tr:last-child td { border-bottom:0; }
+.meter-fill { background:#f0f5fa; border-radius:4px; display:block; min-height:20px; padding:2px 6px; }
+.meter-table td:nth-child(3) .meter-fill { width:calc(100% + 15px); }
+.meter-table td:nth-child(3) { padding-right:25px; }
+.meter-table td:nth-child(3) .meter-fill { border-bottom-right-radius:4px; border-top-right-radius:4px; }
+.meter-unit { text-align:center; }
+.notice { margin:14px 0 16px; line-height:1.25; }
+.keys-summary { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; font-size:10px; font-weight:500; margin:4px 0 8px; }
+.keys-summary-row { align-items:center; display:flex; gap:6px; margin:0; white-space:nowrap; }
+.keys-summary-row:nth-child(1) { justify-content:flex-start; text-align:left; }
+.keys-summary-row:nth-child(2) { justify-content:center; text-align:center; }
+.keys-summary-row:nth-child(3) { justify-content:flex-end; text-align:right; }
+.keys-summary .keys-count { background:#fff; border:1px solid #aac4dc; border-radius:5px; display:inline-block; min-height:24px; min-width:82px; margin:5px 6px 0 0; padding:4px 8px; text-align:center; text-decoration:none; }
+.keys-summary-row .keys-count { margin:0; }
+.keys-lines { display:grid; grid-template-columns:1fr; row-gap:10px; margin:0; }
+.keys-line { border-bottom:1px solid rgba(17, 17, 17, 0.22); min-height:16px; white-space:pre-wrap; }
+.remain-text { background:#edf6fc; border-radius:5px; margin:0; min-height:34px; padding:7px 8px; white-space:pre-wrap; }
+.info-box { align-items:center; background:linear-gradient(135deg,#edf6fc,#f8fcff); border-radius:8px; color:#0b2138; display:grid; grid-template-columns:52px 1fr; gap:8px; margin:8px 0; padding:9px 12px; }
+.info-icon { align-items:center; background:#d6e9f8; border-radius:50%; color:#0b355d; display:flex; font-size:22px; font-weight:900; height:40px; justify-content:center; width:40px; }
+.photo-notice, .final-notice { font-size:10px; line-height:1.28; margin:0; white-space:pre-wrap; }
+.meter-photo-notice { color:#34495e; font-size:9.5px; line-height:1.28; margin:5px 0 0; white-space:normal; }
+.meter-confirmation { color:#34495e; font-size:9.5px; line-height:1.28; margin:8px 0 0; white-space:normal; }
+.final-notice { font-weight:500; }
+.signature-grid { display:grid; grid-template-columns:1fr 1fr; gap:70px; margin:17px 4px 0; break-inside:avoid; page-break-inside:avoid; }
+.sign-city { margin-bottom:14px; min-height:18px; padding-bottom:2px; }
+.sign-row { margin-bottom:14px; }
+.sign-box { height:45px; border-bottom:1.5px solid #0b355d; margin-bottom:5px; }
+.sign-name { font-weight:900; }
+.sign-role { color:#4c596b; margin-top:4px; }
 </style></head><body>
-  <div class="banner">PŘEDÁVACÍ PROTOKOL</div>
-  <div class="grid2">
-    <div class="card">
-      <div class="title">Předávající</div>
-      ${this.renderHandoverProtocolPartyList(delivering, 'Předávající')}
+  <section class="page">
+    <div class="hero">
+      <div class="hero-mark"></div>
+      <div>
+        <div class="hero-title">PŘEDÁVACÍ PROTOKOL</div>
+      </div>
     </div>
-    <div class="card">
-      <div class="title">Přebírající</div>
-      ${this.renderHandoverProtocolPartyList(receiving, 'Přebírající')}
+    <div class="agent-line"></div>
+
+    <div class="parties-grid">
+      <div class="section">
+        <div class="section-icon"></div>
+        <div class="section-title">PŘEDÁVAJÍCÍ</div>
+        ${this.renderHandoverProtocolPartyList(delivering, 'Předávající')}
+      </div>
+      <div class="section">
+        <div class="section-icon"></div>
+        <div class="section-title">PŘEBÍRAJÍCÍ</div>
+        ${this.renderHandoverProtocolPartyList(receiving, 'Přebírající')}
+      </div>
     </div>
-    <div class="card" style="grid-column:1 / -1;">
-      <div class="title">Nemovitost</div>
-      <div class="property-box">${this.escapeHtml(propertyDescription || '—')}</div>
-      <div style="margin-top:8px;"><strong>Adresní místo:</strong> ${this.escapeHtml(propertyAddress || '—')}</div>
+
+    <div class="section property-section">
+      <div class="section-icon"></div>
+      <div class="section-title">NEMOVITOST</div>
+      <div class="property-card">
+        <div class="property-text">${this.escapeHtml(propertyDescription || '—')}</div>
+        <div class="property-divider"></div>
+        <div class="property-address"><div class="address-pin">●</div><div><span class="property-address-label">Adresa nemovitosti:</span><span class="property-address-value">${this.escapeHtml(propertyAddress || '')}</span></div></div>
+      </div>
     </div>
-    <div class="card" style="grid-column:1 / -1;">
-      <div class="title">Stavy měřičů</div>
-      ${meters.map((meter) => `<div class="meter"><strong>${this.escapeHtml(meter.label)}:</strong> č. měřiče <span class="line">${this.escapeHtml(meter.number)}</span> stav <span class="line">${this.escapeHtml(meter.state)}</span> ${this.escapeHtml(meter.unit)}</div>`).join('')}
+
+    ${cellarSection}
+
+    <div class="section">
+      <div class="section-icon"></div>
+      <div class="section-title">STAVY MĚŘIČŮ</div>
+      ${meters.length > 0 ? `<table class="meter-table"><colgroup><col class="meter-source-col"><col class="meter-number-col"><col class="meter-state-col"><col class="meter-unit-col"></colgroup><thead><tr><th>Energetický zdroj</th><th>Č. měřiče</th><th>Stav</th><th>Jednotka</th></tr></thead><tbody>${meters.map((meter) => `<tr><td>${this.escapeHtml(meter.label)}</td><td><span class="meter-fill">${this.escapeHtml(meter.number)}</span></td><td><span class="meter-fill">${this.escapeHtml(meter.state)}</span></td><td class="meter-unit">${this.escapeHtml(meter.unit)}</td></tr>`).join('')}</tbody></table>` : '<div class="party">Měřiče nejsou součástí protokolu.</div>'}
+      ${this.handoverBuyerObligationVisible() && buyerObligationText ? `<div class="meter-photo-notice">${this.escapeHtml(buyerObligationText)}</div>` : ''}
     </div>
-    <div class="card" style="grid-column:1 / -1;">
-      <div class="title">Klíče a přístupy</div>
-      <div><strong>Klíče celkem</strong> ${this.escapeHtml(keysCount || '—')} ks</div>
-      <div><strong>Přístupové čipy celkem</strong> ${this.escapeHtml(chipsCount || '—')} ks</div>
-      <div><strong>Výrobní karty klíčů celkem</strong> ${this.escapeHtml(keyCardsCount || '—')} ks</div>
-      <div class="text-box" style="margin-top:8px;">${this.escapeHtml(keysDescription || '—')}</div>
+
+    <div class="section">
+      <div class="section-icon"></div>
+      <div class="section-title">KLÍČE</div>
+      ${this.renderHandoverKeysBlock(keysCount, chipsCount, keyCardsCount, keysDescription)}
+      ${this.handoverMeterConfirmationVisible() ? '<div class="meter-confirmation">Předávající i přebírající svými podpisy stvrzují, že specifikovaná, výše uvedená nemovitost byla řádně předána ve stavu odpovídajícím smluvní dohodě, s výše uvedenými konečnými stavy měřidel a zároveň byly předány klíče od nemovitosti.</div>' : ''}
     </div>
-    <div class="card" style="grid-column:1 / -1;">
-      <div class="title">V nemovitosti zůstává</div>
-      <div class="text-box">${this.escapeHtml(remains || '—')}</div>
-      <div style="margin-top:8px;">${photoRecorded ? 'Vše zaznamenáno na fotografiích.' : ''}</div>
+
+    <div class="section">
+      <div class="section-icon"></div>
+      <div class="section-title">V NEMOVITOSTI ZŮSTÁVÁ</div>
+      <div class="remain-text">${photoRecorded ? 'vše zaznamenáno na fotografiích\n' : ''}${this.escapeHtml(remains)}</div>
+      ${this.handoverPhotoNoticeVisible() && photoNoticeText ? `<div class="meter-photo-notice">${this.escapeHtml(photoNoticeText)}</div>` : ''}
     </div>
-  </div>
-  <div class="notice">Kupující se podpisem kupní smlouvy zavázal, že nejpozději do 10-ti pracovních dnů od protokolárního předání a převzetí předmětné nemovité věci, bude mít na svou osobu přepsány smlouvy o dodávkách veškerých energií a služeb, které se týkají předmětné nemovité věci, přičemž k přepisu energií je prodávající povinna poskytnout kupujícímu potřebnou a nezbytnou součinnost.</div>
-  <div class="notice">Předávající i přebírající svými podpisy stvrzují, že specifikovaná, výše uvedená nemovitost byla řádně předána ve stavu odpovídajícím smluvní dohodě, s výše uvedenými konečnými stavy měřidel a zároveň byly předány klíče od nemovitosti.</div>
-  <div class="notice">Tento Předávací protokol bude společně s fotografiemi pořízenými při předání nemovitosti zaslán na emaily uvedené v záhlaví stránky.</div>
-  <div class="signature-grid">
-    <div>
-      <div class="sign-city">V ${this.escapeHtml(city || '................')} dne ${this.escapeHtml(date || '................')}</div>
-      ${this.renderHandoverSignatureList(delivering, 'Předávající')}
+
+    ${supplementalSection}
+    ${managerSection}
+
+    <div class="signature-grid">
+      <div>
+        <div class="sign-city">V ${this.escapeHtml(city)} dne ${this.escapeHtml(date)}</div>
+        ${this.renderHandoverSignatureList(delivering, 'Předávající')}
+      </div>
+      <div>
+        <div class="sign-city">V ${this.escapeHtml(city)} dne ${this.escapeHtml(date)}</div>
+        ${this.renderHandoverSignatureList(receiving, 'Přebírající')}
+      </div>
     </div>
-    <div>
-      <div class="sign-city">V ${this.escapeHtml(city || '................')} dne ${this.escapeHtml(date || '................')}</div>
-      ${this.renderHandoverSignatureList(receiving, 'Přebírající')}
-    </div>
-  </div>
+  </section>
 </body></html>`;
 
     win.document.open();
@@ -10539,16 +10728,51 @@ body { font-family: Arial, sans-serif; margin: 0; color: #111; font-size: 12px; 
     return [...resolved, ...extras];
   }
 
+  private handoverProtocolDocumentTitle(
+    delivering: Array<{ name: string }>,
+    receiving: Array<{ name: string }>
+  ): string {
+    const sellers = this.handoverPartySurnames(delivering) || 'prodávající';
+    const buyers = this.handoverPartySurnames(receiving) || 'kupující';
+    return `PP ${sellers} x ${buyers}`;
+  }
+
+  private handoverPartySurnames(parties: Array<{ name: string }>): string {
+    return parties
+      .map((party) => party.name.trim().split(/\s+/).filter(Boolean).pop() || '')
+      .filter(Boolean)
+      .join(', ');
+  }
+
   private renderHandoverProtocolPartyList(parties: Array<{ name: string; birthDate: string; address: string; phone: string; email: string }>, label: string): string {
     if (parties.length === 0) {
-      return `<div class="party"><div class="party-name">${this.escapeHtml(label)} 1</div><div class="meta">Jméno: ................................</div><div class="meta">Datum nar.: ................................</div><div class="meta">Bytem: ................................</div><div class="meta">Telefon: ................................</div><div class="meta">Email: ................................</div></div>`;
+      return `<div class="party"><div class="meta">................................</div><div class="meta">................................</div><div class="meta">................................</div></div>`;
     }
-    return parties.map((party, index) => `<div class="party"><div class="party-name">${this.escapeHtml(label)} ${index + 1}</div><div class="meta">Jméno: ${this.escapeHtml(party.name || '—')}</div><div class="meta">Datum nar.: ${this.escapeHtml(party.birthDate || '—')}</div><div class="meta">Bytem: ${this.escapeHtml(party.address || '—')}</div><div class="meta">Telefon: ${this.escapeHtml(party.phone || '—')}</div><div class="meta">Email: ${this.escapeHtml(party.email || '—')}</div></div>`).join('');
+    return parties.map((party) => {
+      const birthLine = party.birthDate ? `nar.: ${party.birthDate}` : '';
+      return `<div class="party"><div class="party-line"><span class="party-line-icon">●</span><div><span class="party-name">${this.escapeHandoverPrintText(party.name || '—')}</span>${birthLine ? `, ${this.escapeHandoverPrintText(birthLine)}` : ''}</div></div><div class="party-line"><span class="party-line-icon">⌖</span><div class="meta">${this.escapeHandoverPrintText(party.address || '—')}</div></div>${party.email ? `<div class="party-line"><span class="party-line-icon">✉</span><div class="meta">${this.escapeHandoverPrintText(party.email)}</div></div>` : ''}${party.phone ? `<div class="party-line"><span class="party-line-icon">☎</span><div class="meta">${this.escapeHandoverPrintText(party.phone)}</div></div>` : ''}</div>`;
+    }).join('');
+  }
+
+  private escapeHandoverPrintText(value: string): string {
+    return this.escapeHtml(value).replace(/čESKÁ REPUBLIKA|čESKÁ REPUBLLIKA|ČESKÁ REPUBLIKA|ČESKÁ REPUBLLIKA/g, 'ČR');
   }
 
   private renderHandoverSignatureList(parties: Array<{ name: string; birthDate: string; address: string; phone: string; email: string }>, role: string): string {
-    const list = parties.length > 0 ? parties : [{ name: `${role} 1`, birthDate: '', address: '', phone: '', email: '' }];
+    const list = parties.length > 0 ? parties : [{ name: role, birthDate: '', address: '', phone: '', email: '' }];
     return list.map((party) => `<div class="sign-row"><div class="sign-box"></div><div>${this.escapeHtml(party.name || '................')}</div><div class="sign-role">${this.escapeHtml(role)}</div></div>`).join('');
+  }
+
+  private renderHandoverKeysBlock(keysCount: string, chipsCount: string, keyCardsCount: string, keysDescription: string): string {
+    const descriptionLines = keysDescription
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .slice(0, 2);
+    const lines = Array.from({ length: 2 }, (_, index) => descriptionLines[index] || '&nbsp;');
+
+    return `<div class="keys-summary"><div class="keys-summary-row">Klíče celkem <span class="keys-count">${this.escapeHtml(keysCount)}</span> ks</div><div class="keys-summary-row">Přístupové čipy <span class="keys-count">${this.escapeHtml(chipsCount)}</span> ks</div><div class="keys-summary-row">Výrobní karty klíčů <span class="keys-count">${this.escapeHtml(keyCardsCount)}</span> ks</div></div>
+      <div class="keys-lines">${lines.map((line) => `<div class="keys-line">${line === '&nbsp;' ? line : this.escapeHtml(line)}</div>`).join('')}</div>`;
   }
 
   protected loadFromXmlFile(event: Event): void {
