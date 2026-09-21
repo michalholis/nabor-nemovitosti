@@ -1474,13 +1474,44 @@
 }
 
 .handover-party-card {
-  border: 1px solid #d9e1ea;
+  border: 1px solid color-mix(in srgb, var(--client-accent, #1976d2) 20%, #d9e1ea);
   border-radius: 0.8rem;
-  background: #f8fbfe;
+  background: color-mix(in srgb, var(--client-accent, #1976d2) 8%, #fff);
   padding: 0.7rem 0.8rem;
   display: grid;
   gap: 0.2rem;
   margin-bottom: 0.55rem;
+}
+
+.handover-party-card.with-add {
+  grid-template-columns: 1fr 2.8rem;
+  gap: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
+.handover-party-card.with-add .handover-party-card-content {
+  padding: 0.7rem 0.8rem;
+}
+
+.handover-party-add-cell {
+  align-items: center;
+  align-self: stretch;
+  background: color-mix(in srgb, var(--client-accent, #1976d2) 12%, #fff);
+  border: 0;
+  border-left: 1px solid color-mix(in srgb, var(--client-accent, #1976d2) 28%, #d9e1ea);
+  color: var(--client-accent, #1976d2);
+  cursor: pointer;
+  display: flex;
+  font-size: 1.1rem;
+  font-weight: 900;
+  justify-content: center;
+  min-height: 100%;
+}
+
+.handover-party-add-cell:hover {
+  background: var(--client-accent, #1976d2);
+  color: #fff;
 }
 
 .handover-party-title {
@@ -1751,34 +1782,85 @@
 }
 
 .property-form-phase-inline {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin-top: 0.55rem;
-  padding-bottom: 0.45rem;
-  border-bottom: 1px solid #d9e1ea;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  margin-top: 0.9rem;
+  overflow: hidden;
+  width: 100%;
 }
 
 .property-form-phase-label {
-  flex: 0 0 100%;
+  grid-column: 1 / -1;
   color: #6b7785;
   font-size: 0.76rem;
   font-weight: 800;
   letter-spacing: 0.04em;
+  margin-bottom: 0.45rem;
   text-transform: uppercase;
 }
 
 .property-phase-btn {
-  border: 1px solid #d9e1ea;
-  border-radius: 999px;
+  align-items: center;
   background: #fff;
-  color: #5b6b7c;
-  padding: 0.25rem 0.65rem;
+  border: 1px solid #d9e1ea;
+  border-left: 0;
+  color: #26384a;
   font-size: 0.78rem;
-  font-weight: 600;
+  font-weight: 700;
+  min-height: 3rem;
+  padding: 0.55rem 0.75rem 0.55rem 1.55rem;
+  position: relative;
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
+  display: flex;
+  gap: 0.55rem;
+  justify-content: flex-start;
+}
+
+.property-phase-btn:first-of-type {
+  border-left: 1px solid #d9e1ea;
+  border-bottom-left-radius: 0.55rem;
+  border-top-left-radius: 0.55rem;
+}
+
+.property-phase-btn.last {
+  border-bottom-right-radius: 0.55rem;
+  border-top-right-radius: 0.55rem;
+}
+
+.property-phase-btn:not(.last)::after {
+  background: inherit;
+  border-right: 1px solid #d9e1ea;
+  border-top: 1px solid #d9e1ea;
+  content: '';
+  height: 2.14rem;
+  position: absolute;
+  right: -1.08rem;
+  top: 0.42rem;
+  transform: rotate(45deg);
+  width: 2.14rem;
+  z-index: 2;
+}
+
+.property-phase-check {
+  align-items: center;
+  background: #dfe7ef;
+  border-radius: 999px;
+  color: #fff;
+  display: inline-flex;
+  flex: 0 0 1.75rem;
+  font-size: 1rem;
+  font-weight: 900;
+  height: 1.75rem;
+  justify-content: center;
+  position: relative;
+  z-index: 3;
+}
+
+.property-phase-btn span:last-child {
+  position: relative;
+  z-index: 3;
 }
 
 .property-phase-btn:hover {
@@ -1787,13 +1869,20 @@
 }
 
 .property-phase-btn.active {
-  background: var(--client-accent, #1976d2);
-  border-color: var(--client-accent, #1976d2);
-  color: #fff;
+  background: color-mix(in srgb, var(--client-accent, #1976d2) 7%, #fff);
+  color: #10253a;
 }
 
 .property-phase-btn.active:not(.current) {
-  opacity: 0.62;
+  opacity: 1;
+}
+
+.property-phase-btn.active .property-phase-check {
+  background: #0f9f93;
+}
+
+.property-phase-btn.current {
+  background: color-mix(in srgb, var(--client-accent, #1976d2) 12%, #fff);
 }
 
 .new-client-field-card {
@@ -2990,6 +3079,59 @@
   gap: 5px;
 }
 
+.handover-docs-title {
+  font-size: calc(0.74rem + 4px);
+}
+
+.handover-form-title {
+  font-size: calc(0.74rem + 2px);
+}
+
+.handover-form-heading-card {
+  background: #f7fbff;
+  border: 1px solid #d6e2ef;
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.handover-form-content-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+  min-width: 0;
+}
+
+.handover-form-content-grid > .new-client-field-card-full {
+  grid-column: 1 / -1;
+}
+
+.handover-document-btn {
+  background: var(--client-accent, #0c59a5);
+  border: 0;
+  border-radius: 6px;
+  box-shadow: 0 8px 18px rgba(25, 118, 210, 0.24);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 900;
+  padding: 0.6rem 1.4rem;
+}
+
+.handover-document-btn.active {
+  background: var(--client-accent, #1976d2);
+  color: #fff;
+}
+
+.handover-document-btn:hover {
+  background: color-mix(in srgb, var(--client-accent, #0c59a5) 85%, #000);
+}
+
+.handover-generate-row {
+  justify-content: flex-end;
+}
+
 .handover-meter-label {
   align-items: center;
   display: inline-flex;
@@ -2999,6 +3141,12 @@
 .handover-meter-input {
   flex: 0 0 40ch;
   max-width: 40ch;
+}
+
+.handover-custom-meter-row .handover-meter-input {
+  flex: 1 1 0;
+  max-width: none;
+  min-width: 0;
 }
 
 .handover-form-two-columns {
@@ -3022,6 +3170,31 @@
 
 .handover-extra-full {
   grid-column: 1 / -1;
+}
+
+.handover-app-top-grid {
+  align-items: start;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.handover-app-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.handover-app-section {
+  align-self: start;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.handover-app-section-head {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
 }
 
 .handover-form-column {
