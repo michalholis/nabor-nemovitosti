@@ -5213,6 +5213,10 @@ export class App {
     return ['Vyvěšení plachty', 'Letáky do vchodu'];
   }
 
+  protected doplnkoveInformaceDodaneDokumentyOptions(): string[] {
+    return ['Pasport stavby', 'Povolení k užívání', 'Energetický štítek', 'Stavební dokumentace', 'Smlouva o dotacích'];
+  }
+
   protected hasDoplnkoveInformaceMultiValue(field: string, value: string): boolean {
     return this.hasPropertyTabMultiValue('doplnkove-informace', field, value);
   }
@@ -9274,11 +9278,11 @@ export class App {
       if (this.isParcelAreaField(item)) {
         const parcelValues = this.parcelRows(item.id)
           .filter((row) => row.parcelNumber.trim().length > 0 || row.parcelType.trim().length > 0 || row.area.trim().length > 0)
-          .map((row) => [row.parcelNumber.trim(), row.parcelType.trim(), row.area.trim()].filter(Boolean).join(' | '))
+          .map((row) => this.formatParcelSummary(row.parcelNumber, row.parcelType, row.area))
           .filter((value) => value.length > 0);
 
         if (parcelValues.length > 0) {
-          addUnique(`${item.label}: ${parcelValues.join(' || ')}`);
+          addUnique(`${item.label}: ${parcelValues.join(', ')}`);
         }
       }
 
@@ -10010,10 +10014,14 @@ export class App {
       .filter((tab) => !skippedKeys.has(tab.key))
       .map((tab) => {
         const values = draft.tabValues?.[tab.key] || {};
-        const rows = Object.entries(values)
-          .filter(([key, value]) => !BUYER_INFO_EXCLUDED_FIELDS.has(key) && !key.includes('__') && !key.endsWith(' počet') && Boolean(String(value).trim()))
+        const combinedRows = this.combinedBuyerInfoRows(tab.key, values);
+        const combinedFieldKeys = this.combinedBuyerInfoFieldKeys(tab.key, values);
+        const rows = [
+          ...combinedRows,
+          ...Object.entries(values)
+          .filter(([key, value]) => !combinedFieldKeys.has(key) && !BUYER_INFO_EXCLUDED_FIELDS.has(key) && !key.includes('__') && !key.endsWith(' počet') && !key.startsWith('parcel-') && !key.startsWith('stavba-parcel-') && Boolean(String(value).trim()))
           .map(([key, value]) => `<div class="info-row"><div class="info-label">${this.escapeHtml(key)}</div><div class="info-value">${this.escapeHtml(String(value).replace(/\|/g, ', '))}</div></div>`)
-          .join('');
+        ].join('');
         const note = tab.key === 'prostory' && rows ? '<div class="info-row"><div class="info-label">Poznámka</div><div class="info-value">*Rozměry místností jsou orientační</div></div>' : '';
         return rows ? `<section class="info-card"><h2>${this.escapeHtml(tab.label)}</h2><div class="info-card-body">${rows}${note}</div></section>` : '';
       })
@@ -10025,9 +10033,8 @@ export class App {
     const agent = this.agentProfile();
     const phone = agent.phone || '775 946 596';
     const email = agent.email || 'eliska.petrasova@re-max.cz';
-
     const html = `<!doctype html><html lang="cs"><head><meta charset="utf-8"><title>Informace pro zájemce</title><style>
-      @page{size:A4;margin:12mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#334155;margin:0;background:#fff;font-size:11px}.page{min-height:273mm;position:relative;padding-bottom:22mm}.top{background:#075da8;color:#fff;border-radius:4px;padding:7px 60px 7px 18px;margin-bottom:14px;position:relative}.top h1{font-size:18px;letter-spacing:2px;margin:0;line-height:1}.top .subtitle{font-size:11px;margin-top:3px}.logo-mark{position:absolute;right:13px;top:-3px;width:44px;height:44px;border-radius:50%;background:linear-gradient(#e21b23 0 34%,#fff 34% 43%,#0b4fa3 43%);border:2px solid #fff}.grid{columns:2 310px;column-gap:14px}.info-card{break-inside:avoid;margin:0 0 12px;border:1px solid #dce5ee;border-radius:5px;overflow:hidden;background:#fff}.info-card h2{margin:0;background:#2f8ed3;color:#fff;font-size:13px;letter-spacing:.4px;padding:6px 10px;text-transform:uppercase}.info-card-body{padding:7px 10px}.info-row{display:grid;grid-template-columns:48% 52%;gap:6px;border-bottom:1px solid #edf2f7;padding:3px 0}.info-row:last-child{border-bottom:0}.info-label{font-weight:700;color:#2f3f50}.info-value{text-align:right;color:#7b8794;white-space:pre-wrap}.footer{position:fixed;left:12mm;right:12mm;bottom:7mm;border-top:1px solid #9aa4b2;padding-top:8px;display:flex;justify-content:space-between;align-items:flex-end}.remax{font-size:26px;font-weight:900;color:#777}.contact{text-align:right;font-size:11px;color:#2f3f50}.contact strong{display:block;font-size:13px}.empty{color:#7b8794;font-size:13px}@media print{button{display:none}}
+      @page{size:A4;margin:12mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#334155;margin:0;background:#fff;font-size:11px}.page{min-height:273mm;position:relative}.top{background:#075da8;color:#fff;border-radius:4px;padding:7px 60px 7px 18px;margin-bottom:14px;position:relative}.top h1{font-size:18px;letter-spacing:2px;margin:0;line-height:1}.top .subtitle{font-size:11px;margin-top:3px}.logo-mark{position:absolute;right:13px;top:-3px;width:44px;height:44px;border-radius:50%;background:linear-gradient(#e21b23 0 34%,#fff 34% 43%,#0b4fa3 43%);border:2px solid #fff}.grid{columns:2 310px;column-gap:14px}.info-card{break-inside:avoid;margin:0 0 12px;border:1px solid #dce5ee;border-radius:5px;overflow:hidden;background:#fff}.info-card h2{margin:0;background:#2f8ed3;color:#fff;font-size:13px;letter-spacing:.4px;padding:6px 10px;text-transform:uppercase}.info-card-body{padding:7px 10px}.info-row{display:grid;grid-template-columns:48% 52%;gap:6px;border-bottom:1px solid #edf2f7;padding:3px 0}.info-row:last-child{border-bottom:0}.info-label{font-weight:700;color:#2f3f50}.info-value{text-align:right;color:#7b8794;white-space:pre-wrap}.footer{break-inside:avoid;margin-top:14px;border-top:1px solid #9aa4b2;padding-top:8px;display:flex;justify-content:space-between;align-items:flex-end}.remax{font-size:26px;font-weight:900;color:#777}.contact{text-align:right;font-size:11px;color:#2f3f50}.contact strong{display:block;font-size:13px}.empty{color:#7b8794;font-size:13px}@media print{button{display:none}}
     </style></head><body><div class="page"><header class="top"><h1>INFORMACE PRO ZÁJEMCE</h1><div class="subtitle">${this.escapeHtml(title)}</div><div class="logo-mark"></div></header><main class="grid">${sections || '<p class="empty">Nejsou vyplněné žádné informace k nemovitosti.</p>'}</main><footer class="footer"><div class="remax">RE/MAX</div><div class="contact"><strong>${this.escapeHtml(agent.fullName || 'Eliška Petrášová')}</strong><div>${this.escapeHtml(email)}</div><div>${this.escapeHtml(phone)}</div></div></footer></div><script>window.onload=()=>setTimeout(()=>window.print(),200)</script></body></html>`;
 
     const win = window.open('', '_blank', 'width=1100,height=1200');
@@ -10039,6 +10046,132 @@ export class App {
     win.document.open();
     win.document.write(html);
     win.document.close();
+  }
+
+  private combinedBuyerInfoRows(tabKey: NewPropertyTabKey, values: Record<string, string>): string[] {
+    if (tabKey === 'pozemek') {
+      const parcelRows = this.landParcelSummariesFromValues(values);
+      if (parcelRows.length > 0) {
+        return parcelRows.map((summary, index) => `<div class="info-row"><div class="info-label">Pozemek ${index + 1}</div><div class="info-value">${this.escapeHtml(summary)}</div></div>`);
+      }
+
+      const summary = this.formatParcelSummary(values['Parcelní číslo'], values['Druh pozemku'], values['Celková výměra pozemku']);
+      return summary ? [`<div class="info-row"><div class="info-label">Pozemek</div><div class="info-value">${this.escapeHtml(summary)}</div></div>`] : [];
+    }
+
+    if (tabKey === 'stavba') {
+      const rows = this.stavbaParcelSummariesFromValues(values);
+      return rows.length > 0 ? [`<div class="info-row"><div class="info-label">Stavba</div><div class="info-value">${this.escapeHtml(rows.join(', '))}</div></div>`] : [];
+    }
+
+    if (tabKey === 'dostupnost-v-okoli') {
+      return this.dostupnostStopRowsFromValues(values).map((row) => `<div class="info-row"><div class="info-label">${this.escapeHtml(row.label)}</div><div class="info-value">${this.escapeHtml(row.value)}</div></div>`);
+    }
+
+    if (tabKey === 'bezbarierovost') {
+      return this.bezbarierovostRowsFromValues(values).map((row) => `<div class="info-row"><div class="info-label">${this.escapeHtml(row.label)}</div><div class="info-value">${this.escapeHtml(row.value)}</div></div>`);
+    }
+
+    return [];
+  }
+
+  private combinedBuyerInfoFieldKeys(tabKey: NewPropertyTabKey, values: Record<string, string>): Set<string> {
+    const keys = new Set<string>();
+    if (tabKey === 'pozemek') {
+      ['Parcelní číslo', 'Druh pozemku', 'Celková výměra pozemku'].forEach((key) => {
+        if ((values[key] || '').trim()) {
+          keys.add(key);
+        }
+      });
+      Object.keys(values).forEach((key) => {
+        if (key === this.landParcelCountKey() || key.startsWith('parcel-')) {
+          keys.add(key);
+        }
+      });
+    }
+
+    if (tabKey === 'dostupnost-v-okoli') {
+      this.dostupnostStopLabels().forEach((label) => {
+        [label, `${label} jednotka`, `${label} doprava`].forEach((key) => {
+          if ((values[key] || '').trim()) {
+            keys.add(key);
+          }
+        });
+      });
+    }
+
+    if (tabKey === 'bezbarierovost') {
+      this.bezbarierovostPrintFields().forEach((field) => keys.add(field.key));
+    }
+
+    return keys;
+  }
+
+  private bezbarierovostRowsFromValues(values: Record<string, string>): Array<{ label: string; value: string }> {
+    const hasRearEntrance = values['Zadní vchod ano/ne'] !== 'Ne';
+    const hasElevator = (this.newPropertyDraft().tabValues?.stavba?.['Výtah v budově'] || '') === 'Ano';
+    return this.bezbarierovostPrintFields()
+      .filter((field) => field.visible(hasRearEntrance, hasElevator))
+      .map((field) => ({ label: field.label, value: (values[field.key] || '').trim() }))
+      .filter((row) => row.value.length > 0);
+  }
+
+  private bezbarierovostPrintFields(): Array<{ key: string; label: string; visible: (hasRearEntrance: boolean, hasElevator: boolean) => boolean }> {
+    return [
+      { key: 'Zadní vchod ano/ne', label: 'Zadní vchod', visible: () => true },
+      { key: 'Bezbariérový PŘEDNÍ vchod', label: 'Bezbariérový přední vchod', visible: () => true },
+      { key: 'Zadní vchod', label: 'Bezbariérový zadní vchod', visible: (hasRearEntrance) => hasRearEntrance },
+      { key: 'Bezbariérový uvnitř', label: 'Bezbariérový uvnitř', visible: () => true },
+      { key: 'Šíře hlavních dveří', label: 'Šíře hlavních dveří', visible: () => true },
+      { key: 'Šíře vnitřních dveří', label: 'Šíře vnitřních dveří', visible: () => true },
+      { key: 'Počet schodů do budovy - přední vchod', label: 'Počet schodů do budovy - přední vchod', visible: () => true },
+      { key: 'Počet schodů do budovy - zadní vchod', label: 'Počet schodů do budovy - zadní vchod', visible: (hasRearEntrance) => hasRearEntrance },
+      { key: 'Počet schodů od vchodu k výtahu - přední vchod', label: 'Počet schodů od vchodu k výtahu - přední vchod', visible: (_hasRearEntrance, hasElevator) => hasElevator },
+      { key: 'Počet schodů od vchodu k výtahu - zadní vchod', label: 'Počet schodů od vchodu k výtahu - zadní vchod', visible: (hasRearEntrance, hasElevator) => hasRearEntrance && hasElevator },
+      { key: 'Počet schodů od výtahu do bytu', label: 'Počet schodů od výtahu do bytu', visible: (_hasRearEntrance, hasElevator) => hasElevator }
+    ];
+  }
+
+  private dostupnostStopRowsFromValues(values: Record<string, string>): Array<{ label: string; value: string }> {
+    return this.dostupnostStopLabels()
+      .map((label) => ({
+        label,
+        value: [values[label], values[`${label} jednotka`], values[`${label} doprava`]]
+          .map((value) => (value || '').trim())
+          .filter(Boolean)
+          .join(' ')
+      }))
+      .filter((row) => row.value.length > 0);
+  }
+
+  private dostupnostStopLabels(): string[] {
+    return ['Nejbližší autobusová zastávka', 'Nejbližší zastávka MHD', 'Nejbližší vlaková zastávka'];
+  }
+
+  private landParcelSummariesFromValues(values: Record<string, string>): string[] {
+    const count = Number.parseInt(values[this.landParcelCountKey()] || '1', 10);
+    const safeCount = Number.isFinite(count) && count > 0 ? count : 1;
+    return Array.from({ length: safeCount }, (_, index) => this.formatParcelSummary(
+      values[this.landParcelFieldKey(index, 'parcel')],
+      values[this.landParcelFieldKey(index, 'type')],
+      values[this.landParcelFieldKey(index, 'area')]
+    )).filter((value) => value.length > 0);
+  }
+
+  private stavbaParcelSummariesFromValues(values: Record<string, string>): string[] {
+    const count = Number.parseInt(values[this.stavbaParcelCountKey()] || '1', 10);
+    const safeCount = Number.isFinite(count) && count > 0 ? count : 1;
+    return Array.from({ length: safeCount }, (_, index) => this.formatParcelSummary(
+      values[this.stavbaParcelFieldKey(index, 'parcel')],
+      values[this.stavbaParcelFieldKey(index, 'type')],
+      values[this.stavbaParcelFieldKey(index, 'area')]
+    )).filter((value) => value.length > 0);
+  }
+
+  private formatParcelSummary(parcel?: string, type?: string, area?: string): string {
+    const areaValue = (area || '').trim();
+    const formattedArea = areaValue && !/m\s*²|m2/i.test(areaValue) ? `${areaValue} m²` : areaValue;
+    return [(parcel || '').trim(), (type || '').trim(), formattedArea].filter(Boolean).join(' - ');
   }
 
   protected printBuyerInfoAlternative(): void {

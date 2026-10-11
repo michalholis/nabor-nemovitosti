@@ -1314,6 +1314,22 @@
                 </div>
               </article>
 
+              <article class="new-client-field-card" *ngIf="isVodaHasStudna()">
+                <div class="new-client-label">Povolení k odběru podzemních vod</div>
+                <div class="new-client-toggle-row">
+                  <button type="button" class="new-client-toggle-btn" [class.active]="propertyTabFieldValue('voda', 'Povolení k odběru podzemních vod') === 'Ano'" (click)="setPropertyTabFieldValue('voda', 'Povolení k odběru podzemních vod', 'Ano')">Ano</button>
+                  <button type="button" class="new-client-toggle-btn" [class.active]="propertyTabFieldValue('voda', 'Povolení k odběru podzemních vod') === 'Ne'" (click)="setPropertyTabFieldValue('voda', 'Povolení k odběru podzemních vod', 'Ne')">Ne</button>
+                </div>
+              </article>
+
+              <article class="new-client-field-card" *ngIf="isVodaHasStudna()">
+                <div class="new-client-label">Povolení stavby studny</div>
+                <div class="new-client-toggle-row">
+                  <button type="button" class="new-client-toggle-btn" [class.active]="propertyTabFieldValue('voda', 'Povolení stavby studny') === 'Ano'" (click)="setPropertyTabFieldValue('voda', 'Povolení stavby studny', 'Ano')">Ano</button>
+                  <button type="button" class="new-client-toggle-btn" [class.active]="propertyTabFieldValue('voda', 'Povolení stavby studny') === 'Ne'" (click)="setPropertyTabFieldValue('voda', 'Povolení stavby studny', 'Ne')">Ne</button>
+                </div>
+              </article>
+
               <article class="new-client-field-card">
                 <div class="new-client-label">Poznámka k vodě</div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('voda', 'Poznámka k vodě')" (ngModelChange)="setPropertyTabFieldValue('voda', 'Poznámka k vodě', $event)" placeholder="poznámka k vodě" />
@@ -1353,6 +1369,11 @@
                   <option [value]="propertyCustomOption">dopsat vlastní možnost</option>
                 </select>
                 <input *ngIf="isPlynCustomValue('Poskytovatel', plynPoskytovatelOptions())" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('plyn', 'Poskytovatel') === propertyCustomOption ? '' : propertyTabFieldValue('plyn', 'Poskytovatel')" (ngModelChange)="setPropertyTabFieldValue('plyn', 'Poskytovatel', $event)" placeholder="doplňte vlastní možnost" />
+              </article>
+
+              <article class="new-client-field-card">
+                <div class="new-client-label">Poznámka k plynu</div>
+                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('plyn', 'Poznámka k plynu')" (ngModelChange)="setPropertyTabFieldValue('plyn', 'Poznámka k plynu', $event)" placeholder="poznámka k plynu" />
               </article>
             </div>
 
@@ -1434,6 +1455,11 @@
                 </div>
                 <input *ngIf="propertyTabFieldValue('topeni', 'Komín vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('topeni', 'Komín vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('topeni', 'Komín vlastní', $event)" placeholder="doplňte vlastní možnost" />
               </article>
+
+              <article class="new-client-field-card">
+                <div class="new-client-label">Poznámka k topení</div>
+                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('topeni', 'Poznámka k topení')" (ngModelChange)="setPropertyTabFieldValue('topeni', 'Poznámka k topení', $event)" placeholder="poznámka k topení" />
+              </article>
             </div>
 
             <div class="new-client-grid two-up" *ngIf="isActivePropertyTab('ohrev-vody')">
@@ -1467,6 +1493,11 @@
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('ohrev-vody', 'Umístění topného prvku vlastní')" (click)="setPropertyTabFieldValue('ohrev-vody', 'Umístění topného prvku vlastní', propertyTabFieldValue('ohrev-vody', 'Umístění topného prvku vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('ohrev-vody', 'Umístění topného prvku vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('ohrev-vody', 'Umístění topného prvku vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('ohrev-vody', 'Umístění topného prvku vlastní', $event)" placeholder="doplňte vlastní možnost" />
+              </article>
+
+              <article class="new-client-field-card">
+                <div class="new-client-label">Poznámka k ohřevu vody</div>
+                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('ohrev-vody', 'Poznámka k ohřevu vody')" (ngModelChange)="setPropertyTabFieldValue('ohrev-vody', 'Poznámka k ohřevu vody', $event)" placeholder="poznámka k ohřevu vody" />
               </article>
             </div>
 
@@ -2171,6 +2202,15 @@
                 </div>
                 <input *ngIf="propertyTabFieldValue('doplnkove-informace', 'Klient akceptuje vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('doplnkove-informace', 'Klient akceptuje vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('doplnkove-informace', 'Klient akceptuje vlastní', $event)" placeholder="doplňte vlastní možnost" />
               </article>
+
+              <article class="new-client-field-card new-client-field-card-full">
+                <div class="new-client-label">DODANÉ DOKUMENTY</div>
+                <div class="new-client-toggle-row">
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of doplnkoveInformaceDodaneDokumentyOptions(); trackBy: trackByValue" [class.active]="hasDoplnkoveInformaceMultiValue('DODANÉ DOKUMENTY', option)" (click)="toggleDoplnkoveInformaceMultiValue('DODANÉ DOKUMENTY', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('doplnkove-informace', 'DODANÉ DOKUMENTY vlastní')" (click)="setPropertyTabFieldValue('doplnkove-informace', 'DODANÉ DOKUMENTY vlastní', propertyTabFieldValue('doplnkove-informace', 'DODANÉ DOKUMENTY vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
+                </div>
+                <input *ngIf="propertyTabFieldValue('doplnkove-informace', 'DODANÉ DOKUMENTY vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('doplnkove-informace', 'DODANÉ DOKUMENTY vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('doplnkove-informace', 'DODANÉ DOKUMENTY vlastní', $event)" placeholder="doplňte vlastní možnost" />
+              </article>
             </div>
 
             <div class="new-client-grid two-up" *ngIf="isActivePropertyTab('predavaci-protokol')">
@@ -2467,6 +2507,11 @@
                 <article class="new-client-field-card">
                   <div class="new-client-label">Doporučená nabídková cena vč. DPH</div>
                   <input type="text" class="new-client-input new-client-room-area-result" [ngModel]="propertyTabFieldValue('cena-nemovitosti', 'Doporučená nabídková cena vč. DPH')" (ngModelChange)="setPropertyTabFieldValue('cena-nemovitosti', 'Doporučená nabídková cena vč. DPH', $event.replace(/[^0-9,.\sKč]/g, ''))" (blur)="formatCenaNemovitostiCurrencyField('Doporučená nabídková cena vč. DPH')" placeholder="Kč" inputmode="decimal" />
+                </article>
+
+                <article class="new-client-field-card new-client-price-offset-row">
+                  <div class="new-client-label">Odhadovaná prodejní cena nemovitosti</div>
+                  <input type="text" class="new-client-input new-client-room-area-result" [ngModel]="propertyTabFieldValue('cena-nemovitosti', 'Odhadovaná prodejní cena nemovitosti')" (ngModelChange)="setPropertyTabFieldValue('cena-nemovitosti', 'Odhadovaná prodejní cena nemovitosti', $event.replace(/[^0-9,.\sKč]/g, ''))" (blur)="formatCenaNemovitostiCurrencyField('Odhadovaná prodejní cena nemovitosti')" placeholder="Kč" inputmode="decimal" />
                 </article>
 
                 <article class="new-client-field-card new-client-price-offset-row">
