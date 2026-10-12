@@ -585,7 +585,7 @@ const STRECHA_TYPE_OPTIONS: string[] = [
   'Kupolová'
 ];
 
-const STRECHA_INSULATION_OPTIONS: string[] = ['Ano', 'Ne'];
+const STRECHA_INSULATION_OPTIONS: string[] = ['Ano', 'Ne', 'Částečně'];
 
 const STRECHA_INSULATION_TYPE_OPTIONS: string[] = ['Zatepleno vata', 'Zatepleno PES', 'Zatepleno PUR'];
 
