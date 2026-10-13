@@ -205,21 +205,21 @@
                 </select>
               </article>
               <article class="new-client-field-card">
-                <div class="new-client-label">Služba</div>
+                <div class="new-client-label new-client-label-with-switch"><span>Služba</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('zakladni', 'Služba')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('zakladni', 'Služba')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
                 <select class="new-client-input new-client-select" [ngModel]="propertyTabFieldValue('zakladni', 'Služba')" (ngModelChange)="setPropertyTabFieldValue('zakladni', 'Služba', $event)">
                   <option value="">Vyberte službu</option>
                   <option *ngFor="let option of serviceFormOptions()" [value]="option">{{ option }}</option>
                 </select>
               </article>
               <article class="new-client-field-card">
-                <div class="new-client-label">Smlouva <span class="buyer-info-excluded-icon" title="nepropisuje se do tiskové sestavy zájemcům">📑</span></div>
+                <div class="new-client-label new-client-label-with-switch"><span>Smlouva <span class="buyer-info-excluded-icon" title="nepropisuje se do tiskové sestavy zájemcům">📑</span></span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('zakladni', 'Smlouva')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('zakladni', 'Smlouva')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
                 <select class="new-client-input new-client-select" [ngModel]="propertyTabFieldValue('zakladni', 'Smlouva')" (ngModelChange)="setPropertyTabFieldValue('zakladni', 'Smlouva', $event)">
                   <option value="">Vyberte smlouvu</option>
                   <option *ngFor="let option of contractFormOptions()" [value]="option">{{ option }}</option>
                 </select>
               </article>
               <article class="new-client-field-card">
-                <div class="new-client-label">Adresa nemovitosti</div>
+                <div class="new-client-label new-client-label-with-switch"><span>Adresa nemovitosti</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('zakladni', 'Adresa nemovitosti')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('zakladni', 'Adresa nemovitosti')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
                 <input type="text" class="new-client-input" [ngModel]="newPropertyDraft().address" (ngModelChange)="setNewPropertyDraftField('address', $event)" placeholder="adresa nemovitosti" />
               </article>
               <article class="new-client-field-card">
@@ -329,6 +329,11 @@
                 </div>
                 <input *ngIf="propertyTabFieldValue('pozemek', 'Pěstování vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('pozemek', 'Pěstování vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('pozemek', 'Pěstování vlastní', $event)" placeholder="doplňte vlastní možnost" />
               </article>
+
+              <article class="new-client-field-card">
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k pozemku</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('pozemek', 'Poznámka k pozemku')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('pozemek', 'Poznámka k pozemku')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('pozemek', 'Poznámka k pozemku')" (ngModelChange)="setPropertyTabFieldValue('pozemek', 'Poznámka k pozemku', $event)" placeholder="poznámka k pozemku" />
+              </article>
             </div>
 
             <div class="new-client-grid two-up" *ngIf="isActivePropertyTab('stavba')">
@@ -359,7 +364,7 @@
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label">Stavba</div>
+                <div class="new-client-label new-client-label-with-switch"><span>Stavba</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('stavba', 'Stavba')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('stavba', 'Stavba')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
                 <div class="new-client-land-editor stavba-parcel-editor">
                   <div class="new-client-land-rows">
                     <div class="new-client-land-row stavba-parcel-row" *ngFor="let index of stavbaParcelIndexes(); trackBy: trackByIndex">
@@ -525,6 +530,11 @@
                   <span class="new-client-leaflet-file-name">{{ stavbaEnergyFileName() }}</span>
                   <button type="button" class="new-client-leaflet-btn remove" (click)="removeStavbaEnergyFile()">✕</button>
                 </div>
+              </article>
+
+              <article class="new-client-field-card">
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka ke stavbě</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('stavba', 'Poznámka ke stavbě')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('stavba', 'Poznámka ke stavbě')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('stavba', 'Poznámka ke stavbě')" (ngModelChange)="setPropertyTabFieldValue('stavba', 'Poznámka ke stavbě', $event)" placeholder="poznámka ke stavbě" />
               </article>
             </div>
 
@@ -738,6 +748,11 @@
                 <div class="new-client-label">CELKOVÁ UŽITNÁ PLOCHA</div>
                 <input type="text" class="new-client-input" [value]="prostoryAreaTotal('celkovaUzitna')" placeholder="m²" readonly />
               </article>
+
+              <article class="new-client-field-card">
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k dispozici</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('prostory', 'Poznámka k dispozici')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('prostory', 'Poznámka k dispozici')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('prostory', 'Poznámka k dispozici')" (ngModelChange)="setPropertyTabFieldValue('prostory', 'Poznámka k dispozici', $event)" placeholder="poznámka k dispozici" />
+              </article>
             </div>
 
             <div class="new-client-grid two-up" *ngIf="isActivePropertyTab('bezbarierovost')">
@@ -807,6 +822,11 @@
                 <div class="new-client-label">Počet schodů od výtahu do bytu</div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('bezbarierovost', 'Počet schodů od výtahu do bytu')" (ngModelChange)="setPropertyTabFieldValue('bezbarierovost', 'Počet schodů od výtahu do bytu', $event.replace(/[^0-9]/g, ''))" placeholder="počet schodů" inputmode="numeric" />
               </article>
+
+              <article class="new-client-field-card">
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k bezbariérovosti</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('bezbarierovost', 'Poznámka k bezbariérovosti')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('bezbarierovost', 'Poznámka k bezbariérovosti')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('bezbarierovost', 'Poznámka k bezbariérovosti')" (ngModelChange)="setPropertyTabFieldValue('bezbarierovost', 'Poznámka k bezbariérovosti', $event)" placeholder="poznámka k bezbariérovosti" />
+              </article>
             </div>
 
             <div class="new-client-grid two-up" *ngIf="isActivePropertyTab('socialni-zazemi')">
@@ -816,6 +836,16 @@
                   <option value="">Vyberte</option>
                   <option *ngFor="let option of socialniZazemiCoreOptions()" [value]="option">{{ option }}</option>
                 </select>
+              </article>
+
+              <article class="new-client-field-card">
+                <div class="new-client-label">Počet koupelen</div>
+                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('socialni-zazemi', 'Počet koupelen')" (ngModelChange)="setPropertyTabFieldValue('socialni-zazemi', 'Počet koupelen', $event.replace(/[^0-9]/g, ''))" placeholder="počet koupelen" inputmode="numeric" />
+              </article>
+
+              <article class="new-client-field-card">
+                <div class="new-client-label">Počet WC</div>
+                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('socialni-zazemi', 'Počet WC')" (ngModelChange)="setPropertyTabFieldValue('socialni-zazemi', 'Počet WC', $event.replace(/[^0-9]/g, ''))" placeholder="počet WC" inputmode="numeric" />
               </article>
 
               <article class="new-client-field-card">
@@ -838,6 +868,11 @@
                 <div class="new-client-toggle-row">
                   <button type="button" class="new-client-toggle-btn" *ngFor="let option of socialniZazemiWashingMachineOptions(); trackBy: trackByValue" [class.active]="hasSocialniZazemiMultiValue('Umístění pračky', option)" (click)="toggleSocialniZazemiMultiValue('Umístění pračky', option)">{{ option }}</button>
                 </div>
+              </article>
+
+              <article class="new-client-field-card">
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k sociálnímu zázemí</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('socialni-zazemi', 'Poznámka k sociálnímu zázemí')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('socialni-zazemi', 'Poznámka k sociálnímu zázemí')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('socialni-zazemi', 'Poznámka k sociálnímu zázemí')" (ngModelChange)="setPropertyTabFieldValue('socialni-zazemi', 'Poznámka k sociálnímu zázemí', $event)" placeholder="poznámka k sociálnímu zázemí" />
               </article>
             </div>
 
@@ -890,7 +925,7 @@
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label">Poznámka ke střeše</div>
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka ke střeše</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('strecha', 'Poznámka ke střeše')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('strecha', 'Poznámka ke střeše')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('strecha', 'Poznámka ke střeše')" (ngModelChange)="setPropertyTabFieldValue('strecha', 'Poznámka ke střeše', $event)" placeholder="poznámka ke střeše" />
               </article>
             </div>
@@ -954,7 +989,7 @@
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label">Poznámka k oknům a dveřím</div>
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k oknům a dveřím</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('okna', 'Poznámka k oknům a dveřím')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('okna', 'Poznámka k oknům a dveřím')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('okna', 'Poznámka k oknům a dveřím')" (ngModelChange)="setPropertyTabFieldValue('okna', 'Poznámka k oknům a dveřím', $event)" placeholder="poznámka k oknům a dveřím" />
               </article>
             </div>
@@ -967,6 +1002,11 @@
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('podlahy', 'Podlahy vlastní')" (click)="setPropertyTabFieldValue('podlahy', 'Podlahy vlastní', propertyTabFieldValue('podlahy', 'Podlahy vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('podlahy', 'Podlahy vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('podlahy', 'Podlahy vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('podlahy', 'Podlahy vlastní', $event)" placeholder="doplňte vlastní možnost" />
+              </article>
+
+              <article class="new-client-field-card">
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k podlahám</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('podlahy', 'Poznámka k podlahám')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('podlahy', 'Poznámka k podlahám')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('podlahy', 'Poznámka k podlahám')" (ngModelChange)="setPropertyTabFieldValue('podlahy', 'Poznámka k podlahám', $event)" placeholder="poznámka k podlahám" />
               </article>
             </div>
 
@@ -1041,8 +1081,8 @@
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label">Poznámka</div>
-                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('prijezdova-komunikace', 'Poznámka')" (ngModelChange)="setPropertyTabFieldValue('prijezdova-komunikace', 'Poznámka', $event)" placeholder="poznámka" />
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k příjezdové komunikaci</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('prijezdova-komunikace', 'Poznámka k příjezdové komunikaci')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('prijezdova-komunikace', 'Poznámka k příjezdové komunikaci')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('prijezdova-komunikace', 'Poznámka k příjezdové komunikaci') || propertyTabFieldValue('prijezdova-komunikace', 'Poznámka')" (ngModelChange)="setPropertyTabFieldValue('prijezdova-komunikace', 'Poznámka k příjezdové komunikaci', $event)" placeholder="poznámka k příjezdové komunikaci" />
               </article>
             </div>
 
@@ -1129,17 +1169,17 @@
               </ng-container>
 
               <article class="new-client-field-card">
-                <div class="new-client-label">Poznámka ke službám</div>
-                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('sluzby', 'Poznámka ke službám')" (ngModelChange)="setPropertyTabFieldValue('sluzby', 'Poznámka ke službám', $event)" placeholder="poznámka ke službám" />
-              </article>
-
-              <article class="new-client-field-card">
                 <div class="new-client-label">Kamerový systém</div>
                 <select class="new-client-input new-client-select" [ngModel]="propertyTabFieldValue('sluzby', 'Kamerový systém')" (ngModelChange)="setPropertyTabFieldValue('sluzby', 'Kamerový systém', $event)">
                   <option value="">Vyberte</option>
                   <option value="ANO">ANO</option>
                   <option value="NE">NE</option>
                 </select>
+              </article>
+
+              <article class="new-client-field-card">
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka ke službám</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('sluzby', 'Poznámka ke službám')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('sluzby', 'Poznámka ke službám')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('sluzby', 'Poznámka ke službám')" (ngModelChange)="setPropertyTabFieldValue('sluzby', 'Poznámka ke službám', $event)" placeholder="poznámka ke službám" />
               </article>
             </div>
 
@@ -1260,7 +1300,7 @@
               </article>
 
               <article class="new-client-field-card" *ngIf="!isElektroNezavedena()">
-                <div class="new-client-label">Poznámka k elektřině</div>
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k elektřině</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('elektina', 'Poznámka k elektřině')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('elektina', 'Poznámka k elektřině')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('elektina', 'Poznámka k elektřině')" (ngModelChange)="setPropertyTabFieldValue('elektina', 'Poznámka k elektřině', $event)" placeholder="poznámka k elektřině" />
               </article>
             </div>
@@ -1315,7 +1355,7 @@
               </article>
 
               <article class="new-client-field-card" *ngIf="isVodaHasStudna()">
-                <div class="new-client-label">Povolení k odběru podzemních vod</div>
+                <div class="new-client-label new-client-label-with-switch"><span>Povolení k odběru podzemních vod</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('voda', 'Povolení k odběru podzemních vod')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('voda', 'Povolení k odběru podzemních vod')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
                 <div class="new-client-toggle-row">
                   <button type="button" class="new-client-toggle-btn" [class.active]="propertyTabFieldValue('voda', 'Povolení k odběru podzemních vod') === 'Ano'" (click)="setPropertyTabFieldValue('voda', 'Povolení k odběru podzemních vod', 'Ano')">Ano</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="propertyTabFieldValue('voda', 'Povolení k odběru podzemních vod') === 'Ne'" (click)="setPropertyTabFieldValue('voda', 'Povolení k odběru podzemních vod', 'Ne')">Ne</button>
@@ -1331,7 +1371,7 @@
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label">Poznámka k vodě</div>
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k vodě</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('voda', 'Poznámka k vodě')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('voda', 'Poznámka k vodě')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('voda', 'Poznámka k vodě')" (ngModelChange)="setPropertyTabFieldValue('voda', 'Poznámka k vodě', $event)" placeholder="poznámka k vodě" />
               </article>
             </div>
@@ -1372,7 +1412,7 @@
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label">Poznámka k plynu</div>
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k plynu</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('plyn', 'Poznámka k plynu')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('plyn', 'Poznámka k plynu')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('plyn', 'Poznámka k plynu')" (ngModelChange)="setPropertyTabFieldValue('plyn', 'Poznámka k plynu', $event)" placeholder="poznámka k plynu" />
               </article>
             </div>
@@ -1393,7 +1433,7 @@
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label">Poznámka ke kanalizaci</div>
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka ke kanalizaci</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('kanalizace', 'Poznámka ke kanalizaci')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('kanalizace', 'Poznámka ke kanalizaci')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('kanalizace', 'Poznámka ke kanalizaci')" (ngModelChange)="setPropertyTabFieldValue('kanalizace', 'Poznámka ke kanalizaci', $event)" placeholder="poznámka ke kanalizaci" />
               </article>
             </div>
@@ -1457,7 +1497,7 @@
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label">Poznámka k topení</div>
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k topení</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('topeni', 'Poznámka k topení')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('topeni', 'Poznámka k topení')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('topeni', 'Poznámka k topení')" (ngModelChange)="setPropertyTabFieldValue('topeni', 'Poznámka k topení', $event)" placeholder="poznámka k topení" />
               </article>
             </div>
@@ -1496,7 +1536,7 @@
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label">Poznámka k ohřevu vody</div>
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k ohřevu vody</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('ohrev-vody', 'Poznámka k ohřevu vody')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('ohrev-vody', 'Poznámka k ohřevu vody')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('ohrev-vody', 'Poznámka k ohřevu vody')" (ngModelChange)="setPropertyTabFieldValue('ohrev-vody', 'Poznámka k ohřevu vody', $event)" placeholder="poznámka k ohřevu vody" />
               </article>
             </div>
@@ -2195,7 +2235,7 @@
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label">Klient akceptuje</div>
+                <div class="new-client-label new-client-label-with-switch"><span>Klient akceptuje</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('doplnkove-informace', 'Klient akceptuje')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('doplnkove-informace', 'Klient akceptuje')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
                 <div class="new-client-toggle-row">
                   <button type="button" class="new-client-toggle-btn" *ngFor="let option of doplnkoveInformaceKlientAkceptujeOptions(); trackBy: trackByValue" [class.active]="hasDoplnkoveInformaceMultiValue('Klient akceptuje', option)" (click)="toggleDoplnkoveInformaceMultiValue('Klient akceptuje', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('doplnkove-informace', 'Klient akceptuje vlastní')" (click)="setPropertyTabFieldValue('doplnkove-informace', 'Klient akceptuje vlastní', propertyTabFieldValue('doplnkove-informace', 'Klient akceptuje vlastní') ? '' : ' ')">dopsat vlastní možnost</button>

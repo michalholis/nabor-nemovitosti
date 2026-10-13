@@ -4039,6 +4039,23 @@ export class App {
     });
   }
 
+  protected propertyBuyerInfoSwitchKey(field: string): string {
+    return `${field}__buyer-info-visible`;
+  }
+
+  protected isPropertyBuyerInfoFieldVisible(tab: NewPropertyTabKey, field: string): boolean {
+    const value = this.propertyTabFieldValue(tab, this.propertyBuyerInfoSwitchKey(field));
+    if (BUYER_INFO_EXCLUDED_FIELDS.has(field)) {
+      return value === 'ANO';
+    }
+
+    return value !== 'NE';
+  }
+
+  protected togglePropertyBuyerInfoFieldVisibility(tab: NewPropertyTabKey, field: string): void {
+    this.setPropertyTabFieldValue(tab, this.propertyBuyerInfoSwitchKey(field), this.isPropertyBuyerInfoFieldVisible(tab, field) ? 'NE' : 'ANO');
+  }
+
   protected landParcelValue(index: number, field: 'parcel' | 'type' | 'area'): string {
     return this.propertyTabFieldValue('pozemek', this.landParcelFieldKey(index, field));
   }
@@ -10019,7 +10036,7 @@ export class App {
         const rows = [
           ...combinedRows,
           ...Object.entries(values)
-          .filter(([key, value]) => !combinedFieldKeys.has(key) && !BUYER_INFO_EXCLUDED_FIELDS.has(key) && !key.includes('__') && !key.endsWith(' počet') && !key.startsWith('parcel-') && !key.startsWith('stavba-parcel-') && Boolean(String(value).trim()))
+          .filter(([key, value]) => !combinedFieldKeys.has(key) && this.isPropertyBuyerInfoFieldVisible(tab.key, key) && !key.includes('__') && !key.endsWith(' počet') && !key.startsWith('parcel-') && !key.startsWith('stavba-parcel-') && Boolean(String(value).trim()))
           .map(([key, value]) => `<div class="info-row"><div class="info-label">${this.escapeHtml(key)}</div><div class="info-value">${this.escapeHtml(String(value).replace(/\|/g, ', '))}</div></div>`)
         ].join('');
         const note = tab.key === 'prostory' && rows ? '<div class="info-row"><div class="info-label">Poznámka</div><div class="info-value">*Rozměry místností jsou orientační</div></div>' : '';
@@ -10049,6 +10066,13 @@ export class App {
   }
 
   private combinedBuyerInfoRows(tabKey: NewPropertyTabKey, values: Record<string, string>): string[] {
+    if (tabKey === 'zakladni') {
+      const address = this.newPropertyDraft().address.trim();
+      return address && this.isPropertyBuyerInfoFieldVisible(tabKey, 'Adresa nemovitosti')
+        ? [`<div class="info-row"><div class="info-label">Adresa nemovitosti</div><div class="info-value">${this.escapeHtml(address)}</div></div>`]
+        : [];
+    }
+
     if (tabKey === 'pozemek') {
       const parcelRows = this.landParcelSummariesFromValues(values);
       if (parcelRows.length > 0) {
@@ -10060,12 +10084,23 @@ export class App {
     }
 
     if (tabKey === 'stavba') {
+      if (!this.isPropertyBuyerInfoFieldVisible(tabKey, 'Stavba')) {
+        return [];
+      }
+
       const rows = this.stavbaParcelSummariesFromValues(values);
       return rows.length > 0 ? [`<div class="info-row"><div class="info-label">Stavba</div><div class="info-value">${this.escapeHtml(rows.join(', '))}</div></div>`] : [];
     }
 
     if (tabKey === 'dostupnost-v-okoli') {
       return this.dostupnostStopRowsFromValues(values).map((row) => `<div class="info-row"><div class="info-label">${this.escapeHtml(row.label)}</div><div class="info-value">${this.escapeHtml(row.value)}</div></div>`);
+    }
+
+    if (tabKey === 'prijezdova-komunikace') {
+      const note = (values['Poznámka k příjezdové komunikaci'] || values['Poznámka'] || '').trim();
+      return note && this.isPropertyBuyerInfoFieldVisible(tabKey, 'Poznámka k příjezdové komunikaci')
+        ? [`<div class="info-row"><div class="info-label">Poznámka k příjezdové komunikaci</div><div class="info-value">${this.escapeHtml(note)}</div></div>`]
+        : [];
     }
 
     if (tabKey === 'bezbarierovost') {
@@ -10077,6 +10112,10 @@ export class App {
 
   private combinedBuyerInfoFieldKeys(tabKey: NewPropertyTabKey, values: Record<string, string>): Set<string> {
     const keys = new Set<string>();
+    if (tabKey === 'zakladni') {
+      keys.add('Adresa nemovitosti');
+    }
+
     if (tabKey === 'pozemek') {
       ['Parcelní číslo', 'Druh pozemku', 'Celková výměra pozemku'].forEach((key) => {
         if ((values[key] || '').trim()) {
@@ -10098,6 +10137,11 @@ export class App {
           }
         });
       });
+    }
+
+    if (tabKey === 'prijezdova-komunikace') {
+      keys.add('Poznámka');
+      keys.add('Poznámka k příjezdové komunikaci');
     }
 
     if (tabKey === 'bezbarierovost') {
