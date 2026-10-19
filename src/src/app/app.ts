@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AddressAutocompleteDirective } from './address-autocomplete.directive';
+import { SelectedFirstPipe, selectedOptionsFirst } from './selected-first.pipe';
 import { IntakeControl, IntakeSection, PROPERTY_INTAKE_FORM } from './property-intake-form';
 
 type YesNo = 'ANO' | 'NE' | null;
@@ -454,6 +455,8 @@ const STAVBA_CONSTRUCTION_OPTIONS: string[] = [
   'Panel.',
   'Dřevo',
   'Cihlová',
+  'Tvárnice',
+  'Cihlové bloky',
   'Ytong',
   'Porobeton',
   'Sádrokarton',
@@ -1346,7 +1349,7 @@ interface RoomAreaTotal {
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, FormsModule, AddressAutocompleteDirective],
+  imports: [CommonModule, FormsModule, AddressAutocompleteDirective, SelectedFirstPipe],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
@@ -10218,7 +10221,7 @@ export class App {
     }
 
     const selected = new Set(selectedRaw.split('|').map((value) => value.trim()).filter(Boolean));
-    return this.brokerInfoChips(options, selected, Array.from(selected));
+    return this.brokerInfoChips(selectedOptionsFirst(options, Array.from(selected)), selected, Array.from(selected));
   }
 
   private brokerInfoChips(options: string[], selected: Set<string>, extras: string[]): string {

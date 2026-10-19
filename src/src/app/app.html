@@ -205,21 +205,21 @@
                 </select>
               </article>
               <article class="new-client-field-card">
-                <div class="new-client-label new-client-label-with-switch"><span>Služba</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('zakladni', 'Služba')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('zakladni', 'Služba')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <div class="new-client-label new-client-label-with-switch"><span>Služba</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('zakladni', 'Služba')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('zakladni', 'Služba')" title="Zobrazuje se v tiskové sestavě pro zájemce" /></div>
                 <select class="new-client-input new-client-select" [ngModel]="propertyTabFieldValue('zakladni', 'Služba')" (ngModelChange)="setPropertyTabFieldValue('zakladni', 'Služba', $event)">
                   <option value="">Vyberte službu</option>
                   <option *ngFor="let option of serviceFormOptions()" [value]="option">{{ option }}</option>
                 </select>
               </article>
               <article class="new-client-field-card">
-                <div class="new-client-label new-client-label-with-switch"><span>Smlouva <span class="buyer-info-excluded-icon" title="nepropisuje se do tiskové sestavy zájemcům">📑</span></span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('zakladni', 'Smlouva')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('zakladni', 'Smlouva')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <div class="new-client-label new-client-label-with-switch"><span>Smlouva</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('zakladni', 'Smlouva')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('zakladni', 'Smlouva')" title="Zobrazuje se v tiskové sestavě pro zájemce" /></div>
                 <select class="new-client-input new-client-select" [ngModel]="propertyTabFieldValue('zakladni', 'Smlouva')" (ngModelChange)="setPropertyTabFieldValue('zakladni', 'Smlouva', $event)">
                   <option value="">Vyberte smlouvu</option>
                   <option *ngFor="let option of contractFormOptions()" [value]="option">{{ option }}</option>
                 </select>
               </article>
               <article class="new-client-field-card">
-                <div class="new-client-label new-client-label-with-switch"><span>Adresa nemovitosti</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('zakladni', 'Adresa nemovitosti')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('zakladni', 'Adresa nemovitosti')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <div class="new-client-label new-client-label-with-switch"><span>Adresa nemovitosti</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('zakladni', 'Adresa nemovitosti')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('zakladni', 'Adresa nemovitosti')" title="Zobrazuje se v tiskové sestavě pro zájemce" /></div>
                 <input appAddressAutocomplete type="text" class="new-client-input" [ngModel]="newPropertyDraft().address" (ngModelChange)="setNewPropertyDraftField('address', $event)" placeholder="adresa nemovitosti" />
               </article>
               <article class="new-client-field-card">
@@ -230,7 +230,7 @@
 
             <div class="new-client-grid two-up" *ngIf="isActivePropertyTab('pozemek')">
               <article class="new-client-field-card">
-                <div class="new-client-label">Pozemek <span class="buyer-info-excluded-icon" title="nepropisuje se do tiskové sestavy zájemcům">📑</span></div>
+                <div class="new-client-label">Pozemek</div>
                 <select class="new-client-input new-client-select" [ngModel]="propertyTabFieldValue('pozemek', 'Pozemek ano/ne')" (ngModelChange)="setPropertyTabFieldValue('pozemek', 'Pozemek ano/ne', $event)">
                   <option value="">Vyberte</option>
                   <option *ngFor="let option of landPresentOptions()" [value]="option">{{ option }}</option>
@@ -309,7 +309,7 @@
               <article class="new-client-field-card" *ngIf="propertyTabFieldValue('pozemek', 'Oplocení') !== 'Žádné'">
                 <div class="new-client-label">Plot</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of landFenceOptions(); trackBy: trackByValue" [class.active]="hasPropertyTabMultiValue('pozemek', 'Plot', option)" (click)="togglePropertyTabMultiValue('pozemek', 'Plot', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of landFenceOptions() | selectedFirst: propertyTabFieldValue('pozemek', 'Plot'); trackBy: trackByValue" [class.active]="hasPropertyTabMultiValue('pozemek', 'Plot', option)" (click)="togglePropertyTabMultiValue('pozemek', 'Plot', option)">{{ option }}</button>
                 </div>
               </article>
 
@@ -324,14 +324,14 @@
               <article class="new-client-field-card" *ngIf="propertyTabFieldValue('pozemek', 'Zahrada') !== 'Není' && propertyTabFieldValue('pozemek', 'Zahrada') !== 'není'">
                 <div class="new-client-label">Pěstování</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of landCultivationOptions(); trackBy: trackByValue" [class.active]="hasPropertyTabMultiValue('pozemek', 'Pěstování', option)" (click)="togglePropertyTabMultiValue('pozemek', 'Pěstování', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of landCultivationOptions() | selectedFirst: propertyTabFieldValue('pozemek', 'Pěstování'); trackBy: trackByValue" [class.active]="hasPropertyTabMultiValue('pozemek', 'Pěstování', option)" (click)="togglePropertyTabMultiValue('pozemek', 'Pěstování', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('pozemek', 'Pěstování vlastní')" (click)="setPropertyTabFieldValue('pozemek', 'Pěstování vlastní', propertyTabFieldValue('pozemek', 'Pěstování vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('pozemek', 'Pěstování vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('pozemek', 'Pěstování vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('pozemek', 'Pěstování vlastní', $event)" placeholder="doplňte vlastní možnost" />
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k pozemku</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('pozemek', 'Poznámka k pozemku')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('pozemek', 'Poznámka k pozemku')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k pozemku</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('pozemek', 'Poznámka k pozemku')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('pozemek', 'Poznámka k pozemku')" title="Zobrazuje se v tiskové sestavě pro zájemce" /></div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('pozemek', 'Poznámka k pozemku')" (ngModelChange)="setPropertyTabFieldValue('pozemek', 'Poznámka k pozemku', $event)" placeholder="poznámka k pozemku" />
               </article>
             </div>
@@ -364,7 +364,7 @@
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label new-client-label-with-switch"><span>Stavba</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('stavba', 'Stavba')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('stavba', 'Stavba')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <div class="new-client-label new-client-label-with-switch"><span>Stavba</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('stavba', 'Stavba')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('stavba', 'Stavba')" title="Zobrazuje se v tiskové sestavě pro zájemce" /></div>
                 <div class="new-client-land-editor stavba-parcel-editor">
                   <div class="new-client-land-rows">
                     <div class="new-client-land-row stavba-parcel-row" *ngFor="let index of stavbaParcelIndexes(); trackBy: trackByIndex">
@@ -448,7 +448,7 @@
               <article class="new-client-field-card">
                 <div class="new-client-label">Konstrukce stavby</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of stavbaConstructionOptions(); trackBy: trackByValue" [class.active]="hasStavbaMultiValue('Konstrukce stavby', option)" (click)="toggleStavbaMultiValue('Konstrukce stavby', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of stavbaConstructionOptions() | selectedFirst: propertyTabFieldValue('stavba', 'Konstrukce stavby'); trackBy: trackByValue" [class.active]="hasStavbaMultiValue('Konstrukce stavby', option)" (click)="toggleStavbaMultiValue('Konstrukce stavby', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('stavba', 'Konstrukce stavby vlastní')" (click)="setPropertyTabFieldValue('stavba', 'Konstrukce stavby vlastní', propertyTabFieldValue('stavba', 'Konstrukce stavby vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('stavba', 'Konstrukce stavby vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('stavba', 'Konstrukce stavby vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('stavba', 'Konstrukce stavby vlastní', $event)" placeholder="doplňte vlastní možnost" />
@@ -457,7 +457,7 @@
               <article class="new-client-field-card">
                 <div class="new-client-label">Plášť budovy</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of stavbaFacadeOptions(); trackBy: trackByValue" [class.active]="hasStavbaMultiValue('Plášť budovy', option)" (click)="toggleStavbaMultiValue('Plášť budovy', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of stavbaFacadeOptions() | selectedFirst: propertyTabFieldValue('stavba', 'Plášť budovy'); trackBy: trackByValue" [class.active]="hasStavbaMultiValue('Plášť budovy', option)" (click)="toggleStavbaMultiValue('Plášť budovy', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('stavba', 'Plášť budovy vlastní')" (click)="setPropertyTabFieldValue('stavba', 'Plášť budovy vlastní', propertyTabFieldValue('stavba', 'Plášť budovy vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('stavba', 'Plášť budovy vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('stavba', 'Plášť budovy vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('stavba', 'Plášť budovy vlastní', $event)" placeholder="doplňte vlastní možnost" />
@@ -466,14 +466,14 @@
               <article class="new-client-field-card">
                 <div class="new-client-label">Umístění stavby</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of stavbaLocationOptions(); trackBy: trackByValue" [class.active]="hasStavbaMultiValue('Umístění stavby', option)" (click)="toggleStavbaMultiValue('Umístění stavby', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of stavbaLocationOptions() | selectedFirst: propertyTabFieldValue('stavba', 'Umístění stavby'); trackBy: trackByValue" [class.active]="hasStavbaMultiValue('Umístění stavby', option)" (click)="toggleStavbaMultiValue('Umístění stavby', option)">{{ option }}</button>
                 </div>
               </article>
 
               <article class="new-client-field-card">
                 <div class="new-client-label">Zastavení</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of stavbaSettlementOptions(); trackBy: trackByValue" [class.active]="hasStavbaMultiValue('Zastavení', option)" (click)="toggleStavbaMultiValue('Zastavení', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of stavbaSettlementOptions() | selectedFirst: propertyTabFieldValue('stavba', 'Zastavení'); trackBy: trackByValue" [class.active]="hasStavbaMultiValue('Zastavení', option)" (click)="toggleStavbaMultiValue('Zastavení', option)">{{ option }}</button>
                 </div>
               </article>
 
@@ -488,7 +488,7 @@
               <article class="new-client-field-card" *ngIf="propertyTabFieldValue('stavba', 'Zateplení budovy') === 'Ano'">
                 <div class="new-client-label">Zateplení</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of stavbaInsulationOptions(); trackBy: trackByValue" [class.active]="hasStavbaMultiValue('Zateplení', option)" (click)="toggleStavbaMultiValue('Zateplení', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of stavbaInsulationOptions() | selectedFirst: propertyTabFieldValue('stavba', 'Zateplení'); trackBy: trackByValue" [class.active]="hasStavbaMultiValue('Zateplení', option)" (click)="toggleStavbaMultiValue('Zateplení', option)">{{ option }}</button>
                 </div>
               </article>
 
@@ -538,7 +538,7 @@
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label new-client-label-with-switch"><span>Poznámka ke stavbě</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('stavba', 'Poznámka ke stavbě')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('stavba', 'Poznámka ke stavbě')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka ke stavbě</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('stavba', 'Poznámka ke stavbě')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('stavba', 'Poznámka ke stavbě')" title="Zobrazuje se v tiskové sestavě pro zájemce" /></div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('stavba', 'Poznámka ke stavbě')" (ngModelChange)="setPropertyTabFieldValue('stavba', 'Poznámka ke stavbě', $event)" placeholder="poznámka ke stavbě" />
               </article>
             </div>
@@ -570,7 +570,7 @@
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label">Pozice bytu <span class="buyer-info-excluded-icon" title="nepropisuje se do tiskové sestavy zájemcům">📑</span></div>
+                <div class="new-client-label">Pozice bytu</div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('jednotka', 'Pozice bytu')" (ngModelChange)="setPropertyTabFieldValue('jednotka', 'Pozice bytu', $event)" placeholder="pozice bytu" />
               </article>
 
@@ -616,7 +616,7 @@
               <article class="new-client-field-card" *ngIf="shouldShowProstoryLodgingFields()">
                 <div class="new-client-label">{{ prostoryUnitLabel('Další prostory', unit) }}</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of prostoryAdditionalOptions(); trackBy: trackByValue" [class.active]="hasProstoryMultiValue('Další prostory', option, unit)" (click)="toggleProstoryMultiValue('Další prostory', option, unit)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of prostoryAdditionalOptions() | selectedFirst: propertyTabFieldValue('prostory', prostoryKey('Další prostory', unit)); trackBy: trackByValue" [class.active]="hasProstoryMultiValue('Další prostory', option, unit)" (click)="toggleProstoryMultiValue('Další prostory', option, unit)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('prostory', prostoryKey('Další prostory vlastní', unit))" (click)="setPropertyTabFieldValue('prostory', prostoryKey('Další prostory vlastní', unit), propertyTabFieldValue('prostory', prostoryKey('Další prostory vlastní', unit)) ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('prostory', prostoryKey('Další prostory vlastní', unit))" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('prostory', prostoryKey('Další prostory vlastní', unit)).trim()" (ngModelChange)="setPropertyTabFieldValue('prostory', prostoryKey('Další prostory vlastní', unit), $event)" placeholder="doplňte vlastní možnost" />
@@ -625,21 +625,21 @@
               <article class="new-client-field-card" *ngIf="shouldShowProstoryLodgingFields()">
                 <div class="new-client-label">{{ prostoryUnitLabel('Vybavení pokojů', unit) }}</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of prostoryRoomEquipmentOptions(); trackBy: trackByValue" [class.active]="hasProstoryMultiValue('Vybavení pokojů', option, unit)" (click)="toggleProstoryMultiValue('Vybavení pokojů', option, unit)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of prostoryRoomEquipmentOptions() | selectedFirst: propertyTabFieldValue('prostory', prostoryKey('Vybavení pokojů', unit)); trackBy: trackByValue" [class.active]="hasProstoryMultiValue('Vybavení pokojů', option, unit)" (click)="toggleProstoryMultiValue('Vybavení pokojů', option, unit)">{{ option }}</button>
                 </div>
               </article>
 
               <article class="new-client-field-card" *ngIf="shouldShowProstoryLodgingFields()">
                 <div class="new-client-label">{{ prostoryUnitLabel('Vybavení VIP pokojů', unit) }}</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of prostoryRoomEquipmentOptions(); trackBy: trackByValue" [class.active]="hasProstoryMultiValue('Vybavení VIP pokojů', option, unit)" (click)="toggleProstoryMultiValue('Vybavení VIP pokojů', option, unit)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of prostoryRoomEquipmentOptions() | selectedFirst: propertyTabFieldValue('prostory', prostoryKey('Vybavení VIP pokojů', unit)); trackBy: trackByValue" [class.active]="hasProstoryMultiValue('Vybavení VIP pokojů', option, unit)" (click)="toggleProstoryMultiValue('Vybavení VIP pokojů', option, unit)">{{ option }}</button>
                 </div>
               </article>
 
               <article class="new-client-field-card" *ngIf="shouldShowProstoryGeneralFields() && !isCurrentPropertyType('Garáž')">
                 <div class="new-client-label">{{ prostoryUnitLabel('Seznam místností', unit) }}</div>
                 <div class="new-client-toggle-row">
-                  <ng-container *ngFor="let option of prostoryRoomListOptions(); trackBy: trackByValue">
+                  <ng-container *ngFor="let option of prostoryRoomListOptions() | selectedFirst: selectedProstoryRooms(unit); trackBy: trackByValue">
                     <div class="new-client-room-group-separator" *ngIf="isProstoryRoomGroupSeparator(option); else roomOption"></div>
                     <ng-template #roomOption>
                       <button type="button" class="new-client-toggle-btn" [class.active]="hasProstoryMultiValue('Seznam místností', option, unit)" (click)="toggleProstoryMultiValue('Seznam místností', option, unit)">{{ option }}</button>
@@ -666,7 +666,7 @@
               </article>
 
               <article class="new-client-field-card" *ngIf="shouldShowProstoryGeneralFields() && hasSelectedProstoryRoom('Sklep', unit)">
-                <div class="new-client-label">{{ prostoryUnitLabel('Označení sklepu', unit) }} <span class="buyer-info-excluded-icon" title="nepropisuje se do tiskové sestavy zájemcům">📑</span></div>
+                <div class="new-client-label">{{ prostoryUnitLabel('Označení sklepu', unit) }}</div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('prostory', prostoryKey('Sklep číslo', unit))" (ngModelChange)="setPropertyTabFieldValue('prostory', prostoryKey('Sklep číslo', unit), $event)" placeholder="číslo sklepu" />
               </article>
 
@@ -689,7 +689,7 @@
               <article class="new-client-field-card" *ngIf="shouldShowProstoryGarageFields(unit)">
                 <div class="new-client-label">{{ prostoryUnitLabel('Materiál vrat', unit) }}</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of prostoryGarageDoorMaterialOptions(); trackBy: trackByValue" [class.active]="hasProstoryMultiValue('Materiál garážových vrat', option, unit)" (click)="toggleProstoryMultiValue('Materiál garážových vrat', option, unit)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of prostoryGarageDoorMaterialOptions() | selectedFirst: propertyTabFieldValue('prostory', prostoryKey('Materiál garážových vrat', unit)); trackBy: trackByValue" [class.active]="hasProstoryMultiValue('Materiál garážových vrat', option, unit)" (click)="toggleProstoryMultiValue('Materiál garážových vrat', option, unit)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('prostory', prostoryKey('Materiál garážových vrat vlastní', unit))" (click)="setPropertyTabFieldValue('prostory', prostoryKey('Materiál garážových vrat vlastní', unit), propertyTabFieldValue('prostory', prostoryKey('Materiál garážových vrat vlastní', unit)) ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('prostory', prostoryKey('Materiál garážových vrat vlastní', unit))" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('prostory', prostoryKey('Materiál garážových vrat vlastní', unit)).trim()" (ngModelChange)="setPropertyTabFieldValue('prostory', prostoryKey('Materiál garážových vrat vlastní', unit), $event)" placeholder="doplňte vlastní možnost" />
@@ -752,7 +752,7 @@
               </ng-container>
 
               <article class="new-client-field-card">
-                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k dispozici</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('prostory', 'Poznámka k dispozici')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('prostory', 'Poznámka k dispozici')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k dispozici</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('prostory', 'Poznámka k dispozici')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('prostory', 'Poznámka k dispozici')" title="Zobrazuje se v tiskové sestavě pro zájemce" /></div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('prostory', 'Poznámka k dispozici')" (ngModelChange)="setPropertyTabFieldValue('prostory', 'Poznámka k dispozici', $event)" placeholder="poznámka k dispozici" />
               </article>
             </div>
@@ -826,7 +826,7 @@
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k bezbariérovosti</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('bezbarierovost', 'Poznámka k bezbariérovosti')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('bezbarierovost', 'Poznámka k bezbariérovosti')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k bezbariérovosti</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('bezbarierovost', 'Poznámka k bezbariérovosti')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('bezbarierovost', 'Poznámka k bezbariérovosti')" title="Zobrazuje se v tiskové sestavě pro zájemce" /></div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('bezbarierovost', 'Poznámka k bezbariérovosti')" (ngModelChange)="setPropertyTabFieldValue('bezbarierovost', 'Poznámka k bezbariérovosti', $event)" placeholder="poznámka k bezbariérovosti" />
               </article>
             </div>
@@ -853,27 +853,27 @@
               <article class="new-client-field-card">
                 <div class="new-client-label">V koupelně</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of socialniZazemiBathroomOptions(); trackBy: trackByValue" [class.active]="hasSocialniZazemiMultiValue('Vybavení koupelny', option)" (click)="toggleSocialniZazemiMultiValue('Vybavení koupelny', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of socialniZazemiBathroomOptions() | selectedFirst: propertyTabFieldValue('socialni-zazemi', 'Vybavení koupelny'); trackBy: trackByValue" [class.active]="hasSocialniZazemiMultiValue('Vybavení koupelny', option)" (click)="toggleSocialniZazemiMultiValue('Vybavení koupelny', option)">{{ option }}</button>
                 </div>
               </article>
 
               <article class="new-client-field-card">
                 <div class="new-client-label">Toaleta</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of socialniZazemiToiletTypeOptions(); trackBy: trackByValue" [class.active]="hasSocialniZazemiMultiValue('Druh toalety', option)" (click)="toggleSocialniZazemiMultiValue('Druh toalety', option)">{{ option }}</button>
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of socialniZazemiToiletOptions(); trackBy: trackByValue" [class.active]="hasSocialniZazemiMultiValue('Umístění toalety', option)" (click)="toggleSocialniZazemiMultiValue('Umístění toalety', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of socialniZazemiToiletTypeOptions() | selectedFirst: propertyTabFieldValue('socialni-zazemi', 'Druh toalety'); trackBy: trackByValue" [class.active]="hasSocialniZazemiMultiValue('Druh toalety', option)" (click)="toggleSocialniZazemiMultiValue('Druh toalety', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of socialniZazemiToiletOptions() | selectedFirst: propertyTabFieldValue('socialni-zazemi', 'Umístění toalety'); trackBy: trackByValue" [class.active]="hasSocialniZazemiMultiValue('Umístění toalety', option)" (click)="toggleSocialniZazemiMultiValue('Umístění toalety', option)">{{ option }}</button>
                 </div>
               </article>
 
               <article class="new-client-field-card">
                 <div class="new-client-label">Pračka</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of socialniZazemiWashingMachineOptions(); trackBy: trackByValue" [class.active]="hasSocialniZazemiMultiValue('Umístění pračky', option)" (click)="toggleSocialniZazemiMultiValue('Umístění pračky', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of socialniZazemiWashingMachineOptions() | selectedFirst: propertyTabFieldValue('socialni-zazemi', 'Umístění pračky'); trackBy: trackByValue" [class.active]="hasSocialniZazemiMultiValue('Umístění pračky', option)" (click)="toggleSocialniZazemiMultiValue('Umístění pračky', option)">{{ option }}</button>
                 </div>
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k sociálnímu zázemí</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('socialni-zazemi', 'Poznámka k sociálnímu zázemí')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('socialni-zazemi', 'Poznámka k sociálnímu zázemí')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k sociálnímu zázemí</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('socialni-zazemi', 'Poznámka k sociálnímu zázemí')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('socialni-zazemi', 'Poznámka k sociálnímu zázemí')" title="Zobrazuje se v tiskové sestavě pro zájemce" /></div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('socialni-zazemi', 'Poznámka k sociálnímu zázemí')" (ngModelChange)="setPropertyTabFieldValue('socialni-zazemi', 'Poznámka k sociálnímu zázemí', $event)" placeholder="poznámka k sociálnímu zázemí" />
               </article>
             </div>
@@ -882,7 +882,7 @@
               <article class="new-client-field-card">
                 <div class="new-client-label">Materiál</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of strechaMaterialOptions(); trackBy: trackByValue" [class.active]="hasStrechaMultiValue('Materiál', option)" (click)="toggleStrechaMultiValue('Materiál', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of strechaMaterialOptions() | selectedFirst: propertyTabFieldValue('strecha', 'Materiál'); trackBy: trackByValue" [class.active]="hasStrechaMultiValue('Materiál', option)" (click)="toggleStrechaMultiValue('Materiál', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('strecha', 'Materiál vlastní')" (click)="setPropertyTabFieldValue('strecha', 'Materiál vlastní', propertyTabFieldValue('strecha', 'Materiál vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('strecha', 'Materiál vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('strecha', 'Materiál vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('strecha', 'Materiál vlastní', $event)" placeholder="doplňte vlastní možnost" />
@@ -907,7 +907,7 @@
               <article class="new-client-field-card" *ngIf="propertyTabFieldValue('strecha', 'Zateplení střechy') === 'Ano'">
                 <div class="new-client-label">Druh zateplení</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of strechaInsulationTypeOptions(); trackBy: trackByValue" [class.active]="hasStrechaMultiValue('Druh zateplení', option)" (click)="toggleStrechaMultiValue('Druh zateplení', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of strechaInsulationTypeOptions() | selectedFirst: propertyTabFieldValue('strecha', 'Druh zateplení'); trackBy: trackByValue" [class.active]="hasStrechaMultiValue('Druh zateplení', option)" (click)="toggleStrechaMultiValue('Druh zateplení', option)">{{ option }}</button>
                 </div>
               </article>
 
@@ -922,12 +922,12 @@
               <article class="new-client-field-card">
                 <div class="new-client-label">Přistup na střechu</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of strechaAccessOptions(); trackBy: trackByValue" [class.active]="hasStrechaMultiValue('Přistup na střechu', option)" (click)="toggleStrechaMultiValue('Přistup na střechu', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of strechaAccessOptions() | selectedFirst: propertyTabFieldValue('strecha', 'Přistup na střechu'); trackBy: trackByValue" [class.active]="hasStrechaMultiValue('Přistup na střechu', option)" (click)="toggleStrechaMultiValue('Přistup na střechu', option)">{{ option }}</button>
                 </div>
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label new-client-label-with-switch"><span>Poznámka ke střeše</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('strecha', 'Poznámka ke střeše')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('strecha', 'Poznámka ke střeše')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka ke střeše</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('strecha', 'Poznámka ke střeše')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('strecha', 'Poznámka ke střeše')" title="Zobrazuje se v tiskové sestavě pro zájemce" /></div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('strecha', 'Poznámka ke střeše')" (ngModelChange)="setPropertyTabFieldValue('strecha', 'Poznámka ke střeše', $event)" placeholder="poznámka ke střeše" />
               </article>
             </div>
@@ -936,7 +936,7 @@
               <article class="new-client-field-card">
                 <div class="new-client-label">Druh oken</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of oknaTypeOptions(); trackBy: trackByValue" [class.active]="hasOknaMultiValue('Druh oken', option)" (click)="toggleOknaMultiValue('Druh oken', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of oknaTypeOptions() | selectedFirst: propertyTabFieldValue('okna', 'Druh oken'); trackBy: trackByValue" [class.active]="hasOknaMultiValue('Druh oken', option)" (click)="toggleOknaMultiValue('Druh oken', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('okna', 'Druh oken vlastní')" (click)="setPropertyTabFieldValue('okna', 'Druh oken vlastní', propertyTabFieldValue('okna', 'Druh oken vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('okna', 'Druh oken vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('okna', 'Druh oken vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('okna', 'Druh oken vlastní', $event)" placeholder="doplňte vlastní možnost" />
@@ -945,7 +945,7 @@
               <article class="new-client-field-card" *ngIf="!hasNoWindowsSelected()">
                 <div class="new-client-label">Zasklení</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of oknaGlazingOptions(); trackBy: trackByValue" [class.active]="hasOknaMultiValue('Zasklení', option)" (click)="toggleOknaMultiValue('Zasklení', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of oknaGlazingOptions() | selectedFirst: propertyTabFieldValue('okna', 'Zasklení'); trackBy: trackByValue" [class.active]="hasOknaMultiValue('Zasklení', option)" (click)="toggleOknaMultiValue('Zasklení', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('okna', 'Zasklení vlastní')" (click)="setPropertyTabFieldValue('okna', 'Zasklení vlastní', propertyTabFieldValue('okna', 'Zasklení vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('okna', 'Zasklení vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('okna', 'Zasklení vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('okna', 'Zasklení vlastní', $event)" placeholder="doplňte vlastní možnost" />
@@ -969,7 +969,7 @@
               <article class="new-client-field-card">
                 <div class="new-client-label">Druh dveří</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of dvereTypeOptions(); trackBy: trackByValue" [class.active]="hasOknaMultiValue('Druh dveří', option)" (click)="toggleOknaMultiValue('Druh dveří', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of dvereTypeOptions() | selectedFirst: propertyTabFieldValue('okna', 'Druh dveří'); trackBy: trackByValue" [class.active]="hasOknaMultiValue('Druh dveří', option)" (click)="toggleOknaMultiValue('Druh dveří', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('okna', 'Druh dveří vlastní')" (click)="setPropertyTabFieldValue('okna', 'Druh dveří vlastní', propertyTabFieldValue('okna', 'Druh dveří vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('okna', 'Druh dveří vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('okna', 'Druh dveří vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('okna', 'Druh dveří vlastní', $event)" placeholder="doplňte vlastní možnost" />
@@ -991,7 +991,7 @@
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k oknům a dveřím</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('okna', 'Poznámka k oknům a dveřím')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('okna', 'Poznámka k oknům a dveřím')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k oknům a dveřím</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('okna', 'Poznámka k oknům a dveřím')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('okna', 'Poznámka k oknům a dveřím')" title="Zobrazuje se v tiskové sestavě pro zájemce" /></div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('okna', 'Poznámka k oknům a dveřím')" (ngModelChange)="setPropertyTabFieldValue('okna', 'Poznámka k oknům a dveřím', $event)" placeholder="poznámka k oknům a dveřím" />
               </article>
             </div>
@@ -1000,14 +1000,14 @@
               <article class="new-client-field-card">
                 <div class="new-client-label">Podlahy</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of podlahyOptions(); trackBy: trackByValue" [class.active]="hasOknaMultiValue('Podlahy', option)" (click)="toggleOknaMultiValue('Podlahy', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of podlahyOptions() | selectedFirst: propertyTabFieldValue('okna', 'Podlahy'); trackBy: trackByValue" [class.active]="hasOknaMultiValue('Podlahy', option)" (click)="toggleOknaMultiValue('Podlahy', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('podlahy', 'Podlahy vlastní')" (click)="setPropertyTabFieldValue('podlahy', 'Podlahy vlastní', propertyTabFieldValue('podlahy', 'Podlahy vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('podlahy', 'Podlahy vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('podlahy', 'Podlahy vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('podlahy', 'Podlahy vlastní', $event)" placeholder="doplňte vlastní možnost" />
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k podlahám</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('podlahy', 'Poznámka k podlahám')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('podlahy', 'Poznámka k podlahám')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k podlahám</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('podlahy', 'Poznámka k podlahám')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('podlahy', 'Poznámka k podlahám')" title="Zobrazuje se v tiskové sestavě pro zájemce" /></div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('podlahy', 'Poznámka k podlahám')" (ngModelChange)="setPropertyTabFieldValue('podlahy', 'Poznámka k podlahám', $event)" placeholder="poznámka k podlahám" />
               </article>
             </div>
@@ -1032,14 +1032,14 @@
               <article class="new-client-field-card">
                 <div class="new-client-label">Příjezdová cesta</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of prijezdCestaOptions(); trackBy: trackByValue" [class.active]="hasPrijezdMultiValue('Příjezdová cesta', option)" (click)="togglePrijezdMultiValue('Příjezdová cesta', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of prijezdCestaOptions() | selectedFirst: propertyTabFieldValue('prijezdova-komunikace', 'Příjezdová cesta'); trackBy: trackByValue" [class.active]="hasPrijezdMultiValue('Příjezdová cesta', option)" (click)="togglePrijezdMultiValue('Příjezdová cesta', option)">{{ option }}</button>
                 </div>
               </article>
 
               <article class="new-client-field-card">
                 <div class="new-client-label">Majitel příjezdové cesty</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of majitelCestyOptions(); trackBy: trackByValue" [class.active]="hasPrijezdMultiValue('Majitel příjezdové cesty', option)" (click)="togglePrijezdMultiValue('Majitel příjezdové cesty', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of majitelCestyOptions() | selectedFirst: propertyTabFieldValue('prijezdova-komunikace', 'Majitel příjezdové cesty'); trackBy: trackByValue" [class.active]="hasPrijezdMultiValue('Majitel příjezdové cesty', option)" (click)="togglePrijezdMultiValue('Majitel příjezdové cesty', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('prijezdova-komunikace', 'Majitel příjezdové cesty vlastní')" (click)="setPropertyTabFieldValue('prijezdova-komunikace', 'Majitel příjezdové cesty vlastní', propertyTabFieldValue('prijezdova-komunikace', 'Majitel příjezdové cesty vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('prijezdova-komunikace', 'Majitel příjezdové cesty vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('prijezdova-komunikace', 'Majitel příjezdové cesty vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('prijezdova-komunikace', 'Majitel příjezdové cesty vlastní', $event)" placeholder="doplňte vlastní možnost" />
@@ -1048,7 +1048,7 @@
               <article class="new-client-field-card">
                 <div class="new-client-label">Parkování</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of parkovaniOptions(); trackBy: trackByValue" [class.active]="hasPrijezdMultiValue('Parkování', option)" (click)="togglePrijezdMultiValue('Parkování', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of parkovaniOptions() | selectedFirst: propertyTabFieldValue('prijezdova-komunikace', 'Parkování'); trackBy: trackByValue" [class.active]="hasPrijezdMultiValue('Parkování', option)" (click)="togglePrijezdMultiValue('Parkování', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('prijezdova-komunikace', 'Parkování vlastní')" (click)="setPropertyTabFieldValue('prijezdova-komunikace', 'Parkování vlastní', propertyTabFieldValue('prijezdova-komunikace', 'Parkování vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('prijezdova-komunikace', 'Parkování vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('prijezdova-komunikace', 'Parkování vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('prijezdova-komunikace', 'Parkování vlastní', $event)" placeholder="doplňte vlastní možnost" />
@@ -1083,7 +1083,7 @@
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k příjezdové komunikaci</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('prijezdova-komunikace', 'Poznámka k příjezdové komunikaci')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('prijezdova-komunikace', 'Poznámka k příjezdové komunikaci')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k příjezdové komunikaci</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('prijezdova-komunikace', 'Poznámka k příjezdové komunikaci')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('prijezdova-komunikace', 'Poznámka k příjezdové komunikaci')" title="Zobrazuje se v tiskové sestavě pro zájemce" /></div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('prijezdova-komunikace', 'Poznámka k příjezdové komunikaci') || propertyTabFieldValue('prijezdova-komunikace', 'Poznámka')" (ngModelChange)="setPropertyTabFieldValue('prijezdova-komunikace', 'Poznámka k příjezdové komunikaci', $event)" placeholder="poznámka k příjezdové komunikaci" />
               </article>
             </div>
@@ -1092,7 +1092,7 @@
               <article class="new-client-field-card">
                 <div class="new-client-label">Služby</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of sluzbyOptions(); trackBy: trackByValue" [class.active]="hasSluzbyMultiValue('Služby', option)" (click)="toggleSluzbyMultiValue('Služby', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of sluzbyOptions() | selectedFirst: propertyTabFieldValue('sluzby', 'Služby'); trackBy: trackByValue" [class.active]="hasSluzbyMultiValue('Služby', option)" (click)="toggleSluzbyMultiValue('Služby', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('sluzby', 'Služby vlastní')" (click)="setPropertyTabFieldValue('sluzby', 'Služby vlastní', propertyTabFieldValue('sluzby', 'Služby vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('sluzby', 'Služby vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('sluzby', 'Služby vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('sluzby', 'Služby vlastní', $event)" placeholder="doplňte vlastní možnost" />
@@ -1180,7 +1180,7 @@
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label new-client-label-with-switch"><span>Poznámka ke službám</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('sluzby', 'Poznámka ke službám')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('sluzby', 'Poznámka ke službám')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka ke službám</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('sluzby', 'Poznámka ke službám')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('sluzby', 'Poznámka ke službám')" title="Zobrazuje se v tiskové sestavě pro zájemce" /></div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('sluzby', 'Poznámka ke službám')" (ngModelChange)="setPropertyTabFieldValue('sluzby', 'Poznámka ke službám', $event)" placeholder="poznámka ke službám" />
               </article>
             </div>
@@ -1227,7 +1227,7 @@
               <article class="new-client-field-card" *ngIf="!isElektroNezavedena()">
                 <div class="new-client-label">Technologie</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of elektroTechOptions(); trackBy: trackByValue" [class.active]="hasElektroMultiValue('Technologie', option)" (click)="toggleElektroMultiValue('Technologie', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of elektroTechOptions() | selectedFirst: propertyTabFieldValue('elektina', 'Technologie'); trackBy: trackByValue" [class.active]="hasElektroMultiValue('Technologie', option)" (click)="toggleElektroMultiValue('Technologie', option)">{{ option }}</button>
                 </div>
               </article>
 
@@ -1250,7 +1250,7 @@
               <article class="new-client-field-card" *ngIf="!isElektroNezavedena() && isCurrentPropertyType('Garáž')">
                 <div class="new-client-label">Elektřina rozvedena</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of ['V chatce', 'V budově', 'Na pozemku', 'V pergole', 'Na okraji pozemku', 'V garáži', 'Před garáží']; trackBy: trackByValue" [class.active]="hasElektroMultiValue('Elektřina rozvedena', option)" (click)="toggleElektroMultiValue('Elektřina rozvedena', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of ['V chatce', 'V budově', 'Na pozemku', 'V pergole', 'Na okraji pozemku', 'V garáži', 'Před garáží'] | selectedFirst: propertyTabFieldValue('elektina', 'Elektřina rozvedena'); trackBy: trackByValue" [class.active]="hasElektroMultiValue('Elektřina rozvedena', option)" (click)="toggleElektroMultiValue('Elektřina rozvedena', option)">{{ option }}</button>
                 </div>
               </article>
 
@@ -1276,7 +1276,7 @@
               <article class="new-client-field-card" *ngIf="!isElektroNezavedena()">
                 <div class="new-client-label">Elektroměr</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of elektroMeterOptions(); trackBy: trackByValue" [class.active]="hasElektroMultiValue('Elektroměr', option)" (click)="toggleElektroMultiValue('Elektroměr', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of elektroMeterOptions() | selectedFirst: propertyTabFieldValue('elektina', 'Elektroměr'); trackBy: trackByValue" [class.active]="hasElektroMultiValue('Elektroměr', option)" (click)="toggleElektroMultiValue('Elektroměr', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('elektina', 'Elektroměr vlastní')" (click)="setPropertyTabFieldValue('elektina', 'Elektroměr vlastní', propertyTabFieldValue('elektina', 'Elektroměr vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('elektina', 'Elektroměr vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('elektina', 'Elektroměr vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('elektina', 'Elektroměr vlastní', $event)" placeholder="doplňte vlastní možnost" />
@@ -1285,7 +1285,7 @@
               <article class="new-client-field-card" *ngIf="!isElektroNezavedena()">
                 <div class="new-client-label">Umístění elektroměru</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of elektroMeterLocationOptions(); trackBy: trackByValue" [class.active]="hasElektroMultiValue('Umístění elektroměru', option)" (click)="toggleElektroMultiValue('Umístění elektroměru', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of elektroMeterLocationOptions() | selectedFirst: propertyTabFieldValue('elektina', 'Umístění elektroměru'); trackBy: trackByValue" [class.active]="hasElektroMultiValue('Umístění elektroměru', option)" (click)="toggleElektroMultiValue('Umístění elektroměru', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('elektina', 'Umístění elektroměru vlastní')" (click)="setPropertyTabFieldValue('elektina', 'Umístění elektroměru vlastní', propertyTabFieldValue('elektina', 'Umístění elektroměru vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('elektina', 'Umístění elektroměru vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('elektina', 'Umístění elektroměru vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('elektina', 'Umístění elektroměru vlastní', $event)" placeholder="doplňte vlastní možnost" />
@@ -1302,7 +1302,7 @@
               </article>
 
               <article class="new-client-field-card" *ngIf="!isElektroNezavedena()">
-                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k elektřině</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('elektina', 'Poznámka k elektřině')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('elektina', 'Poznámka k elektřině')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k elektřině</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('elektina', 'Poznámka k elektřině')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('elektina', 'Poznámka k elektřině')" title="Zobrazuje se v tiskové sestavě pro zájemce" /></div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('elektina', 'Poznámka k elektřině')" (ngModelChange)="setPropertyTabFieldValue('elektina', 'Poznámka k elektřině', $event)" placeholder="poznámka k elektřině" />
               </article>
             </div>
@@ -1320,14 +1320,14 @@
               <article class="new-client-field-card" *ngIf="!isVodaNezaveden() && isNewPropertyByt()">
                 <div class="new-client-label">Vodoměr</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of vodaMerakOptions(); trackBy: trackByValue" [class.active]="hasVodaMultiValue('Vodoměr', option)" (click)="toggleVodaMultiValue('Vodoměr', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of vodaMerakOptions() | selectedFirst: propertyTabFieldValue('voda', 'Vodoměr'); trackBy: trackByValue" [class.active]="hasVodaMultiValue('Vodoměr', option)" (click)="toggleVodaMultiValue('Vodoměr', option)">{{ option }}</button>
                 </div>
               </article>
 
               <article class="new-client-field-card" *ngIf="!isVodaNezaveden()">
                 <div class="new-client-label">Provozovatel vodovodu</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of vodaProvozovatelOptions(); trackBy: trackByValue" [class.active]="hasVodaMultiValue('Provozovatel vodovodu', option)" (click)="toggleVodaMultiValue('Provozovatel vodovodu', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of vodaProvozovatelOptions() | selectedFirst: propertyTabFieldValue('voda', 'Provozovatel vodovodu'); trackBy: trackByValue" [class.active]="hasVodaMultiValue('Provozovatel vodovodu', option)" (click)="toggleVodaMultiValue('Provozovatel vodovodu', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('voda', 'Provozovatel vodovodu vlastní')" (click)="setPropertyTabFieldValue('voda', 'Provozovatel vodovodu vlastní', propertyTabFieldValue('voda', 'Provozovatel vodovodu vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('voda', 'Provozovatel vodovodu vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('voda', 'Provozovatel vodovodu vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('voda', 'Provozovatel vodovodu vlastní', $event)" placeholder="doplňte vlastní možnost" />
@@ -1336,14 +1336,14 @@
               <article class="new-client-field-card" *ngIf="!isVodaNezaveden() && !isCurrentPropertyType('Dům') && !isCurrentPropertyType('Rodinný dům')">
                 <div class="new-client-label">Stoupačky</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of vodaStoupackyOptions(); trackBy: trackByValue" [class.active]="hasVodaMultiValue('Stoupačky', option)" (click)="toggleVodaMultiValue('Stoupačky', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of vodaStoupackyOptions() | selectedFirst: propertyTabFieldValue('voda', 'Stoupačky'); trackBy: trackByValue" [class.active]="hasVodaMultiValue('Stoupačky', option)" (click)="toggleVodaMultiValue('Stoupačky', option)">{{ option }}</button>
                 </div>
               </article>
 
               <article class="new-client-field-card">
                 <div class="new-client-label">Další zdroj vody</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of ['Sezonní (na zimu se vypouští)', 'Celoroční', 'Studna vlastní', 'Studna společná', 'Retenční nádrž na dešťovou vodu']; trackBy: trackByValue" [class.active]="hasVodaMultiValue('Další zdroj vody', option)" (click)="toggleVodaMultiValue('Další zdroj vody', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of ['Sezonní (na zimu se vypouští)', 'Celoroční', 'Studna vlastní', 'Studna společná', 'Retenční nádrž na dešťovou vodu'] | selectedFirst: propertyTabFieldValue('voda', 'Další zdroj vody'); trackBy: trackByValue" [class.active]="hasVodaMultiValue('Další zdroj vody', option)" (click)="toggleVodaMultiValue('Další zdroj vody', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('voda', 'Další zdroj vody vlastní')" (click)="setPropertyTabFieldValue('voda', 'Další zdroj vody vlastní', propertyTabFieldValue('voda', 'Další zdroj vody vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('voda', 'Další zdroj vody vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('voda', 'Další zdroj vody vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('voda', 'Další zdroj vody vlastní', $event)" placeholder="doplňte vlastní možnost" />
@@ -1352,12 +1352,12 @@
               <article class="new-client-field-card" *ngIf="hasVodaAnyDalsiZdroj()">
                 <div class="new-client-label">Kvalita dalšího zdroje vody</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of vodaKvalitaOptions(); trackBy: trackByValue" [class.active]="hasVodaMultiValue('Kvalita vody', option)" (click)="toggleVodaMultiValue('Kvalita vody', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of vodaKvalitaOptions() | selectedFirst: propertyTabFieldValue('voda', 'Kvalita vody'); trackBy: trackByValue" [class.active]="hasVodaMultiValue('Kvalita vody', option)" (click)="toggleVodaMultiValue('Kvalita vody', option)">{{ option }}</button>
                 </div>
               </article>
 
               <article class="new-client-field-card" *ngIf="isVodaHasStudna()">
-                <div class="new-client-label new-client-label-with-switch"><span>Povolení k odběru podzemních vod</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('voda', 'Povolení k odběru podzemních vod')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('voda', 'Povolení k odběru podzemních vod')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <div class="new-client-label new-client-label-with-switch"><span>Povolení k odběru podzemních vod</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('voda', 'Povolení k odběru podzemních vod')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('voda', 'Povolení k odběru podzemních vod')" title="Zobrazuje se v tiskové sestavě pro zájemce" /></div>
                 <div class="new-client-toggle-row">
                   <button type="button" class="new-client-toggle-btn" [class.active]="propertyTabFieldValue('voda', 'Povolení k odběru podzemních vod') === 'Ano'" (click)="setPropertyTabFieldValue('voda', 'Povolení k odběru podzemních vod', 'Ano')">Ano</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="propertyTabFieldValue('voda', 'Povolení k odběru podzemních vod') === 'Ne'" (click)="setPropertyTabFieldValue('voda', 'Povolení k odběru podzemních vod', 'Ne')">Ne</button>
@@ -1382,7 +1382,7 @@
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k vodě</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('voda', 'Poznámka k vodě')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('voda', 'Poznámka k vodě')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k vodě</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('voda', 'Poznámka k vodě')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('voda', 'Poznámka k vodě')" title="Zobrazuje se v tiskové sestavě pro zájemce" /></div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('voda', 'Poznámka k vodě')" (ngModelChange)="setPropertyTabFieldValue('voda', 'Poznámka k vodě', $event)" placeholder="poznámka k vodě" />
               </article>
             </div>
@@ -1401,14 +1401,14 @@
               <article class="new-client-field-card" *ngIf="!isPlynNezaveden()">
                 <div class="new-client-label">Typ</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of plynTypOptions(); trackBy: trackByValue" [class.active]="hasPlynMultiValue('Typ', option)" (click)="togglePlynMultiValue('Typ', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of plynTypOptions() | selectedFirst: propertyTabFieldValue('plyn', 'Typ'); trackBy: trackByValue" [class.active]="hasPlynMultiValue('Typ', option)" (click)="togglePlynMultiValue('Typ', option)">{{ option }}</button>
                 </div>
               </article>
 
               <article class="new-client-field-card" *ngIf="!isPlynNezaveden()">
                 <div class="new-client-label">Umístění</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of plynUmisteniOptions(); trackBy: trackByValue" [class.active]="hasPlynMultiValue('Umístění', option)" (click)="togglePlynMultiValue('Umístění', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of plynUmisteniOptions() | selectedFirst: propertyTabFieldValue('plyn', 'Umístění'); trackBy: trackByValue" [class.active]="hasPlynMultiValue('Umístění', option)" (click)="togglePlynMultiValue('Umístění', option)">{{ option }}</button>
                 </div>
               </article>
 
@@ -1423,7 +1423,7 @@
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k plynu</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('plyn', 'Poznámka k plynu')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('plyn', 'Poznámka k plynu')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k plynu</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('plyn', 'Poznámka k plynu')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('plyn', 'Poznámka k plynu')" title="Zobrazuje se v tiskové sestavě pro zájemce" /></div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('plyn', 'Poznámka k plynu')" (ngModelChange)="setPropertyTabFieldValue('plyn', 'Poznámka k plynu', $event)" placeholder="poznámka k plynu" />
               </article>
             </div>
@@ -1432,7 +1432,7 @@
               <article class="new-client-field-card">
                 <div class="new-client-label">Kanalizace</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of kanalizaceOptions(); trackBy: trackByValue" [class.active]="hasKanalizaceMultiValue('Kanalizace', option)" (click)="toggleKanalizaceMultiValue('Kanalizace', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of kanalizaceOptions() | selectedFirst: propertyTabFieldValue('kanalizace', 'Kanalizace'); trackBy: trackByValue" [class.active]="hasKanalizaceMultiValue('Kanalizace', option)" (click)="toggleKanalizaceMultiValue('Kanalizace', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('kanalizace', 'Kanalizace vlastní')" (click)="setPropertyTabFieldValue('kanalizace', 'Kanalizace vlastní', propertyTabFieldValue('kanalizace', 'Kanalizace vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('kanalizace', 'Kanalizace vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('kanalizace', 'Kanalizace vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('kanalizace', 'Kanalizace vlastní', $event)" placeholder="doplňte vlastní možnost" />
@@ -1444,7 +1444,7 @@
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label new-client-label-with-switch"><span>Poznámka ke kanalizaci</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('kanalizace', 'Poznámka ke kanalizaci')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('kanalizace', 'Poznámka ke kanalizaci')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka ke kanalizaci</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('kanalizace', 'Poznámka ke kanalizaci')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('kanalizace', 'Poznámka ke kanalizaci')" title="Zobrazuje se v tiskové sestavě pro zájemce" /></div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('kanalizace', 'Poznámka ke kanalizaci')" (ngModelChange)="setPropertyTabFieldValue('kanalizace', 'Poznámka ke kanalizaci', $event)" placeholder="poznámka ke kanalizaci" />
               </article>
             </div>
@@ -1453,7 +1453,7 @@
               <article class="new-client-field-card">
                 <div class="new-client-label">Stav topení</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of topeniStavOptions(); trackBy: trackByValue" [class.active]="hasTopeniMultiValue('Stav topení', option)" (click)="toggleTopeniMultiValue('Stav topení', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of topeniStavOptions() | selectedFirst: propertyTabFieldValue('topeni', 'Stav topení'); trackBy: trackByValue" [class.active]="hasTopeniMultiValue('Stav topení', option)" (click)="toggleTopeniMultiValue('Stav topení', option)">{{ option }}</button>
                 </div>
               </article>
 
@@ -1468,7 +1468,7 @@
               <article class="new-client-field-card" *ngIf="!isTopeniNeniReseno()">
                 <div class="new-client-label">Způsob vytápění objektu</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of topeniVytapeniOptions(); trackBy: trackByValue" [class.active]="hasTopeniMultiValue('Způsob vytápění objektu', option)" (click)="toggleTopeniMultiValue('Způsob vytápění objektu', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of topeniVytapeniOptions() | selectedFirst: propertyTabFieldValue('topeni', 'Způsob vytápění objektu'); trackBy: trackByValue" [class.active]="hasTopeniMultiValue('Způsob vytápění objektu', option)" (click)="toggleTopeniMultiValue('Způsob vytápění objektu', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('topeni', 'Způsob vytápění objektu vlastní')" (click)="setPropertyTabFieldValue('topeni', 'Způsob vytápění objektu vlastní', propertyTabFieldValue('topeni', 'Způsob vytápění objektu vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('topeni', 'Způsob vytápění objektu vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('topeni', 'Způsob vytápění objektu vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('topeni', 'Způsob vytápění objektu vlastní', $event)" placeholder="doplňte vlastní možnost" />
@@ -1477,7 +1477,7 @@
               <article class="new-client-field-card" *ngIf="!isTopeniNeniReseno() && !isTopeniCentralniDalkove()">
                 <div class="new-client-label">Topné těleso</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of topeniTelesoOptions(); trackBy: trackByValue" [class.active]="hasTopeniMultiValue('Topné těleso', option)" (click)="toggleTopeniMultiValue('Topné těleso', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of topeniTelesoOptions() | selectedFirst: propertyTabFieldValue('topeni', 'Topné těleso'); trackBy: trackByValue" [class.active]="hasTopeniMultiValue('Topné těleso', option)" (click)="toggleTopeniMultiValue('Topné těleso', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('topeni', 'Topné těleso vlastní')" (click)="setPropertyTabFieldValue('topeni', 'Topné těleso vlastní', propertyTabFieldValue('topeni', 'Topné těleso vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('topeni', 'Topné těleso vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('topeni', 'Topné těleso vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('topeni', 'Topné těleso vlastní', $event)" placeholder="doplňte vlastní možnost" />
@@ -1501,14 +1501,14 @@
               <article class="new-client-field-card" *ngIf="!isTopeniNeniReseno()">
                 <div class="new-client-label">Komín</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of topeniKominOptions(); trackBy: trackByValue" [class.active]="hasTopeniMultiValue('Komín', option)" (click)="toggleTopeniMultiValue('Komín', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of topeniKominOptions() | selectedFirst: propertyTabFieldValue('topeni', 'Komín'); trackBy: trackByValue" [class.active]="hasTopeniMultiValue('Komín', option)" (click)="toggleTopeniMultiValue('Komín', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('topeni', 'Komín vlastní')" (click)="setPropertyTabFieldValue('topeni', 'Komín vlastní', propertyTabFieldValue('topeni', 'Komín vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('topeni', 'Komín vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('topeni', 'Komín vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('topeni', 'Komín vlastní', $event)" placeholder="doplňte vlastní možnost" />
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k topení</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('topeni', 'Poznámka k topení')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('topeni', 'Poznámka k topení')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k topení</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('topeni', 'Poznámka k topení')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('topeni', 'Poznámka k topení')" title="Zobrazuje se v tiskové sestavě pro zájemce" /></div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('topeni', 'Poznámka k topení')" (ngModelChange)="setPropertyTabFieldValue('topeni', 'Poznámka k topení', $event)" placeholder="poznámka k topení" />
               </article>
             </div>
@@ -1517,7 +1517,7 @@
               <article class="new-client-field-card">
                 <div class="new-client-label">Zdroj teplé vody</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of ohrevVodyZdrojOptions(); trackBy: trackByValue" [class.active]="hasOhrevVodyMultiValue('Zdroj teplé vody', option)" (click)="toggleOhrevVodyMultiValue('Zdroj teplé vody', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of ohrevVodyZdrojOptions() | selectedFirst: propertyTabFieldValue('ohrev-vody', 'Zdroj teplé vody'); trackBy: trackByValue" [class.active]="hasOhrevVodyMultiValue('Zdroj teplé vody', option)" (click)="toggleOhrevVodyMultiValue('Zdroj teplé vody', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('ohrev-vody', 'Zdroj teplé vody vlastní')" (click)="setPropertyTabFieldValue('ohrev-vody', 'Zdroj teplé vody vlastní', propertyTabFieldValue('ohrev-vody', 'Zdroj teplé vody vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('ohrev-vody', 'Zdroj teplé vody vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('ohrev-vody', 'Zdroj teplé vody vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('ohrev-vody', 'Zdroj teplé vody vlastní', $event)" placeholder="doplňte vlastní možnost" />
@@ -1526,7 +1526,7 @@
               <article class="new-client-field-card" *ngIf="!isOhrevVodyFieldsHidden()">
                 <div class="new-client-label">Způsob ohřevu vody</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of ohrevVodyZpusobOptions(); trackBy: trackByValue" [class.active]="hasOhrevVodyMultiValue('Způsob ohřevu vody', option)" (click)="toggleOhrevVodyMultiValue('Způsob ohřevu vody', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of ohrevVodyZpusobOptions() | selectedFirst: propertyTabFieldValue('ohrev-vody', 'Způsob ohřevu vody'); trackBy: trackByValue" [class.active]="hasOhrevVodyMultiValue('Způsob ohřevu vody', option)" (click)="toggleOhrevVodyMultiValue('Způsob ohřevu vody', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('ohrev-vody', 'Způsob ohřevu vody vlastní')" (click)="setPropertyTabFieldValue('ohrev-vody', 'Způsob ohřevu vody vlastní', propertyTabFieldValue('ohrev-vody', 'Způsob ohřevu vody vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('ohrev-vody', 'Způsob ohřevu vody vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('ohrev-vody', 'Způsob ohřevu vody vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('ohrev-vody', 'Způsob ohřevu vody vlastní', $event)" placeholder="doplňte vlastní možnost" />
@@ -1540,14 +1540,14 @@
               <article class="new-client-field-card" *ngIf="!isOhrevVodyContainerFieldsHidden()">
                 <div class="new-client-label">Umístění topného prvku</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of ohrevVodyUmisteniOptions(); trackBy: trackByValue" [class.active]="hasOhrevVodyMultiValue('Umístění topného prvku', option)" (click)="toggleOhrevVodyMultiValue('Umístění topného prvku', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of ohrevVodyUmisteniOptions() | selectedFirst: propertyTabFieldValue('ohrev-vody', 'Umístění topného prvku'); trackBy: trackByValue" [class.active]="hasOhrevVodyMultiValue('Umístění topného prvku', option)" (click)="toggleOhrevVodyMultiValue('Umístění topného prvku', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('ohrev-vody', 'Umístění topného prvku vlastní')" (click)="setPropertyTabFieldValue('ohrev-vody', 'Umístění topného prvku vlastní', propertyTabFieldValue('ohrev-vody', 'Umístění topného prvku vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('ohrev-vody', 'Umístění topného prvku vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('ohrev-vody', 'Umístění topného prvku vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('ohrev-vody', 'Umístění topného prvku vlastní', $event)" placeholder="doplňte vlastní možnost" />
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k ohřevu vody</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('ohrev-vody', 'Poznámka k ohřevu vody')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('ohrev-vody', 'Poznámka k ohřevu vody')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <div class="new-client-label new-client-label-with-switch"><span>Poznámka k ohřevu vody</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('ohrev-vody', 'Poznámka k ohřevu vody')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('ohrev-vody', 'Poznámka k ohřevu vody')" title="Zobrazuje se v tiskové sestavě pro zájemce" /></div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('ohrev-vody', 'Poznámka k ohřevu vody')" (ngModelChange)="setPropertyTabFieldValue('ohrev-vody', 'Poznámka k ohřevu vody', $event)" placeholder="poznámka k ohřevu vody" />
               </article>
             </div>
@@ -1570,7 +1570,7 @@
               <article class="new-client-field-card">
                 <div class="new-client-label">Zdroj signálu</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of datoveSiteZdrojSignaluOptions(); trackBy: trackByValue" [class.active]="hasDatoveSiteMultiValue('Zdroj signálu', option)" (click)="toggleDatoveSiteMultiValue('Zdroj signálu', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of datoveSiteZdrojSignaluOptions() | selectedFirst: propertyTabFieldValue('datove-site', 'Zdroj signálu'); trackBy: trackByValue" [class.active]="hasDatoveSiteMultiValue('Zdroj signálu', option)" (click)="toggleDatoveSiteMultiValue('Zdroj signálu', option)">{{ option }}</button>
                 </div>
               </article>
 
@@ -1600,7 +1600,7 @@
               <article class="new-client-field-card">
                 <div class="new-client-label">Umístění připojení</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of datoveSiteUmisteniPripojeniOptions(); trackBy: trackByValue" [class.active]="hasDatoveSiteMultiValue('Umístění připojení', option)" (click)="toggleDatoveSiteMultiValue('Umístění připojení', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of datoveSiteUmisteniPripojeniOptions() | selectedFirst: propertyTabFieldValue('datove-site', 'Umístění připojení'); trackBy: trackByValue" [class.active]="hasDatoveSiteMultiValue('Umístění připojení', option)" (click)="toggleDatoveSiteMultiValue('Umístění připojení', option)">{{ option }}</button>
                 </div>
               </article>
             </div>
@@ -1721,7 +1721,7 @@
               <article class="new-client-field-card">
                 <div class="new-client-label">Kategorie ochrany území</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of oblastOchranaOptions(); trackBy: trackByValue" [class.active]="hasOblastMultiValue('Kategorie ochrany území', option)" (click)="toggleOblastMultiValue('Kategorie ochrany území', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of oblastOchranaOptions() | selectedFirst: propertyTabFieldValue('oblast', 'Kategorie ochrany území'); trackBy: trackByValue" [class.active]="hasOblastMultiValue('Kategorie ochrany území', option)" (click)="toggleOblastMultiValue('Kategorie ochrany území', option)">{{ option }}</button>
                 </div>
               </article>
             </div>
@@ -1738,7 +1738,7 @@
               <article class="new-client-field-card">
                 <div class="new-client-label">Dostupnost v okolí</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of dostupnostOkoliOptions(); trackBy: trackByValue" [class.active]="hasDostupnostMultiValue('Dostupnost v okolí', option)" (click)="toggleDostupnostMultiValue('Dostupnost v okolí', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of dostupnostOkoliOptions() | selectedFirst: propertyTabFieldValue('dostupnost-v-okoli', 'Dostupnost v okolí'); trackBy: trackByValue" [class.active]="hasDostupnostMultiValue('Dostupnost v okolí', option)" (click)="toggleDostupnostMultiValue('Dostupnost v okolí', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('dostupnost-v-okoli', 'Dostupnost v okolí vlastní')" (click)="setPropertyTabFieldValue('dostupnost-v-okoli', 'Dostupnost v okolí vlastní', propertyTabFieldValue('dostupnost-v-okoli', 'Dostupnost v okolí vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('dostupnost-v-okoli', 'Dostupnost v okolí vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('dostupnost-v-okoli', 'Dostupnost v okolí vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('dostupnost-v-okoli', 'Dostupnost v okolí vlastní', $event)" placeholder="doplňte vlastní možnost" />
@@ -1747,7 +1747,7 @@
               <article class="new-client-field-card">
                 <div class="new-client-label">Infrastruktura obce</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of infrastrukturaObceOptions(); trackBy: trackByValue" [class.active]="hasDostupnostMultiValue('Infrastruktura obce', option)" (click)="toggleDostupnostMultiValue('Infrastruktura obce', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of infrastrukturaObceOptions() | selectedFirst: propertyTabFieldValue('dostupnost-v-okoli', 'Infrastruktura obce'); trackBy: trackByValue" [class.active]="hasDostupnostMultiValue('Infrastruktura obce', option)" (click)="toggleDostupnostMultiValue('Infrastruktura obce', option)">{{ option }}</button>
                 </div>
               </article>
 
@@ -1769,7 +1769,7 @@
               <article class="new-client-field-card">
                 <div class="new-client-label">Doprava</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of dopravaOptions(); trackBy: trackByValue" [class.active]="hasDostupnostMultiValue('Doprava', option)" (click)="toggleDostupnostMultiValue('Doprava', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of dopravaOptions() | selectedFirst: propertyTabFieldValue('dostupnost-v-okoli', 'Doprava'); trackBy: trackByValue" [class.active]="hasDostupnostMultiValue('Doprava', option)" (click)="toggleDostupnostMultiValue('Doprava', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('dostupnost-v-okoli', 'Doprava vlastní')" (click)="setPropertyTabFieldValue('dostupnost-v-okoli', 'Doprava vlastní', propertyTabFieldValue('dostupnost-v-okoli', 'Doprava vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('dostupnost-v-okoli', 'Doprava vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('dostupnost-v-okoli', 'Doprava vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('dostupnost-v-okoli', 'Doprava vlastní', $event)" placeholder="doplňte vlastní možnost" />
@@ -1830,7 +1830,7 @@
               <article class="new-client-field-card">
                 <div class="new-client-label">Hlavní přednosti</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of hlavniPrednostiOptions(); trackBy: trackByValue" [class.active]="hasHlavniPrednostiMultiValue('Hlavní přednosti', option)" (click)="toggleHlavniPrednostiMultiValue('Hlavní přednosti', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of hlavniPrednostiOptions() | selectedFirst: propertyTabFieldValue('hlavni-prednosti', 'Hlavní přednosti'); trackBy: trackByValue" [class.active]="hasHlavniPrednostiMultiValue('Hlavní přednosti', option)" (click)="toggleHlavniPrednostiMultiValue('Hlavní přednosti', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('hlavni-prednosti', 'Hlavní přednosti vlastní')" (click)="setPropertyTabFieldValue('hlavni-prednosti', 'Hlavní přednosti vlastní', propertyTabFieldValue('hlavni-prednosti', 'Hlavní přednosti vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('hlavni-prednosti', 'Hlavní přednosti vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('hlavni-prednosti', 'Hlavní přednosti vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('hlavni-prednosti', 'Hlavní přednosti vlastní', $event)" placeholder="doplňte vlastní možnost" />
@@ -1838,13 +1838,13 @@
               <article class="new-client-field-card">
                 <div class="new-client-label">Právní vady a jiná omezení</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of pravniVadyOptions(); trackBy: trackByValue" [class.active]="hasPravniVadyMultiValue('Právní vady a jiná omezení', option)" (click)="togglePravniVadyMultiValue('Právní vady a jiná omezení', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of pravniVadyOptions() | selectedFirst: propertyTabFieldValue('pravni-vady', 'Právní vady a jiná omezení'); trackBy: trackByValue" [class.active]="hasPravniVadyMultiValue('Právní vady a jiná omezení', option)" (click)="togglePravniVadyMultiValue('Právní vady a jiná omezení', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('pravni-vady', 'Právní vady a jiná omezení vlastní')" (click)="setPropertyTabFieldValue('pravni-vady', 'Právní vady a jiná omezení vlastní', propertyTabFieldValue('pravni-vady', 'Právní vady a jiná omezení vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('pravni-vady', 'Právní vady a jiná omezení vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('pravni-vady', 'Právní vady a jiná omezení vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('pravni-vady', 'Právní vady a jiná omezení vlastní', $event)" placeholder="doplňte vlastní možnost" />
               </article>
               <article class="new-client-field-card" *ngIf="hasPravniVadyMultiValue('Právní vady a jiná omezení', 'Černá stavba')">
-                <div class="new-client-label new-client-label-with-switch"><span>Informace k černé stavbě</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('pravni-vady', 'Černá stavba')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('pravni-vady', 'Černá stavba')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <div class="new-client-label new-client-label-with-switch"><span>Informace k černé stavbě</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('pravni-vady', 'Černá stavba')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('pravni-vady', 'Černá stavba')" title="Zobrazuje se v tiskové sestavě pro zájemce" /></div>
                 <textarea class="new-client-input new-client-textarea auto-grow-textarea" rows="2" [ngModel]="propertyTabFieldValue('pravni-vady', 'Informace k černé stavbě')" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setPropertyTabFieldValue('pravni-vady', 'Informace k černé stavbě', $event)" placeholder="doplňte informace k černé stavbě"></textarea>
               </article>
             </div>
@@ -2168,7 +2168,7 @@
               <article class="new-client-field-card">
                 <div class="new-client-label">Služby, které si na sebe nájemce přepíše</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of cenaNajmuSluzbyNajemceOptions(); trackBy: trackByValue" [class.active]="hasCenaNajmuMultiValue('Služby, které si na sebe nájemce přepíše', option)" (click)="toggleCenaNajmuMultiValue('Služby, které si na sebe nájemce přepíše', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of cenaNajmuSluzbyNajemceOptions() | selectedFirst: propertyTabFieldValue('cena-najmu', 'Služby, které si na sebe nájemce přepíše'); trackBy: trackByValue" [class.active]="hasCenaNajmuMultiValue('Služby, které si na sebe nájemce přepíše', option)" (click)="toggleCenaNajmuMultiValue('Služby, které si na sebe nájemce přepíše', option)">{{ option }}</button>
                 </div>
               </article>
 
@@ -2247,9 +2247,9 @@
               </article>
 
               <article class="new-client-field-card">
-                <div class="new-client-label new-client-label-with-switch"><span>Klient akceptuje</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('doplnkove-informace', 'Klient akceptuje')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('doplnkove-informace', 'Klient akceptuje')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <div class="new-client-label new-client-label-with-switch"><span>Klient akceptuje</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('doplnkove-informace', 'Klient akceptuje')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('doplnkove-informace', 'Klient akceptuje')" title="Zobrazuje se v tiskové sestavě pro zájemce" /></div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of doplnkoveInformaceKlientAkceptujeOptions(); trackBy: trackByValue" [class.active]="hasDoplnkoveInformaceMultiValue('Klient akceptuje', option)" (click)="toggleDoplnkoveInformaceMultiValue('Klient akceptuje', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of doplnkoveInformaceKlientAkceptujeOptions() | selectedFirst: propertyTabFieldValue('doplnkove-informace', 'Klient akceptuje'); trackBy: trackByValue" [class.active]="hasDoplnkoveInformaceMultiValue('Klient akceptuje', option)" (click)="toggleDoplnkoveInformaceMultiValue('Klient akceptuje', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('doplnkove-informace', 'Klient akceptuje vlastní')" (click)="setPropertyTabFieldValue('doplnkove-informace', 'Klient akceptuje vlastní', propertyTabFieldValue('doplnkove-informace', 'Klient akceptuje vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('doplnkove-informace', 'Klient akceptuje vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('doplnkove-informace', 'Klient akceptuje vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('doplnkove-informace', 'Klient akceptuje vlastní', $event)" placeholder="doplňte vlastní možnost" />
@@ -2258,7 +2258,7 @@
               <article class="new-client-field-card new-client-field-card-full">
                 <div class="new-client-label">DODANÉ DOKUMENTY</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of doplnkoveInformaceDodaneDokumentyOptions(); trackBy: trackByValue" [class.active]="hasDoplnkoveInformaceMultiValue('DODANÉ DOKUMENTY', option)" (click)="toggleDoplnkoveInformaceMultiValue('DODANÉ DOKUMENTY', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of doplnkoveInformaceDodaneDokumentyOptions() | selectedFirst: propertyTabFieldValue('doplnkove-informace', 'DODANÉ DOKUMENTY'); trackBy: trackByValue" [class.active]="hasDoplnkoveInformaceMultiValue('DODANÉ DOKUMENTY', option)" (click)="toggleDoplnkoveInformaceMultiValue('DODANÉ DOKUMENTY', option)">{{ option }}</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('doplnkove-informace', 'DODANÉ DOKUMENTY vlastní')" (click)="setPropertyTabFieldValue('doplnkove-informace', 'DODANÉ DOKUMENTY vlastní', propertyTabFieldValue('doplnkove-informace', 'DODANÉ DOKUMENTY vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('doplnkove-informace', 'DODANÉ DOKUMENTY vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('doplnkove-informace', 'DODANÉ DOKUMENTY vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('doplnkove-informace', 'DODANÉ DOKUMENTY vlastní', $event)" placeholder="doplňte vlastní možnost" />
@@ -3046,7 +3046,7 @@
                   <article class="new-client-field-card">
                     <div class="new-client-label">Původ finančních prostředků / majetku</div>
                     <div class="new-client-toggle-row">
-                      <button type="button" class="new-client-toggle-btn" *ngFor="let option of amlSourceOfFundsOptions(); trackBy: trackByValue" [class.active]="hasNewClientDraftListValue('amlSourceOfFunds', option)" (click)="toggleNewClientDraftListValue('amlSourceOfFunds', option)">{{ option }}</button>
+                      <button type="button" class="new-client-toggle-btn" *ngFor="let option of amlSourceOfFundsOptions() | selectedFirst: newClientDraft().amlSourceOfFunds; trackBy: trackByValue" [class.active]="hasNewClientDraftListValue('amlSourceOfFunds', option)" (click)="toggleNewClientDraftListValue('amlSourceOfFunds', option)">{{ option }}</button>
                     </div>
                     <input *ngIf="hasNewClientDraftListValue('amlSourceOfFunds', 'Jiné (definujte)')" type="text" class="new-client-input" [ngModel]="newClientDraft().amlOtherSourceDetails" (ngModelChange)="setNewClientDraftField('amlOtherSourceDetails', $event)" placeholder="Definujte jiný původ finančních prostředků / majetku" />
                   </article>
@@ -3112,7 +3112,7 @@
                     <div class="new-client-label">Dodané dokumenty</div>
                     <input type="text" class="new-client-input" [ngModel]="amlDeliveredDocumentSearch()" (ngModelChange)="setAmlDeliveredDocumentSearch($event)" placeholder="Hledat dodané dokumenty..." />
                     <div class="new-client-toggle-row">
-                      <button type="button" class="new-client-toggle-btn" *ngFor="let option of filteredAmlDeliveredDocumentOptions(); trackBy: trackByValue" [class.active]="hasNewClientDraftListValue('deliveredDocuments', option)" (click)="toggleNewClientDraftListValue('deliveredDocuments', option)">{{ option }}</button>
+                      <button type="button" class="new-client-toggle-btn" *ngFor="let option of filteredAmlDeliveredDocumentOptions() | selectedFirst: newClientDraft().deliveredDocuments; trackBy: trackByValue" [class.active]="hasNewClientDraftListValue('deliveredDocuments', option)" (click)="toggleNewClientDraftListValue('deliveredDocuments', option)">{{ option }}</button>
                     </div>
                   </article>
 
