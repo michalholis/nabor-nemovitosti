@@ -220,11 +220,11 @@
               </article>
               <article class="new-client-field-card">
                 <div class="new-client-label new-client-label-with-switch"><span>Adresa nemovitosti</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('zakladni', 'Adresa nemovitosti')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('zakladni', 'Adresa nemovitosti')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
-                <input type="text" class="new-client-input" [ngModel]="newPropertyDraft().address" (ngModelChange)="setNewPropertyDraftField('address', $event)" placeholder="adresa nemovitosti" />
+                <input appAddressAutocomplete type="text" class="new-client-input" [ngModel]="newPropertyDraft().address" (ngModelChange)="setNewPropertyDraftField('address', $event)" placeholder="adresa nemovitosti" />
               </article>
               <article class="new-client-field-card">
                 <div class="new-client-label">Nejblížší adresa (orientační bod pro zájemce o prohlídku)</div>
-                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('zakladni', 'Nejblížší adresa')" (ngModelChange)="setPropertyTabFieldValue('zakladni', 'Nejblížší adresa', $event)" placeholder="orientační adresa nemovitosti" />
+                <input appAddressAutocomplete type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('zakladni', 'Nejblížší adresa')" (ngModelChange)="setPropertyTabFieldValue('zakladni', 'Nejblížší adresa', $event)" placeholder="orientační adresa nemovitosti" />
               </article>
             </div>
 
@@ -440,6 +440,11 @@
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('stavba', 'Počet jednotek v domě')" (ngModelChange)="setPropertyTabFieldValue('stavba', 'Počet jednotek v domě', $event)" placeholder="počet jednotek" />
               </article>
 
+              <article class="new-client-field-card" *ngIf="propertyTabFieldValue('stavba', 'Rozděleno na jednotky') === 'Ano'">
+                <div class="new-client-label">Počet vchodů</div>
+                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('stavba', 'Počet vchodů')" (ngModelChange)="setPropertyTabFieldValue('stavba', 'Počet vchodů', $event)" placeholder="počet vchodů" />
+              </article>
+
               <article class="new-client-field-card">
                 <div class="new-client-label">Konstrukce stavby</div>
                 <div class="new-client-toggle-row">
@@ -582,172 +587,169 @@
             </div>
 
             <div class="new-client-grid two-up" *ngIf="isActivePropertyTab('prostory')">
+              <ng-container *ngFor="let unit of dispoziceUnits()">
               <article class="new-client-field-card">
-                <div class="new-client-label">Dispozice jednotky</div>
-                <select class="new-client-input new-client-select" [ngModel]="jednotkaSingleSelectValue('Dispozice jednotky', jednotkaDispositionOptions())" (ngModelChange)="setJednotkaSingleSelectValue('Dispozice jednotky', $event, jednotkaDispositionOptions())">
+                <div class="new-client-label">{{ prostoryUnitLabel('Dispozice jednotky', unit) }}</div>
+                <select class="new-client-input new-client-select" [ngModel]="prostorySingleSelectValue('Dispozice jednotky', jednotkaDispositionOptions(), unit)" (ngModelChange)="setProstorySingleSelectValue('Dispozice jednotky', $event, jednotkaDispositionOptions(), unit)">
                   <option value="">Vyberte dispozici</option>
                   <option *ngFor="let option of jednotkaDispositionOptions()" [value]="option">{{ option }}</option>
                   <option [value]="propertyCustomOption">dopsat vlastní možnost</option>
                 </select>
-                <input *ngIf="isJednotkaCustomValue('Dispozice jednotky', jednotkaDispositionOptions())" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('jednotka', 'Dispozice jednotky') === propertyCustomOption ? '' : propertyTabFieldValue('jednotka', 'Dispozice jednotky')" (ngModelChange)="setPropertyTabFieldValue('jednotka', 'Dispozice jednotky', $event)" placeholder="doplňte vlastní možnost" />
+                <input *ngIf="isProstoryCustomValue('Dispozice jednotky', jednotkaDispositionOptions(), unit)" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('prostory', prostoryKey('Dispozice jednotky', unit)) === propertyCustomOption ? '' : propertyTabFieldValue('prostory', prostoryKey('Dispozice jednotky', unit))" (ngModelChange)="setPropertyTabFieldValue('prostory', prostoryKey('Dispozice jednotky', unit), $event)" placeholder="doplňte vlastní možnost" />
               </article>
 
               <article class="new-client-field-card" *ngIf="shouldShowProstoryLodgingFields()">
-                <div class="new-client-label">Ubytovací kapacita</div>
-                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('prostory', 'Ubytovací kapacita')" (ngModelChange)="setPropertyTabFieldValue('prostory', 'Ubytovací kapacita', $event.replace(/[^0-9]/g, ''))" placeholder="ubytovací kapacita" inputmode="numeric" />
+                <div class="new-client-label">{{ prostoryUnitLabel('Ubytovací kapacita', unit) }}</div>
+                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('prostory', prostoryKey('Ubytovací kapacita', unit))" (ngModelChange)="setPropertyTabFieldValue('prostory', prostoryKey('Ubytovací kapacita', unit), $event.replace(/[^0-9]/g, ''))" placeholder="ubytovací kapacita" inputmode="numeric" />
               </article>
 
               <article class="new-client-field-card" *ngIf="shouldShowProstoryLodgingFields()">
-                <div class="new-client-label">Počet pokojů</div>
-                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('prostory', 'Počet pokojů')" (ngModelChange)="setPropertyTabFieldValue('prostory', 'Počet pokojů', $event.replace(/[^0-9]/g, ''))" placeholder="počet pokojů" inputmode="numeric" />
+                <div class="new-client-label">{{ prostoryUnitLabel('Počet pokojů', unit) }}</div>
+                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('prostory', prostoryKey('Počet pokojů', unit))" (ngModelChange)="setPropertyTabFieldValue('prostory', prostoryKey('Počet pokojů', unit), $event.replace(/[^0-9]/g, ''))" placeholder="počet pokojů" inputmode="numeric" />
               </article>
 
               <article class="new-client-field-card" *ngIf="shouldShowProstoryLodgingFields()">
-                <div class="new-client-label">Počet apartmánů</div>
-                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('prostory', 'Počet apartmánů')" (ngModelChange)="setPropertyTabFieldValue('prostory', 'Počet apartmánů', $event.replace(/[^0-9]/g, ''))" placeholder="počet apartmánů" inputmode="numeric" />
+                <div class="new-client-label">{{ prostoryUnitLabel('Počet apartmánů', unit) }}</div>
+                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('prostory', prostoryKey('Počet apartmánů', unit))" (ngModelChange)="setPropertyTabFieldValue('prostory', prostoryKey('Počet apartmánů', unit), $event.replace(/[^0-9]/g, ''))" placeholder="počet apartmánů" inputmode="numeric" />
               </article>
 
               <article class="new-client-field-card" *ngIf="shouldShowProstoryLodgingFields()">
-                <div class="new-client-label">Další prostory</div>
+                <div class="new-client-label">{{ prostoryUnitLabel('Další prostory', unit) }}</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of prostoryAdditionalOptions(); trackBy: trackByValue" [class.active]="hasProstoryMultiValue('Další prostory', option)" (click)="toggleProstoryMultiValue('Další prostory', option)">{{ option }}</button>
-                  <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('prostory', 'Další prostory vlastní')" (click)="setPropertyTabFieldValue('prostory', 'Další prostory vlastní', propertyTabFieldValue('prostory', 'Další prostory vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of prostoryAdditionalOptions(); trackBy: trackByValue" [class.active]="hasProstoryMultiValue('Další prostory', option, unit)" (click)="toggleProstoryMultiValue('Další prostory', option, unit)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('prostory', prostoryKey('Další prostory vlastní', unit))" (click)="setPropertyTabFieldValue('prostory', prostoryKey('Další prostory vlastní', unit), propertyTabFieldValue('prostory', prostoryKey('Další prostory vlastní', unit)) ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
-                <input *ngIf="propertyTabFieldValue('prostory', 'Další prostory vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('prostory', 'Další prostory vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('prostory', 'Další prostory vlastní', $event)" placeholder="doplňte vlastní možnost" />
+                <input *ngIf="propertyTabFieldValue('prostory', prostoryKey('Další prostory vlastní', unit))" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('prostory', prostoryKey('Další prostory vlastní', unit)).trim()" (ngModelChange)="setPropertyTabFieldValue('prostory', prostoryKey('Další prostory vlastní', unit), $event)" placeholder="doplňte vlastní možnost" />
               </article>
 
               <article class="new-client-field-card" *ngIf="shouldShowProstoryLodgingFields()">
-                <div class="new-client-label">Vybavení pokojů</div>
+                <div class="new-client-label">{{ prostoryUnitLabel('Vybavení pokojů', unit) }}</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of prostoryRoomEquipmentOptions(); trackBy: trackByValue" [class.active]="hasProstoryMultiValue('Vybavení pokojů', option)" (click)="toggleProstoryMultiValue('Vybavení pokojů', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of prostoryRoomEquipmentOptions(); trackBy: trackByValue" [class.active]="hasProstoryMultiValue('Vybavení pokojů', option, unit)" (click)="toggleProstoryMultiValue('Vybavení pokojů', option, unit)">{{ option }}</button>
                 </div>
               </article>
 
               <article class="new-client-field-card" *ngIf="shouldShowProstoryLodgingFields()">
-                <div class="new-client-label">Vybavení VIP pokojů</div>
+                <div class="new-client-label">{{ prostoryUnitLabel('Vybavení VIP pokojů', unit) }}</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of prostoryRoomEquipmentOptions(); trackBy: trackByValue" [class.active]="hasProstoryMultiValue('Vybavení VIP pokojů', option)" (click)="toggleProstoryMultiValue('Vybavení VIP pokojů', option)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of prostoryRoomEquipmentOptions(); trackBy: trackByValue" [class.active]="hasProstoryMultiValue('Vybavení VIP pokojů', option, unit)" (click)="toggleProstoryMultiValue('Vybavení VIP pokojů', option, unit)">{{ option }}</button>
                 </div>
               </article>
 
               <article class="new-client-field-card" *ngIf="shouldShowProstoryGeneralFields() && !isCurrentPropertyType('Garáž')">
-                <div class="new-client-label">Seznam místností</div>
+                <div class="new-client-label">{{ prostoryUnitLabel('Seznam místností', unit) }}</div>
                 <div class="new-client-toggle-row">
                   <ng-container *ngFor="let option of prostoryRoomListOptions(); trackBy: trackByValue">
                     <div class="new-client-room-group-separator" *ngIf="isProstoryRoomGroupSeparator(option); else roomOption"></div>
                     <ng-template #roomOption>
-                      <button type="button" class="new-client-toggle-btn" [class.active]="hasProstoryMultiValue('Seznam místností', option)" (click)="toggleProstoryMultiValue('Seznam místností', option)">{{ option }}</button>
+                      <button type="button" class="new-client-toggle-btn" [class.active]="hasProstoryMultiValue('Seznam místností', option, unit)" (click)="toggleProstoryMultiValue('Seznam místností', option, unit)">{{ option }}</button>
                     </ng-template>
                   </ng-container>
                 </div>
               </article>
 
-              <article class="new-client-field-card" *ngIf="shouldShowProstoryGeneralFields() && selectedProstoryRooms().length > 0">
-                <div class="new-client-label">Velikost místností</div>
+              <article class="new-client-field-card" *ngIf="shouldShowProstoryGeneralFields() && selectedProstoryRooms(unit).length > 0">
+                <div class="new-client-label">{{ prostoryUnitLabel('Velikost místností', unit) }}</div>
                 <div class="new-client-room-rows">
-                  <div class="new-client-room-row" *ngFor="let entry of selectedProstoryRoomEntries(); trackBy: trackByIndex">
+                  <div class="new-client-room-row" *ngFor="let entry of selectedProstoryRoomEntries(unit); trackBy: trackByIndex">
                     <div class="new-client-room-name">{{ entry.room }}</div>
-                    <input type="text" class="new-client-input" [ngModel]="prostoryRoomDimensionValue(entry.room, entry.index, 'width')" (ngModelChange)="setProstoryRoomDimensionValue(entry.room, entry.index, 'width', $event)" (blur)="formatProstoryRoomDimensionValue(entry.room, entry.index, 'width')" placeholder="šířka" inputmode="decimal" />
+                    <input type="text" class="new-client-input" [ngModel]="prostoryRoomDimensionValue(entry.room, entry.index, 'width', unit)" (ngModelChange)="setProstoryRoomDimensionValue(entry.room, entry.index, 'width', $event, unit)" (blur)="formatProstoryRoomDimensionValue(entry.room, entry.index, 'width', unit)" placeholder="šířka" inputmode="decimal" />
                     <div class="new-client-room-times">x</div>
-                    <input type="text" class="new-client-input" [ngModel]="prostoryRoomDimensionValue(entry.room, entry.index, 'length')" (ngModelChange)="setProstoryRoomDimensionValue(entry.room, entry.index, 'length', $event)" (blur)="formatProstoryRoomDimensionValue(entry.room, entry.index, 'length')" placeholder="délka" inputmode="decimal" />
-                    <input type="text" class="new-client-input new-client-room-area-result" [value]="prostoryRoomArea(entry.room, entry.index)" placeholder="m²" readonly />
-                    <button type="button" class="new-client-leaflet-btn new-client-land-add-btn" *ngIf="entry.primary; else removeProstoryRoomButton" (click)="addProstoryRoomInstance(entry.room)">+</button>
+                    <input type="text" class="new-client-input" [ngModel]="prostoryRoomDimensionValue(entry.room, entry.index, 'length', unit)" (ngModelChange)="setProstoryRoomDimensionValue(entry.room, entry.index, 'length', $event, unit)" (blur)="formatProstoryRoomDimensionValue(entry.room, entry.index, 'length', unit)" placeholder="délka" inputmode="decimal" />
+                    <input type="text" class="new-client-input new-client-room-area-result" [value]="prostoryRoomArea(entry.room, entry.index, unit)" placeholder="m²" readonly />
+                    <button type="button" class="new-client-leaflet-btn new-client-land-add-btn" *ngIf="entry.primary; else removeProstoryRoomButton" (click)="addProstoryRoomInstance(entry.room, unit)">+</button>
                     <ng-template #removeProstoryRoomButton>
-                      <button type="button" class="new-client-leaflet-btn new-client-land-add-btn remove" (click)="removeProstoryRoomInstance(entry.room, entry.index)">-</button>
+                      <button type="button" class="new-client-leaflet-btn new-client-land-add-btn remove" (click)="removeProstoryRoomInstance(entry.room, entry.index, unit)">-</button>
                     </ng-template>
                   </div>
                 </div>
               </article>
 
-              <article class="new-client-field-card" *ngIf="shouldShowProstoryGeneralFields() && hasSelectedProstoryRoom('Sklep')">
-                <div class="new-client-label">Označení sklepu <span class="buyer-info-excluded-icon" title="nepropisuje se do tiskové sestavy zájemcům">📑</span></div>
-                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('prostory', 'Sklep číslo')" (ngModelChange)="setPropertyTabFieldValue('prostory', 'Sklep číslo', $event)" placeholder="číslo sklepu" />
+              <article class="new-client-field-card" *ngIf="shouldShowProstoryGeneralFields() && hasSelectedProstoryRoom('Sklep', unit)">
+                <div class="new-client-label">{{ prostoryUnitLabel('Označení sklepu', unit) }} <span class="buyer-info-excluded-icon" title="nepropisuje se do tiskové sestavy zájemcům">📑</span></div>
+                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('prostory', prostoryKey('Sklep číslo', unit))" (ngModelChange)="setPropertyTabFieldValue('prostory', prostoryKey('Sklep číslo', unit), $event)" placeholder="číslo sklepu" />
               </article>
 
-              <article class="new-client-field-card" *ngIf="shouldShowProstoryGeneralFields() && hasSelectedProstoryRoom('Sklep')">
-                <div class="new-client-label">Typ sklepu</div>
-                <select class="new-client-input new-client-select" [ngModel]="prostorySingleSelectValue('Typ sklepu', prostoryCellarTypeOptions())" (ngModelChange)="setProstorySingleSelectValue('Typ sklepu', $event, prostoryCellarTypeOptions())">
+              <article class="new-client-field-card" *ngIf="shouldShowProstoryGeneralFields() && hasSelectedProstoryRoom('Sklep', unit)">
+                <div class="new-client-label">{{ prostoryUnitLabel('Typ sklepu', unit) }}</div>
+                <select class="new-client-input new-client-select" [ngModel]="prostorySingleSelectValue('Typ sklepu', prostoryCellarTypeOptions(), unit)" (ngModelChange)="setProstorySingleSelectValue('Typ sklepu', $event, prostoryCellarTypeOptions(), unit)">
                   <option value="">Vyberte typ sklepu</option>
                   <option *ngFor="let option of prostoryCellarTypeOptions()" [value]="option">{{ option }}</option>
                 </select>
               </article>
 
-              <article class="new-client-field-card" *ngIf="propertyTabFieldValue('stavba', 'Zateplení budovy') === 'Ano'">
-                <div class="new-client-label">Poznámka k zateplení</div>
-                <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('stavba', 'Poznámka k zateplení')" (ngModelChange)="setPropertyTabFieldValue('stavba', 'Poznámka k zateplení', $event)" placeholder="poznámka k zateplení" />
-              </article>
-
-              <article class="new-client-field-card" *ngIf="shouldShowProstoryGeneralFields() && hasSelectedProstoryRoom('Sklep') && propertyTabFieldValue('prostory', 'Typ sklepu') !== 'Sklepní kóje'">
-                <div class="new-client-label">Sklep je zděný ze</div>
-                <select class="new-client-input new-client-select" [ngModel]="propertyTabFieldValue('prostory', 'Sklep je zděný ze')" (ngModelChange)="setPropertyTabFieldValue('prostory', 'Sklep je zděný ze', $event)">
+              <article class="new-client-field-card" *ngIf="shouldShowProstoryGeneralFields() && hasSelectedProstoryRoom('Sklep', unit) && propertyTabFieldValue('prostory', prostoryKey('Typ sklepu', unit)) !== 'Sklepní kóje'">
+                <div class="new-client-label">{{ prostoryUnitLabel('Sklep je zděný ze', unit) }}</div>
+                <select class="new-client-input new-client-select" [ngModel]="propertyTabFieldValue('prostory', prostoryKey('Sklep je zděný ze', unit))" (ngModelChange)="setPropertyTabFieldValue('prostory', prostoryKey('Sklep je zděný ze', unit), $event)">
                   <option value="">stran</option>
                   <option *ngFor="let option of prostoryCellarSidesOptions()" [value]="option">{{ option }}</option>
                 </select>
               </article>
 
-              <article class="new-client-field-card" *ngIf="shouldShowProstoryGarageFields()">
-                <div class="new-client-label">Materiál vrat</div>
+              <article class="new-client-field-card" *ngIf="shouldShowProstoryGarageFields(unit)">
+                <div class="new-client-label">{{ prostoryUnitLabel('Materiál vrat', unit) }}</div>
                 <div class="new-client-toggle-row">
-                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of prostoryGarageDoorMaterialOptions(); trackBy: trackByValue" [class.active]="hasProstoryMultiValue('Materiál garážových vrat', option)" (click)="toggleProstoryMultiValue('Materiál garážových vrat', option)">{{ option }}</button>
-                  <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('prostory', 'Materiál garážových vrat vlastní')" (click)="setPropertyTabFieldValue('prostory', 'Materiál garážových vrat vlastní', propertyTabFieldValue('prostory', 'Materiál garážových vrat vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
+                  <button type="button" class="new-client-toggle-btn" *ngFor="let option of prostoryGarageDoorMaterialOptions(); trackBy: trackByValue" [class.active]="hasProstoryMultiValue('Materiál garážových vrat', option, unit)" (click)="toggleProstoryMultiValue('Materiál garážových vrat', option, unit)">{{ option }}</button>
+                  <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('prostory', prostoryKey('Materiál garážových vrat vlastní', unit))" (click)="setPropertyTabFieldValue('prostory', prostoryKey('Materiál garážových vrat vlastní', unit), propertyTabFieldValue('prostory', prostoryKey('Materiál garážových vrat vlastní', unit)) ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
-                <input *ngIf="propertyTabFieldValue('prostory', 'Materiál garážových vrat vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('prostory', 'Materiál garážových vrat vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('prostory', 'Materiál garážových vrat vlastní', $event)" placeholder="doplňte vlastní možnost" />
+                <input *ngIf="propertyTabFieldValue('prostory', prostoryKey('Materiál garážových vrat vlastní', unit))" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('prostory', prostoryKey('Materiál garážových vrat vlastní', unit)).trim()" (ngModelChange)="setPropertyTabFieldValue('prostory', prostoryKey('Materiál garážových vrat vlastní', unit), $event)" placeholder="doplňte vlastní možnost" />
               </article>
 
-              <article class="new-client-field-card" *ngIf="shouldShowProstoryGarageFields()">
-                <div class="new-client-label">Otevírání vrat</div>
-                <select class="new-client-input new-client-select" [ngModel]="propertyTabFieldValue('prostory', 'Otevírání garážových vrat')" (ngModelChange)="setPropertyTabFieldValue('prostory', 'Otevírání garážových vrat', $event)">
+              <article class="new-client-field-card" *ngIf="shouldShowProstoryGarageFields(unit)">
+                <div class="new-client-label">{{ prostoryUnitLabel('Otevírání vrat', unit) }}</div>
+                <select class="new-client-input new-client-select" [ngModel]="propertyTabFieldValue('prostory', prostoryKey('Otevírání garážových vrat', unit))" (ngModelChange)="setPropertyTabFieldValue('prostory', prostoryKey('Otevírání garážových vrat', unit), $event)">
                   <option value="">Vyberte otevírání</option>
                   <option *ngFor="let option of prostoryGarageDoorOpeningOptions()" [value]="option">{{ option }}</option>
                 </select>
               </article>
 
-              <article class="new-client-field-card" *ngIf="shouldShowProstoryGarageFields()">
-                <div class="new-client-label">Vrata (A x B)</div>
+              <article class="new-client-field-card" *ngIf="shouldShowProstoryGarageFields(unit)">
+                <div class="new-client-label">{{ prostoryUnitLabel('Vrata (A x B)', unit) }}</div>
                 <div class="new-client-room-pair-row">
-                  <input type="text" class="new-client-input" [ngModel]="prostoryDimensionValue('Garážová vrata (A x B)', 'first')" (ngModelChange)="setProstoryDimensionValue('Garážová vrata (A x B)', 'first', $event)" (blur)="formatProstoryDimensionValue('Garážová vrata (A x B)', 'first')" placeholder="šířka (A)" inputmode="decimal" />
+                  <input type="text" class="new-client-input" [ngModel]="prostoryDimensionValue('Garážová vrata (A x B)', 'first', unit)" (ngModelChange)="setProstoryDimensionValue('Garážová vrata (A x B)', 'first', $event, unit)" (blur)="formatProstoryDimensionValue('Garážová vrata (A x B)', 'first', unit)" placeholder="šířka (A)" inputmode="decimal" />
                   <div class="new-client-room-times">x</div>
-                  <input type="text" class="new-client-input" [ngModel]="prostoryDimensionValue('Garážová vrata (A x B)', 'second')" (ngModelChange)="setProstoryDimensionValue('Garážová vrata (A x B)', 'second', $event)" (blur)="formatProstoryDimensionValue('Garážová vrata (A x B)', 'second')" placeholder="výška (B)" inputmode="decimal" />
+                  <input type="text" class="new-client-input" [ngModel]="prostoryDimensionValue('Garážová vrata (A x B)', 'second', unit)" (ngModelChange)="setProstoryDimensionValue('Garážová vrata (A x B)', 'second', $event, unit)" (blur)="formatProstoryDimensionValue('Garážová vrata (A x B)', 'second', unit)" placeholder="výška (B)" inputmode="decimal" />
                 </div>
               </article>
 
-              <article class="new-client-field-card" *ngIf="shouldShowProstoryGarageFields()">
-                <div class="new-client-label">Místnost (C x D)</div>
+              <article class="new-client-field-card" *ngIf="shouldShowProstoryGarageFields(unit)">
+                <div class="new-client-label">{{ prostoryUnitLabel('Místnost (C x D)', unit) }}</div>
                 <div class="new-client-room-pair-row">
-                  <input type="text" class="new-client-input" [ngModel]="prostoryDimensionValue('Místnost garáže (C x D)', 'first')" (ngModelChange)="setProstoryDimensionValue('Místnost garáže (C x D)', 'first', $event)" (blur)="formatProstoryDimensionValue('Místnost garáže (C x D)', 'first')" placeholder="šířka (C)" inputmode="decimal" />
+                  <input type="text" class="new-client-input" [ngModel]="prostoryDimensionValue('Místnost garáže (C x D)', 'first', unit)" (ngModelChange)="setProstoryDimensionValue('Místnost garáže (C x D)', 'first', $event, unit)" (blur)="formatProstoryDimensionValue('Místnost garáže (C x D)', 'first', unit)" placeholder="šířka (C)" inputmode="decimal" />
                   <div class="new-client-room-times">x</div>
-                  <input type="text" class="new-client-input" [ngModel]="prostoryDimensionValue('Místnost garáže (C x D)', 'second')" (ngModelChange)="setProstoryDimensionValue('Místnost garáže (C x D)', 'second', $event)" (blur)="formatProstoryDimensionValue('Místnost garáže (C x D)', 'second')" placeholder="hloubka (D)" inputmode="decimal" />
+                  <input type="text" class="new-client-input" [ngModel]="prostoryDimensionValue('Místnost garáže (C x D)', 'second', unit)" (ngModelChange)="setProstoryDimensionValue('Místnost garáže (C x D)', 'second', $event, unit)" (blur)="formatProstoryDimensionValue('Místnost garáže (C x D)', 'second', unit)" placeholder="hloubka (D)" inputmode="decimal" />
                 </div>
               </article>
 
-              <article class="new-client-field-card" *ngIf="shouldShowProstoryGarageFields()">
-                <div class="new-client-label">Výška stropu (vpředu x vzadu) (E x F)</div>
+              <article class="new-client-field-card" *ngIf="shouldShowProstoryGarageFields(unit)">
+                <div class="new-client-label">{{ prostoryUnitLabel('Výška stropu (vpředu x vzadu) (E x F)', unit) }}</div>
                 <div class="new-client-room-pair-row">
-                  <input type="text" class="new-client-input" [ngModel]="prostoryDimensionValue('Výška stropu garáže (vpředu x vzadu) (E x F)', 'first')" (ngModelChange)="setProstoryDimensionValue('Výška stropu garáže (vpředu x vzadu) (E x F)', 'first', $event)" (blur)="formatProstoryDimensionValue('Výška stropu garáže (vpředu x vzadu) (E x F)', 'first')" placeholder="vpředu (E)" inputmode="decimal" />
+                  <input type="text" class="new-client-input" [ngModel]="prostoryDimensionValue('Výška stropu garáže (vpředu x vzadu) (E x F)', 'first', unit)" (ngModelChange)="setProstoryDimensionValue('Výška stropu garáže (vpředu x vzadu) (E x F)', 'first', $event, unit)" (blur)="formatProstoryDimensionValue('Výška stropu garáže (vpředu x vzadu) (E x F)', 'first', unit)" placeholder="vpředu (E)" inputmode="decimal" />
                   <div class="new-client-room-times">x</div>
-                  <input type="text" class="new-client-input" [ngModel]="prostoryDimensionValue('Výška stropu garáže (vpředu x vzadu) (E x F)', 'second')" (ngModelChange)="setProstoryDimensionValue('Výška stropu garáže (vpředu x vzadu) (E x F)', 'second', $event)" (blur)="formatProstoryDimensionValue('Výška stropu garáže (vpředu x vzadu) (E x F)', 'second')" placeholder="vzadu (F)" inputmode="decimal" />
+                  <input type="text" class="new-client-input" [ngModel]="prostoryDimensionValue('Výška stropu garáže (vpředu x vzadu) (E x F)', 'second', unit)" (ngModelChange)="setProstoryDimensionValue('Výška stropu garáže (vpředu x vzadu) (E x F)', 'second', $event, unit)" (blur)="formatProstoryDimensionValue('Výška stropu garáže (vpředu x vzadu) (E x F)', 'second', unit)" placeholder="vzadu (F)" inputmode="decimal" />
                 </div>
               </article>
 
               <article class="new-client-field-card" *ngIf="shouldShowProstoryGeneralFields()">
-                <div class="new-client-label">PODLAHOVÁ PLOCHA</div>
-                <input type="text" class="new-client-input" [value]="prostoryAreaTotal('podlahova')" placeholder="m²" readonly />
+                <div class="new-client-label">{{ prostoryUnitLabel('PODLAHOVÁ PLOCHA', unit) }}</div>
+                <input type="text" class="new-client-input" [value]="prostoryAreaTotal('podlahova', unit)" placeholder="m²" readonly />
               </article>
 
               <article class="new-client-field-card" *ngIf="shouldShowProstoryGeneralFields() && !isCurrentPropertyType('Garáž')">
-                <div class="new-client-label">OBYTNÁ PLOCHA</div>
-                <input type="text" class="new-client-input" [value]="prostoryAreaTotal('obytna')" placeholder="m²" readonly />
+                <div class="new-client-label">{{ prostoryUnitLabel('OBYTNÁ PLOCHA', unit) }}</div>
+                <input type="text" class="new-client-input" [value]="prostoryAreaTotal('obytna', unit)" placeholder="m²" readonly />
               </article>
 
               <article class="new-client-field-card" *ngIf="shouldShowProstoryGeneralFields()">
-                <div class="new-client-label">UŽITNÁ PLOCHA</div>
-                <input type="text" class="new-client-input" [value]="prostoryAreaTotal('uzitna')" placeholder="m²" readonly />
+                <div class="new-client-label">{{ prostoryUnitLabel('UŽITNÁ PLOCHA', unit) }}</div>
+                <input type="text" class="new-client-input" [value]="prostoryAreaTotal('uzitna', unit)" placeholder="m²" readonly />
               </article>
 
               <article class="new-client-field-card" *ngIf="shouldShowProstoryGeneralFields()">
-                <div class="new-client-label">CELKOVÁ UŽITNÁ PLOCHA</div>
-                <input type="text" class="new-client-input" [value]="prostoryAreaTotal('celkovaUzitna')" placeholder="m²" readonly />
+                <div class="new-client-label">{{ prostoryUnitLabel('CELKOVÁ UŽITNÁ PLOCHA', unit) }}</div>
+                <input type="text" class="new-client-input" [value]="prostoryAreaTotal('celkovaUzitna', unit)" placeholder="m²" readonly />
               </article>
+              </ng-container>
 
               <article class="new-client-field-card">
                 <div class="new-client-label new-client-label-with-switch"><span>Poznámka k dispozici</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('prostory', 'Poznámka k dispozici')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('prostory', 'Poznámka k dispozici')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
@@ -1252,8 +1254,8 @@
                 </div>
               </article>
 
-              <article class="new-client-field-card" *ngIf="!isElektroNezavedena() && isCurrentPropertyType('Garáž')">
-                <div class="new-client-label">Zásuvka venku</div>
+              <article class="new-client-field-card" *ngIf="shouldShowOutdoorUtilityFields()">
+                <div class="new-client-label">Venkovní zásuvka</div>
                 <select class="new-client-input new-client-select" [ngModel]="propertyTabFieldValue('elektina', 'Zásuvka venku')" (ngModelChange)="setPropertyTabFieldValue('elektina', 'Zásuvka venku', $event)">
                   <option value="">Vyberte</option>
                   <option value="ANO">ANO</option>
@@ -1261,12 +1263,12 @@
                 </select>
               </article>
 
-              <article class="new-client-field-card" *ngIf="!isElektroNezavedena() && !isNewPropertyByt()">
+              <article class="new-client-field-card" *ngIf="!isElektroNezavedena() && isCurrentPropertyType('Garáž')">
                 <div class="new-client-label">Počet světel</div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('elektina', 'Počet světel')" (ngModelChange)="setPropertyTabFieldValue('elektina', 'Počet světel', $event.replace(/[^0-9]/g, ''))" (blur)="appendSvetelUnit()" placeholder="počet" inputmode="numeric" />
               </article>
 
-              <article class="new-client-field-card" *ngIf="!isElektroNezavedena() && !isNewPropertyByt()">
+              <article class="new-client-field-card" *ngIf="!isElektroNezavedena() && isCurrentPropertyType('Garáž')">
                 <div class="new-client-label">Počet zásuvek</div>
                 <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('elektina', 'Počet zásuvek')" (ngModelChange)="setPropertyTabFieldValue('elektina', 'Počet zásuvek', $event.replace(/[^0-9]/g, ''))" (blur)="appendZasuvekUnit()" placeholder="počet" inputmode="numeric" />
               </article>
@@ -1331,7 +1333,7 @@
                 <input *ngIf="propertyTabFieldValue('voda', 'Provozovatel vodovodu vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('voda', 'Provozovatel vodovodu vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('voda', 'Provozovatel vodovodu vlastní', $event)" placeholder="doplňte vlastní možnost" />
               </article>
 
-              <article class="new-client-field-card" *ngIf="!isVodaNezaveden()">
+              <article class="new-client-field-card" *ngIf="!isVodaNezaveden() && !isCurrentPropertyType('Dům') && !isCurrentPropertyType('Rodinný dům')">
                 <div class="new-client-label">Stoupačky</div>
                 <div class="new-client-toggle-row">
                   <button type="button" class="new-client-toggle-btn" *ngFor="let option of vodaStoupackyOptions(); trackBy: trackByValue" [class.active]="hasVodaMultiValue('Stoupačky', option)" (click)="toggleVodaMultiValue('Stoupačky', option)">{{ option }}</button>
@@ -1368,6 +1370,15 @@
                   <button type="button" class="new-client-toggle-btn" [class.active]="propertyTabFieldValue('voda', 'Povolení stavby studny') === 'Ano'" (click)="setPropertyTabFieldValue('voda', 'Povolení stavby studny', 'Ano')">Ano</button>
                   <button type="button" class="new-client-toggle-btn" [class.active]="propertyTabFieldValue('voda', 'Povolení stavby studny') === 'Ne'" (click)="setPropertyTabFieldValue('voda', 'Povolení stavby studny', 'Ne')">Ne</button>
                 </div>
+              </article>
+
+              <article class="new-client-field-card" *ngIf="shouldShowOutdoorUtilityFields()">
+                <div class="new-client-label">Venkovní ventil na vodu</div>
+                <select class="new-client-input new-client-select" [ngModel]="propertyTabFieldValue('voda', 'Venkovní ventil na vodu')" (ngModelChange)="setPropertyTabFieldValue('voda', 'Venkovní ventil na vodu', $event)">
+                  <option value="">Vyberte</option>
+                  <option value="ANO">ANO</option>
+                  <option value="NE">NE</option>
+                </select>
               </article>
 
               <article class="new-client-field-card">
@@ -1824,9 +1835,6 @@
                 </div>
                 <input *ngIf="propertyTabFieldValue('hlavni-prednosti', 'Hlavní přednosti vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('hlavni-prednosti', 'Hlavní přednosti vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('hlavni-prednosti', 'Hlavní přednosti vlastní', $event)" placeholder="doplňte vlastní možnost" />
               </article>
-            </div>
-
-            <div class="new-client-grid two-up" *ngIf="isActivePropertyTab('pravni-vady')">
               <article class="new-client-field-card">
                 <div class="new-client-label">Právní vady a jiná omezení</div>
                 <div class="new-client-toggle-row">
@@ -1834,6 +1842,10 @@
                   <button type="button" class="new-client-toggle-btn" [class.active]="!!propertyTabFieldValue('pravni-vady', 'Právní vady a jiná omezení vlastní')" (click)="setPropertyTabFieldValue('pravni-vady', 'Právní vady a jiná omezení vlastní', propertyTabFieldValue('pravni-vady', 'Právní vady a jiná omezení vlastní') ? '' : ' ')">dopsat vlastní možnost</button>
                 </div>
                 <input *ngIf="propertyTabFieldValue('pravni-vady', 'Právní vady a jiná omezení vlastní')" type="text" class="new-client-input new-client-custom-type-input" [ngModel]="propertyTabFieldValue('pravni-vady', 'Právní vady a jiná omezení vlastní').trim()" (ngModelChange)="setPropertyTabFieldValue('pravni-vady', 'Právní vady a jiná omezení vlastní', $event)" placeholder="doplňte vlastní možnost" />
+              </article>
+              <article class="new-client-field-card" *ngIf="hasPravniVadyMultiValue('Právní vady a jiná omezení', 'Černá stavba')">
+                <div class="new-client-label new-client-label-with-switch"><span>Informace k černé stavbě</span><input type="checkbox" class="buyer-info-switch" [checked]="isPropertyBuyerInfoFieldVisible('pravni-vady', 'Černá stavba')" (click)="$event.stopPropagation()" (change)="togglePropertyBuyerInfoFieldVisibility('pravni-vady', 'Černá stavba')" title="Zobrazit v tiskové sestavě pro zájemce" /></div>
+                <textarea class="new-client-input new-client-textarea auto-grow-textarea" rows="2" [ngModel]="propertyTabFieldValue('pravni-vady', 'Informace k černé stavbě')" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setPropertyTabFieldValue('pravni-vady', 'Informace k černé stavbě', $event)" placeholder="doplňte informace k černé stavbě"></textarea>
               </article>
             </div>
 
@@ -2258,6 +2270,7 @@
                 <div class="new-client-label handover-docs-title">Doklady</div>
                 <div class="new-client-toggle-row">
                   <button type="button" class="new-client-toggle-btn handover-document-btn active" (click)="generateCurrentPropertyBuyerInfo()">Vygenerovat informace pro zájemce</button>
+                  <button type="button" class="new-client-toggle-btn handover-document-btn active" (click)="generateCurrentPropertyBrokerInfo()">Vygenerovat informace pro makléře</button>
                   <button type="button" class="new-client-toggle-btn handover-document-btn" [class.active]="propertyTabFieldValue('predavaci-protokol', 'handoverFormOpen') === 'ANO'" (click)="setPropertyTabFieldValue('predavaci-protokol', 'handoverFormOpen', propertyTabFieldValue('predavaci-protokol', 'handoverFormOpen') === 'ANO' ? '' : 'ANO')">Předávací protokol</button>
                 </div>
               </article>
@@ -2294,7 +2307,7 @@
                       <div class="handover-party-editor" *ngFor="let index of handoverExtraPartyIndexes('predavajici'); trackBy: trackByIndex">
                         <input type="text" class="new-client-input" [ngModel]="handoverExtraPartyField('predavajici', index, 'name')" (ngModelChange)="setHandoverExtraPartyField('predavajici', index, 'name', $event)" placeholder="jméno" />
                         <input type="text" class="new-client-input" [ngModel]="handoverExtraPartyField('predavajici', index, 'birthDate')" (ngModelChange)="setHandoverExtraPartyField('predavajici', index, 'birthDate', $event)" placeholder="datum narození" />
-                        <input type="text" class="new-client-input" [ngModel]="handoverExtraPartyField('predavajici', index, 'address')" (ngModelChange)="setHandoverExtraPartyField('predavajici', index, 'address', $event)" placeholder="bytem" />
+                        <input appAddressAutocomplete type="text" class="new-client-input" [ngModel]="handoverExtraPartyField('predavajici', index, 'address')" (ngModelChange)="setHandoverExtraPartyField('predavajici', index, 'address', $event)" placeholder="bytem" />
                         <input type="text" class="new-client-input" [ngModel]="handoverExtraPartyField('predavajici', index, 'email')" (ngModelChange)="setHandoverExtraPartyField('predavajici', index, 'email', $event)" placeholder="e-mail" />
                         <input type="text" class="new-client-input" [ngModel]="handoverExtraPartyField('predavajici', index, 'phone')" (ngModelChange)="setHandoverExtraPartyField('predavajici', index, 'phone', $event)" placeholder="telefon" />
                         <button type="button" class="new-client-leaflet-btn new-client-land-add-btn remove" (click)="removeHandoverExtraParty('predavajici', index)">-</button>
@@ -2318,7 +2331,7 @@
                       <div class="handover-party-editor" *ngFor="let index of handoverExtraPartyIndexes('prebirajici'); trackBy: trackByIndex">
                         <input type="text" class="new-client-input" [ngModel]="handoverExtraPartyField('prebirajici', index, 'name')" (ngModelChange)="setHandoverExtraPartyField('prebirajici', index, 'name', $event)" placeholder="jméno" />
                         <input type="text" class="new-client-input" [ngModel]="handoverExtraPartyField('prebirajici', index, 'birthDate')" (ngModelChange)="setHandoverExtraPartyField('prebirajici', index, 'birthDate', $event)" placeholder="datum narození" />
-                        <input type="text" class="new-client-input" [ngModel]="handoverExtraPartyField('prebirajici', index, 'address')" (ngModelChange)="setHandoverExtraPartyField('prebirajici', index, 'address', $event)" placeholder="bytem" />
+                        <input appAddressAutocomplete type="text" class="new-client-input" [ngModel]="handoverExtraPartyField('prebirajici', index, 'address')" (ngModelChange)="setHandoverExtraPartyField('prebirajici', index, 'address', $event)" placeholder="bytem" />
                         <input type="text" class="new-client-input" [ngModel]="handoverExtraPartyField('prebirajici', index, 'email')" (ngModelChange)="setHandoverExtraPartyField('prebirajici', index, 'email', $event)" placeholder="e-mail" />
                         <input type="text" class="new-client-input" [ngModel]="handoverExtraPartyField('prebirajici', index, 'phone')" (ngModelChange)="setHandoverExtraPartyField('prebirajici', index, 'phone', $event)" placeholder="telefon" />
                         <button type="button" class="new-client-leaflet-btn new-client-land-add-btn remove" (click)="removeHandoverExtraParty('prebirajici', index)">-</button>
@@ -2328,7 +2341,7 @@
                   <section class="handover-app-section">
                     <div class="new-client-label">Nemovitost</div>
                     <textarea class="new-client-input new-client-textarea auto-grow-textarea" rows="3" [ngModel]="handoverPropertyDescriptionValue()" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'propertyDescription', $event)" placeholder="popis nemovitosti"></textarea>
-                    <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'address') || newPropertyDraft().address" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'address', $event)" placeholder="adresní místo" />
+                    <input appAddressAutocomplete type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'address') || newPropertyDraft().address" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'address', $event)" placeholder="adresní místo" />
                   </section>
                 </div>
               </article>
@@ -2856,7 +2869,7 @@
 
                   <article class="new-client-field-card">
                     <div class="new-client-label">Trvalý nebo jiný pobyt<span class="new-client-risk-warning" *ngIf="isHighRiskField('permanentResidence')"><span class="new-client-risk-bang" tabindex="0" role="img" aria-label="Občan z vysoce rizikové země, nutnost provést zesílenou identifikaci">!</span><span class="new-client-risk-tooltip">Občan z vysoce rizikové země, nutnost provést zesílenou identifikaci</span></span></div>
-                    <textarea class="new-client-input new-client-textarea auto-grow-textarea" rows="1" [ngModel]="newClientDraft().permanentResidence" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientDraftField('permanentResidence', $event)" placeholder="trvalý pobyt z dokladu"></textarea>
+                    <textarea appAddressAutocomplete class="new-client-input new-client-textarea auto-grow-textarea" rows="1" [ngModel]="newClientDraft().permanentResidence" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientDraftField('permanentResidence', $event)" placeholder="trvalý pobyt z dokladu"></textarea>
                   </article>
 
                   <article class="new-client-field-card">
@@ -2877,7 +2890,7 @@
 
                   <article class="new-client-field-card">
                     <div class="new-client-label">Skutečné místo pobytu (korespondenční adresa)<span class="new-client-risk-warning" *ngIf="isHighRiskField('correspondenceAddress')"><span class="new-client-risk-bang" tabindex="0" role="img" aria-label="Občan z vysoce rizikové země, nutnost provést zesílenou identifikaci">!</span><span class="new-client-risk-tooltip">Občan z vysoce rizikové země, nutnost provést zesílenou identifikaci</span></span></div>
-                    <textarea class="new-client-input new-client-textarea auto-grow-textarea" rows="1" [ngModel]="newClientDraft().correspondenceAddress" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientDraftField('correspondenceAddress', $event)" placeholder="korespondenční adresa"></textarea>
+                    <textarea appAddressAutocomplete class="new-client-input new-client-textarea auto-grow-textarea" rows="1" [ngModel]="newClientDraft().correspondenceAddress" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientDraftField('correspondenceAddress', $event)" placeholder="korespondenční adresa"></textarea>
                   </article>
 
                   <article class="new-client-field-card">
@@ -2941,7 +2954,7 @@
 
                   <article class="new-client-field-card">
                     <div class="new-client-label">Sídlo společnosti</div>
-                    <textarea class="new-client-input new-client-textarea auto-grow-textarea" rows="1" [ngModel]="newClientDraft().companyAddress" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientDraftField('companyAddress', $event)" placeholder="sídlo společnosti"></textarea>
+                    <textarea appAddressAutocomplete class="new-client-input new-client-textarea auto-grow-textarea" rows="1" [ngModel]="newClientDraft().companyAddress" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setNewClientDraftField('companyAddress', $event)" placeholder="sídlo společnosti"></textarea>
                   </article>
 
                   <article class="new-client-field-card">
@@ -3767,9 +3780,7 @@
   </section>
 
   <div class="print-only buyer-print-footer" *ngIf="isBuyerDocumentPrintMode() && (buyerFooterName() || buyerFooterPhone() || buyerFooterEmail())">
-    <div class="buyer-print-footer-left">
-      <img class="buyer-print-footer-logo" src="/assets/REMAX-Primary-RGB-BLACK.jpg" alt="REMAX" />
-    </div>
+    <div class="buyer-print-footer-left"></div>
     <div class="buyer-print-footer-right">
       <div class="buyer-print-footer-name">{{ buyerFooterName() }}</div>
       <div class="buyer-print-footer-email buyer-print-footer-contact" *ngIf="buyerFooterEmail()"><img class="buyer-print-footer-contact-icon" src="/assets/mail.png" alt="E-mail" /> {{ buyerFooterEmail() }}</div>
