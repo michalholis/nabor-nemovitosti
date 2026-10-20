@@ -77,9 +77,9 @@ export class AddressAutocompleteDirective implements OnInit {
       this.panel.active.set(index);
       this.renderer.setAttribute(this.element, 'aria-activedescendant', `${this.panel.listId}-${index}`);
       this.element.ownerDocument.getElementById(`${this.panel.listId}-${index}`)?.scrollIntoView?.({ block: 'nearest' });
-    } else if (event.key === 'Enter' && this.panel.active() >= 0) {
+    } else if (event.key === 'Enter' && results.length > 0 && (this.panel.active() >= 0 || results.length === 1)) {
       event.preventDefault();
-      this.select(results[this.panel.active()]);
+      this.select(results[Math.max(0, this.panel.active())]);
     }
   }
 

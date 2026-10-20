@@ -2271,6 +2271,7 @@
                 <div class="new-client-toggle-row">
                   <button type="button" class="new-client-toggle-btn handover-document-btn active" (click)="generateCurrentPropertyBuyerInfo()">Vygenerovat informace pro zájemce</button>
                   <button type="button" class="new-client-toggle-btn handover-document-btn active" (click)="generateCurrentPropertyBrokerInfo()">Vygenerovat informace pro makléře</button>
+                  <button type="button" class="new-client-toggle-btn handover-document-btn active" (click)="generateCurrentPropertyBlankForm()">Vygenerovat prázdný formulář</button>
                   <button type="button" class="new-client-toggle-btn handover-document-btn" [class.active]="propertyTabFieldValue('predavaci-protokol', 'handoverFormOpen') === 'ANO'" (click)="setPropertyTabFieldValue('predavaci-protokol', 'handoverFormOpen', propertyTabFieldValue('predavaci-protokol', 'handoverFormOpen') === 'ANO' ? '' : 'ANO')">Předávací protokol</button>
                 </div>
               </article>

@@ -305,6 +305,7 @@ const DOCUMENT_TYPE_SUBTITLES: Record<string, string> = {
 
 const PROPERTY_TYPE_OPTIONS: string[] = [
   'Dům',
+  'Bytový dům',
   'Byt',
   'Garáž',
   'Chatka',
@@ -771,7 +772,7 @@ const PROSTORY_GARAGE_DOOR_OPENING_OPTIONS: string[] = ['Klasické', 'Doleva', '
 
 const PROSTORY_LODGING_TYPES: string[] = ['Jiná', 'Ubytovací zařízení'];
 
-const PROSTORY_GENERAL_TYPES: string[] = ['Dům', 'Byt', 'Chata', 'Zahrada', 'Pozemek', 'Pole', 'Nebytový prostor', 'Jiná', 'Ubytovací zařízení', 'Chatka', 'Garáž'];
+const PROSTORY_GENERAL_TYPES: string[] = ['Dům', 'Bytový dům', 'Byt', 'Chata', 'Zahrada', 'Pozemek', 'Pole', 'Nebytový prostor', 'Jiná', 'Ubytovací zařízení', 'Chatka', 'Garáž'];
 
 const PROSTORY_OBYTNA_ROOMS: string[] = [
   'Jídelna',
@@ -4507,7 +4508,7 @@ export class App {
 
   protected TOPENI_STAV_OPTIONS: string[] = ['Není řešeno', 'Původní', 'Rekonstruováno'];
   protected TOPENI_VYTAPENI_OPTIONS: string[] = ['Plyn', 'Elektřina', 'Tuhá paliva', 'Solární', 'Tepelné čerpadlo', 'Ústřední vytápění', 'Centrální dálkové'];
-  protected TOPENI_TELESO_OPTIONS: string[] = ['Podlahové vytápění', 'Radiátory', 'Elektrický přímotop', 'Infrapanel', 'Krb', 'Krb s výměníkem', 'Kotel na tuhá paliva', 'Vafky', 'Klimatizace', 'Akumulační kamna', 'Kamna (PETRY)', 'S regulací topení'];
+  protected TOPENI_TELESO_OPTIONS: string[] = ['Podlahové vytápění', 'Radiátory', 'Elektrický přímotop', 'Infrapanel', 'Krb na dřevo', 'Krb s výměníkem', 'Plynový krb', 'Kotel na tuhá paliva', 'Vafky', 'Klimatizace', 'Akumulační kamna', 'Kamna (PETRY)', 'S regulací topení'];
   protected TOPENI_UMISTENI_OPTIONS: string[] = ['V bytě', 'V místnosti', 'V domě (Ústřední vytápění)', 'V chatě', 'Ve sklepě', 'Dálkové'];
   protected TOPENI_KOMIN_OPTIONS: string[] = ['Není', 'Vyvložkovaný', 'Nevyvložkovaný', 'Dvoukomín'];
 
@@ -4734,7 +4735,7 @@ export class App {
       'Vlastní parkování', 'Sídliště', 'Klid', 'Samota', 'Polosamota', 'Zahrada u domu',
       'Krajina / okolí', 'Zeleň v okolí', 'Výhled', 'Dostupnost služeb', 'Rekonstrukce',
       'Prostor pro pračku', 'Možnost trvalého pobytu', 'Úklid společných prostor',
-      'Kamery v domě', 'Koupání', 'Ráj houbařů', 'Rybářské lokality', 'dostatek úložného prostoru'
+      'Kamery v domě', 'Koupání', 'Ráj houbařů', 'Rybářské lokality', 'Dostatek úložného prostoru'
     ];
   }
 
@@ -6008,6 +6009,22 @@ export class App {
   }
 
   private normalizePropertyTabValues(tabKey: NewPropertyTabKey, values: Record<string, string>): Record<string, string> {
+    if (tabKey === 'topeni' && values['Topné těleso']) {
+      return {
+        ...values,
+        'Topné těleso': values['Topné těleso'].split('|')
+          .map(value => value === 'Krb' ? 'Krb na dřevo' : value)
+          .join('|')
+      };
+    }
+    if (tabKey === 'hlavni-prednosti' && values['Hlavní přednosti']) {
+      return {
+        ...values,
+        'Hlavní přednosti': values['Hlavní přednosti'].split('|')
+          .map(value => value === 'dostatek úložného prostoru' ? 'Dostatek úložného prostoru' : value)
+          .join('|')
+      };
+    }
     if (tabKey === 'pravni-vady') {
       const next = { ...values };
       if (next['Černá stavba'] === 'ANO') {
@@ -10075,21 +10092,38 @@ export class App {
   }
 
   protected generateCurrentPropertyBuyerInfo(): void {
+    this.generateCurrentPropertySummary('buyer');
+  }
+
+  protected generateCurrentPropertyBrokerInfo(): void {
+    this.generateCurrentPropertySummary('broker');
+  }
+
+  private generateCurrentPropertySummary(audience: 'buyer' | 'broker'): void {
+    const includeExcluded = audience === 'broker';
+    const reportTitle = includeExcluded ? 'Informace pro makléře' : 'Informace pro zájemce';
     const draft = this.newPropertyDraft();
+    const clientDetails = includeExcluded ? this.linkedPropertyClients().map(({ draft: client }) => {
+      const name = this.escapeHtml(this.handoverClientName(client) || 'Jméno neuvedeno');
+      const phone = this.escapeHtml(this.displayNewClientPhone(client) || 'Telefon neuveden');
+      const email = this.escapeHtml(client.email.trim() || 'E-mail neuveden');
+      return `<div class="client-details"><h3>${name}</h3><div class="info-row"><div class="info-label">Telefon</div><div class="info-value">${phone}</div></div><div class="info-row"><div class="info-label">E-mail</div><div class="info-value">${email}</div></div></div>`;
+    }).join('') : '';
+    const clientSection = clientDetails ? `<section class="info-card"><h2>KLIENT</h2><div class="info-card-body">${clientDetails}</div></section>` : '';
     const skippedKeys = new Set(['informace-do-letaku', 'predavaci-protokol', 'cena-nemovitosti']);
-    const sections = this.propertySectionTabs()
+    const sections = clientSection + this.propertySectionTabs()
       .filter((tab) => !skippedKeys.has(tab.key))
       .map((tab) => {
         const sourceTabs: NewPropertyTabKey[] = tab.key === 'hlavni-prednosti' ? ['hlavni-prednosti', 'pravni-vady'] : [tab.key];
         const rows = sourceTabs.flatMap((sourceTab) => {
           const rawValues = draft.tabValues?.[sourceTab] || {};
-          const values = sourceTab === 'pravni-vady' ? this.legalDefectPrintValues(rawValues, true) : rawValues;
-          const combinedRows = this.combinedBuyerInfoRows(sourceTab, values);
+          const values = sourceTab === 'pravni-vady' ? this.legalDefectPrintValues(rawValues, !includeExcluded) : rawValues;
+          const combinedRows = this.combinedBuyerInfoRows(sourceTab, values, includeExcluded);
           const combinedFieldKeys = this.combinedBuyerInfoFieldKeys(sourceTab, values);
           return [
             ...combinedRows,
             ...Object.entries(values)
-              .filter(([key, value]) => !combinedFieldKeys.has(key) && this.isPropertyBuyerInfoFieldVisible(sourceTab, key) && !key.includes('__') && !key.endsWith(' počet') && !key.startsWith('parcel-') && !key.startsWith('stavba-parcel-') && Boolean(String(value).trim()))
+              .filter(([key, value]) => !combinedFieldKeys.has(key) && (includeExcluded || this.isPropertyBuyerInfoFieldVisible(sourceTab, key)) && !key.includes('__') && !key.endsWith(' počet') && !key.startsWith('parcel-') && !key.startsWith('stavba-parcel-') && Boolean(String(value).trim()))
               .map(([key, value]) => `<div class="info-row"><div class="info-label">${this.escapeHtml(sourceTab === 'elektina' && key === 'Zásuvka venku' ? 'Venkovní zásuvka' : key)}</div><div class="info-value">${this.escapeHtml(String(value).replace(/\|/g, ', '))}</div></div>`)
           ];
         }).join('');
@@ -10104,13 +10138,15 @@ export class App {
     const agent = this.agentProfile();
     const phone = agent.phone || '775 946 596';
     const email = agent.email || 'eliska.petrasova@re-max.cz';
-    const html = `<!doctype html><html lang="cs"><head><meta charset="utf-8"><title>Informace pro zájemce</title><style>
+    const html = `<!doctype html><html lang="cs"><head><meta charset="utf-8"><title>${reportTitle}</title><style>
       @page{size:A4;margin:12mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#334155;margin:0;background:#fff;font-size:11px}.page{min-height:273mm;position:relative}.top{background:#075da8;color:#fff;border-radius:4px;padding:7px 18px;margin-bottom:14px;position:relative}.top h1{font-size:18px;letter-spacing:2px;margin:0;line-height:1}.top .subtitle{font-size:11px;margin-top:3px}.grid{columns:2 310px;column-gap:14px}.info-card{break-inside:avoid;margin:0 0 12px;border:1px solid #dce5ee;border-radius:5px;overflow:hidden;background:#fff}.info-card h2{margin:0;background:#2f8ed3;color:#fff;font-size:13px;letter-spacing:.4px;padding:6px 10px;text-transform:uppercase}.info-card-body{padding:7px 10px}.info-row{display:grid;grid-template-columns:48% 52%;gap:6px;border-bottom:1px solid #edf2f7;padding:3px 0}.info-row:last-child{border-bottom:0}.info-label{font-weight:700;color:#2f3f50}.info-value{text-align:right;color:#7b8794;white-space:pre-wrap}.footer{break-inside:avoid;margin-top:14px;border-top:1px solid #9aa4b2;padding-top:8px;display:flex;justify-content:flex-end}.contact{text-align:right;font-size:11px;color:#2f3f50}.contact strong{display:block;font-size:13px}.empty{color:#7b8794;font-size:13px}@media print{button{display:none}}
-    </style></head><body><div class="page"><header class="top"><h1>INFORMACE PRO ZÁJEMCE</h1><div class="subtitle">${this.escapeHtml(title)}</div></header><main class="grid">${sections || '<p class="empty">Nejsou vyplněné žádné informace k nemovitosti.</p>'}</main><footer class="footer"><div class="contact"><strong>${this.escapeHtml(agent.fullName || 'Eliška Petrášová')}</strong><div>${this.escapeHtml(email)}</div><div>${this.escapeHtml(phone)}</div></div></footer></div><script>window.onload=()=>setTimeout(()=>window.print(),200)</script></body></html>`;
+      ${includeExcluded ? '.top{background:#b91c1c}.info-card h2{background:#dc2626}' : ''}
+      .client-details h3{font-size:12px;color:#2f3f50;margin:0 0 5px}.client-details+.client-details{border-top:1px solid #dce5ee;margin-top:8px;padding-top:8px}
+    </style></head><body><div class="page"><header class="top"><h1>${reportTitle.toLocaleUpperCase('cs-CZ')}</h1><div class="subtitle">${this.escapeHtml(title)}</div></header><main class="grid">${sections || '<p class="empty">Nejsou vyplněné žádné informace k nemovitosti.</p>'}</main><footer class="footer"><div class="contact"><strong>${this.escapeHtml(agent.fullName || 'Eliška Petrášová')}</strong><div>${this.escapeHtml(email)}</div><div>${this.escapeHtml(phone)}</div></div></footer></div><script>window.onload=()=>setTimeout(()=>window.print(),200)</script></body></html>`;
 
     const win = window.open('', '_blank', 'width=1100,height=1200');
     if (!win) {
-      window.alert('Nepodařilo se otevřít okno pro informace pro zájemce. Zkontrolujte blokování vyskakovacích oken.');
+      window.alert(`Nepodařilo se otevřít okno pro ${reportTitle.toLocaleLowerCase('cs-CZ')}. Zkontrolujte blokování vyskakovacích oken.`);
       return;
     }
 
@@ -10119,7 +10155,7 @@ export class App {
     win.document.close();
   }
 
-  protected generateCurrentPropertyBrokerInfo(): void {
+  protected generateCurrentPropertyBlankForm(): void {
     const draft = this.newPropertyDraft();
     const visibleTabs = this.visiblePropertySectionTabs();
     const labels = new Map(visibleTabs.map((tab) => [tab.key as string, tab.label] as const));
@@ -10137,7 +10173,7 @@ export class App {
         rows = this.brokerInfoProstory(section, values);
       } else {
         const combinedRows = section.key === 'pozemek' || section.key === 'stavba'
-          ? this.combinedBuyerInfoRows(section.key as NewPropertyTabKey, values)
+          ? this.combinedBuyerInfoRows(section.key as NewPropertyTabKey, values, true)
           : [];
         const sourceSections = section.key === 'hlavni-prednosti'
           ? [section, ...PROPERTY_INTAKE_FORM.filter((source) => source.key === 'pravni-vady')]
@@ -10168,13 +10204,13 @@ export class App {
     const agent = this.agentProfile();
     const phone = agent.phone || '775 946 596';
     const email = agent.email || 'eliska.petrasova@re-max.cz';
-    const html = `<!doctype html><html lang="cs"><head><meta charset="utf-8"><title>Informace pro makléře</title><style>
+    const html = `<!doctype html><html lang="cs"><head><meta charset="utf-8"><title>Prázdný formulář</title><style>
       @page{size:A4;margin:12mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#334155;margin:0;background:#fff;font-size:11px}.page{min-height:273mm;position:relative}.top{background:#075da8;color:#fff;border-radius:4px;padding:7px 18px;margin-bottom:14px;position:relative}.top h1{font-size:18px;letter-spacing:2px;margin:0;line-height:1}.top .subtitle{font-size:11px;margin-top:3px}.grid{columns:2 320px;column-gap:14px}.info-card{break-inside:avoid;margin:0 0 12px;border:1px solid #dce5ee;border-radius:5px;overflow:hidden;background:#fff}.info-card h2{margin:0;background:#2f8ed3;color:#fff;font-size:13px;letter-spacing:.4px;padding:6px 10px;text-transform:uppercase}.info-card-body{padding:7px 10px}.info-row{display:grid;grid-template-columns:40% 60%;gap:6px;border-bottom:1px solid #edf2f7;padding:4px 0}.info-row:last-child{border-bottom:0}.info-label{font-weight:700;color:#2f3f50;line-height:1.35}.info-value{color:#5b6b7c;line-height:1.7}.opt{display:inline-block;margin:0 10px 2px 0}.opt.on{color:#0c5a96;font-weight:700}.opt.muted{color:#ff4f9a}.blank{color:#b6bec7}.footer{break-inside:avoid;margin-top:14px;border-top:1px solid #9aa4b2;padding-top:8px;display:flex;justify-content:flex-end}.contact{text-align:right;font-size:11px;color:#2f3f50}.contact strong{display:block;font-size:13px}.empty{color:#7b8794;font-size:13px}@media print{button{display:none}}
-    </style></head><body><div class="page"><header class="top"><h1>INFORMACE PRO MAKLÉŘE</h1><div class="subtitle">${this.escapeHtml(title)}</div></header><main class="grid">${sections || '<p class="empty">Nejsou vyplněné žádné informace k nemovitosti.</p>'}</main><footer class="footer"><div class="contact"><strong>${this.escapeHtml(agent.fullName || 'Eliška Petrášová')}</strong><div>${this.escapeHtml(email)}</div><div>${this.escapeHtml(phone)}</div></div></footer></div><script>window.onload=()=>setTimeout(()=>window.print(),200)</script></body></html>`;
+    </style></head><body><div class="page"><header class="top"><h1>PRÁZDNÝ FORMULÁŘ</h1><div class="subtitle">${this.escapeHtml(title)}</div></header><main class="grid">${sections || '<p class="empty">Nejsou vyplněné žádné informace k nemovitosti.</p>'}</main><footer class="footer"><div class="contact"><strong>${this.escapeHtml(agent.fullName || 'Eliška Petrášová')}</strong><div>${this.escapeHtml(email)}</div><div>${this.escapeHtml(phone)}</div></div></footer></div><script>window.onload=()=>setTimeout(()=>window.print(),200)</script></body></html>`;
 
     const win = window.open('', '_blank', 'width=1100,height=1200');
     if (!win) {
-      window.alert('Nepodařilo se otevřít okno pro informace pro makléře. Zkontrolujte blokování vyskakovacích oken.');
+      window.alert('Nepodařilo se otevřít okno pro prázdný formulář. Zkontrolujte blokování vyskakovacích oken.');
       return;
     }
 
@@ -10221,22 +10257,17 @@ export class App {
     }
 
     const selected = new Set(selectedRaw.split('|').map((value) => value.trim()).filter(Boolean));
-    return this.brokerInfoChips(selectedOptionsFirst(options, Array.from(selected)), selected, Array.from(selected));
+    return this.brokerInfoChips(options, selected, Array.from(selected));
   }
 
   private brokerInfoChips(options: string[], selected: Set<string>, extras: string[]): string {
     const empty = selected.size === 0;
-    const chips = options.map((option) => {
+    const choices = [...new Set([...options, ...extras.filter(Boolean)])];
+    const chips = selectedOptionsFirst(choices, Array.from(selected)).map((option) => {
       const on = selected.has(option);
       const classes = on ? 'opt on' : empty ? 'opt muted' : 'opt';
       return `<span class="${classes}">${on ? '☑' : '☐'} ${this.escapeHtml(option)}</span>`;
     });
-
-    for (const extra of extras) {
-      if (extra && !options.includes(extra)) {
-        chips.push(`<span class="opt on">☑ ${this.escapeHtml(extra)}</span>`);
-      }
-    }
 
     return chips.length ? chips.join(' ') : '<span class="blank">—</span>';
   }
@@ -10340,10 +10371,10 @@ export class App {
     return values[field] ?? '';
   }
 
-  private combinedBuyerInfoRows(tabKey: NewPropertyTabKey, values: Record<string, string>): string[] {
+  private combinedBuyerInfoRows(tabKey: NewPropertyTabKey, values: Record<string, string>, includeExcluded = false): string[] {
     if (tabKey === 'zakladni') {
       const address = this.newPropertyDraft().address.trim();
-      return address && this.isPropertyBuyerInfoFieldVisible(tabKey, 'Adresa nemovitosti')
+      return address && (includeExcluded || this.isPropertyBuyerInfoFieldVisible(tabKey, 'Adresa nemovitosti'))
         ? [`<div class="info-row"><div class="info-label">Adresa nemovitosti</div><div class="info-value">${this.escapeHtml(address)}</div></div>`]
         : [];
     }
@@ -10359,7 +10390,7 @@ export class App {
     }
 
     if (tabKey === 'stavba') {
-      if (!this.isPropertyBuyerInfoFieldVisible(tabKey, 'Stavba')) {
+      if (!includeExcluded && !this.isPropertyBuyerInfoFieldVisible(tabKey, 'Stavba')) {
         return [];
       }
 
@@ -10373,7 +10404,7 @@ export class App {
 
     if (tabKey === 'prijezdova-komunikace') {
       const note = (values['Poznámka k příjezdové komunikaci'] || values['Poznámka'] || '').trim();
-      return note && this.isPropertyBuyerInfoFieldVisible(tabKey, 'Poznámka k příjezdové komunikaci')
+      return note && (includeExcluded || this.isPropertyBuyerInfoFieldVisible(tabKey, 'Poznámka k příjezdové komunikaci'))
         ? [`<div class="info-row"><div class="info-label">Poznámka k příjezdové komunikaci</div><div class="info-value">${this.escapeHtml(note)}</div></div>`]
         : [];
     }

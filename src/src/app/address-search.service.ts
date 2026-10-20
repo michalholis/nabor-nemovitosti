@@ -48,6 +48,8 @@ export class AddressSearchService {
       timeout(10000),
       map(addressSuggestions),
       tap(results => {
+        // An incomplete/transient lookup must not prevent a later retry.
+        if (results.length === 0) return;
         if (this.cache.size >= 100) this.cache.delete(this.cache.keys().next().value!);
         this.cache.set(key, results);
       })

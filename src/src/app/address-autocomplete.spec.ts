@@ -97,4 +97,32 @@ describe('Address autocomplete', () => {
     expect(fixture.componentInstance.value).toBe('Řadová 1337');
     expect(fixture.nativeElement.textContent).toContain('není dostupná');
   });
+
+  it('accepts the unique Říkovice 116 result with Enter without first using the arrows', async () => {
+    const rikovice: AddressSuggestion = {
+      label: 'Říkovice 116, Říkovice 751 18 (Olomoucký kraj)',
+      street: 'Říkovice 116', city: 'Říkovice', postcode: '751 18', region: 'Olomoucký kraj'
+    };
+    const { fixture, input } = await setup(vi.fn(() => of([rikovice])));
+    type(input, 'Říkovice 116');
+    await vi.advanceTimersByTimeAsync(500);
+    fixture.detectChanges();
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    fixture.detectChanges();
+    expect(input.value).toBe(rikovice.label);
+    expect(fixture.componentInstance.value).toBe(rikovice.label);
+    expect(fixture.nativeElement.textContent).toContain('Adresa vybrána');
+  });
+
+  it('requires an explicit selection when more than one address matches', async () => {
+    const { fixture, input } = await setup(vi.fn(() => of([address, { ...address, label: 'Jiná adresa 1337' }])));
+    type(input, 'Řadová 1337');
+    await vi.advanceTimersByTimeAsync(500);
+    fixture.detectChanges();
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    fixture.detectChanges();
+    expect(fixture.componentInstance.value).toBe('Řadová 1337');
+    expect(input.getAttribute('aria-expanded')).toBe('true');
+    expect(fixture.nativeElement.textContent).not.toContain('Adresa vybrána');
+  });
 });
