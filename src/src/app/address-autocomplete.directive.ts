@@ -28,6 +28,7 @@ export class AddressAutocompleteDirective implements OnInit {
     this.renderer.setAttribute(this.element, 'aria-controls', this.panel.listId);
     this.setOpen(false);
     this.panel.choose.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(address => this.select(address));
+    this.panel.retry.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.queue(this.element.value));
     this.model.valueChanges?.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(value => {
       if (this.selecting) return;
       this.panel.selected.set(false);

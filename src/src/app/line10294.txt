@@ -1,0 +1,1 @@
+      .info-row-stavba{grid-template-columns:max-content minmax(0,1fr)}

@@ -125,4 +125,17 @@ describe('Address autocomplete', () => {
     expect(input.getAttribute('aria-expanded')).toBe('true');
     expect(fixture.nativeElement.textContent).not.toContain('Adresa vybrána');
   });
+
+  it('retries a failed lookup using the button without retyping the address', async () => {
+    const search = vi.fn().mockReturnValueOnce(throwError(() => new Error('offline'))).mockReturnValueOnce(of([address]));
+    const { fixture, input } = await setup(search);
+    type(input, 'Řadová 1337');
+    await vi.advanceTimersByTimeAsync(500);
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('.retry') as HTMLButtonElement).click();
+    await vi.advanceTimersByTimeAsync(500);
+    fixture.detectChanges();
+    expect(search).toHaveBeenCalledTimes(2);
+    expect(fixture.nativeElement.querySelector('[role="option"]')?.textContent).toContain('Řadová 1337');
+  });
 });

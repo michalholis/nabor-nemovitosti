@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, map, of, tap, timeout } from 'rxjs';
+import { Observable, catchError, map, of, switchMap, tap, timeout } from 'rxjs';
 
 export interface AddressSuggestion {
   label: string;
@@ -8,10 +8,20 @@ export interface AddressSuggestion {
   city: string;
   postcode: string;
   region: string;
+  county?: string;
+  source?: 'esri';
 }
 
 interface PhotonResponse {
   features: Array<{ properties: Record<string, string | number | undefined> }>;
+}
+
+interface EsriResponse {
+  error?: unknown;
+  candidates?: Array<{ score: number; attributes: {
+    Addr_type?: string; StAddr?: string; City?: string; Postal?: string;
+    Region?: string; Subregion?: string; Country?: string;
+  } }>;
 }
 
 export function addressSuggestions(response: PhotonResponse): AddressSuggestion[] {
@@ -28,7 +38,7 @@ export function addressSuggestions(response: PhotonResponse): AddressSuggestion[
     const locality = [[city, postcode].filter(Boolean).join(' '), region ? `(${region})` : ''].filter(Boolean).join(' ');
     const label = [street, locality,
       p['countrycode'] !== 'CZ' ? p['country'] : ''].filter(Boolean).join(', ');
-    unique.set(label, { label, street, city, postcode, region });
+    unique.set(label, { label, street, city, postcode, region, ...(p['county'] ? { county: String(p['county']) } : {}) });
   }
   return [...unique.values()];
 }
@@ -45,13 +55,45 @@ export class AddressSearchService {
     return this.http.get<PhotonResponse>('https://photon.komoot.io/api/', {
       params: { q: key, limit: '8', lang: 'default', lat: '49.8', lon: '15.5', location_bias_scale: '0.2' }
     }).pipe(
-      timeout(10000),
+      timeout(5000),
       map(addressSuggestions),
+      catchError(() => of([] as AddressSuggestion[])),
+      switchMap(results => results.length ? of(results) : this.searchFallback(key)),
       tap(results => {
         // An incomplete/transient lookup must not prevent a later retry.
         if (results.length === 0) return;
         if (this.cache.size >= 100) this.cache.delete(this.cache.keys().next().value!);
         this.cache.set(key, results);
+      })
+    );
+  }
+
+  private searchFallback(query: string): Observable<AddressSuggestion[]> {
+    return this.http.get<EsriResponse>('https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates', {
+      params: {
+        SingleLine: query, f: 'json', sourceCountry: 'CZE', maxLocations: '8',
+        outFields: 'StAddr,City,Postal,Region,Country,Addr_type,Subregion'
+      }
+    }).pipe(
+      timeout(7000),
+      map(response => {
+        if (response.error) throw new Error('Záložní adresní služba není dostupná.');
+        const unique = new Map<string, AddressSuggestion>();
+        for (const candidate of response.candidates || []) {
+          const p = candidate.attributes;
+          if (candidate.score < 90 || !['PointAddress', 'StreetAddress', 'Subaddress'].includes(p.Addr_type || '') || !/\d/.test(p.StAddr || '')) continue;
+          const street = p.StAddr || '';
+          const city = p.City || '';
+          const postcode = (p.Postal || '').replace(/^(\d{3})\s?(\d{2})$/, '$1 $2');
+          const region = p.Region || '';
+          const locality = [[city, postcode].filter(Boolean).join(' '), region ? `(${region})` : ''].filter(Boolean).join(' ');
+          const label = [street, locality].filter(Boolean).join(', ');
+          unique.set(label, {
+            label, street, city, postcode, region, source: 'esri',
+            ...(p.Subregion ? { county: `okres ${p.Subregion}` } : {})
+          });
+        }
+        return [...unique.values()];
       })
     );
   }

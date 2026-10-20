@@ -1691,6 +1691,117 @@
   column-gap: 0.8rem;
 }
 
+.new-client-grid.two-up.dispozice-accordion {
+  column-count: 1;
+}
+
+.dispozice-unit:not(.is-multiple),
+.dispozice-unit:not(.is-multiple) > .dispozice-unit-fields {
+  display: contents;
+}
+
+.dispozice-unit.is-multiple {
+  margin-bottom: 0.7rem;
+  border: 1px solid #d6e2ef;
+  border-radius: 10px;
+}
+
+.dispozice-unit-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0.7rem;
+  border: 0;
+  border-radius: 10px;
+  background: var(--client-accent-bg);
+  color: #183751;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dispozice-unit-header:focus-visible {
+  outline: 2px solid var(--client-accent);
+  outline-offset: 2px;
+}
+
+.dispozice-unit.is-multiple > .dispozice-unit-fields {
+  padding: 0.7rem;
+}
+
+.dispozice-shared-accessories {
+  column-span: all;
+  padding: 0.7rem;
+  border: 1px solid #d6e2ef;
+  border-radius: 10px;
+}
+
+.dispozice-shared-accessories h3 {
+  margin: 0 0 0.6rem;
+}
+
+.socialni-zazemi-unit-header {
+  margin: 0;
+  padding: 0.6rem 0.7rem;
+  border-radius: 9px 9px 0 0;
+  background: var(--client-accent-bg);
+  color: #183751;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.socialni-zazemi-unit-header:only-child {
+  border-radius: 10px;
+}
+
+.map-quick-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.map-quick-row .new-client-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.map-quick-link {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d6e2ef;
+  border-radius: 50%;
+  background: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.map-quick-link:hover:not(:disabled) {
+  background: var(--client-accent-bg);
+}
+
+.map-quick-link:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.map-quick-link--google {
+  color: #4285f4;
+}
+
+.map-quick-link--seznam {
+  color: #39a900;
+}
+
 .new-client-aml-columns {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1745,9 +1856,13 @@
 
 .stavba-parcel-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 6rem auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr) 4.5rem minmax(0, 0.7fr) minmax(0, 1.7fr) auto;
   gap: 0.3rem;
   margin-bottom: 0.3rem;
+}
+
+.stavba-parcel-row .new-client-input {
+  min-width: 0;
 }
 
 .property-phase-row {
