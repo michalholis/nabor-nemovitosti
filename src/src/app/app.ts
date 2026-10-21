@@ -6172,6 +6172,9 @@ export class App {
   }
 
   private normalizePropertyTabValues(tabKey: NewPropertyTabKey, values: Record<string, string>): Record<string, string> {
+    if (tabKey === 'voda' && values['Vodovod'] === 'Zaveden') {
+      return { ...values, Vodovod: 'Napojen' };
+    }
     if (tabKey === 'stavba') {
       const next = { ...values };
       for (const [oldField, field] of [['Označení budovy', 'buildingNumber'], ['Označení budovy typ', 'buildingNumberType']] as const) {

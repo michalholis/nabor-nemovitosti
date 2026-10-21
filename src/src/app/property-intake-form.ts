@@ -226,7 +226,7 @@ export const PROPERTY_INTAKE_FORM: IntakeSection[] = [
   {
     key: 'voda',
     fields: [
-      { kind: 'select', label: 'Obecní vodovod', field: 'Vodovod', options: ['Zaveden', 'Nezaveden'] },
+      { kind: 'select', label: 'Obecní vodovod', field: 'Vodovod', options: ['Napojen', 'Nezaveden'] },
       { kind: 'multi', label: 'Vodoměr', field: 'Vodoměr', sources: ['vodaMerakOptions'] },
       { kind: 'multi', label: 'Provozovatel vodovodu', field: 'Provozovatel vodovodu', sources: ['vodaProvozovatelOptions'] },
       { kind: 'multi', label: 'Stoupačky', field: 'Stoupačky', sources: ['vodaStoupackyOptions'] },

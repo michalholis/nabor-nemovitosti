@@ -1347,9 +1347,9 @@
             <div class="new-client-grid two-up" *ngIf="isActivePropertyTab('voda')">
               <article class="new-client-field-card">
                 <div class="new-client-label">Obecní vodovod</div>
-                <select class="new-client-input new-client-select" [ngModel]="vodaSingleSelectValue('Vodovod', ['Zaveden', 'Nezaveden'])" (ngModelChange)="setVodaSingleSelectValue('Vodovod', $event, ['Zaveden', 'Nezaveden'])">
+                <select class="new-client-input new-client-select" [ngModel]="vodaSingleSelectValue('Vodovod', ['Napojen', 'Nezaveden'])" (ngModelChange)="setVodaSingleSelectValue('Vodovod', $event, ['Napojen', 'Nezaveden'])">
                   <option value="">Vyberte</option>
-                  <option value="Zaveden">Zaveden</option>
+                  <option value="Napojen">Napojen</option>
                   <option value="Nezaveden">Nezaveden</option>
                 </select>
               </article>
