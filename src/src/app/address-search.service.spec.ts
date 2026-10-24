@@ -65,4 +65,26 @@ describe('Address search retries', () => {
     http.expectOne(request => request.url.includes('findAddressCandidates')).error(new ProgressEvent('error'));
     expect(failed).toBe(true);
   });
+
+  it('reuses the coordinates of an address selected from autocomplete', () => {
+    let selected = '';
+    service.search('Říkovice 116').subscribe(results => { selected = results[0].label; });
+    http.expectOne(request => request.url.includes('photon')).flush({ features: [{
+      ...rikoviceResponse.features[0], geometry: { coordinates: [17.4444, 49.3816] }
+    }] });
+    let point: number[] = [];
+    service.resolveCoordinates(selected).subscribe(value => { point = value; });
+    expect(point).toEqual([17.4444, 49.3816]);
+    http.expectNone(request => request.url.includes('photon'));
+  });
+
+  it('rejects ambiguous addresses instead of routing to an arbitrary house', () => {
+    let error: Error | undefined;
+    service.resolveCoordinates('Říkovice').subscribe({ error: value => { error = value; } });
+    http.expectOne(request => request.url.includes('photon')).flush({ features: [
+      { ...rikoviceResponse.features[0], geometry: { coordinates: [17.4444, 49.3816] } },
+      { properties: { ...rikoviceResponse.features[0].properties, housenumber: '117' }, geometry: { coordinates: [17.4445, 49.3817] } }
+    ] });
+    expect(error?.message).toContain('nelze jednoznačně určit');
+  });
 });

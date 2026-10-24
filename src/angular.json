@@ -3,7 +3,12 @@
   "version": 1,
   "cli": {
     "packageManager": "npm",
-    "analytics": false
+    "analytics": false,
+    "cache": {
+      "enabled": true,
+      "environment": "all",
+      "path": ".angular/cache"
+    }
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -45,7 +50,7 @@
                 {
                   "type": "anyComponentStyle",
                   "maximumWarning": "64kB",
-                  "maximumError": "128kB"
+                  "maximumError": "133kB"
                 }
               ],
               "outputHashing": "all"

@@ -4,8 +4,16 @@ import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './app';
 import { PROPERTY_INTAKE_FORM } from './property-intake-form';
+import { Subject, throwError } from 'rxjs';
+import { DrivingRoute, DrivingRouteService } from './driving-route.service';
 
 interface PrintHarness {
+  activeWorkspace: WritableSignal<string>;
+  propertyWorkspaceMode: WritableSignal<string>;
+  propertyDrivingInfo(): { status: string; summary: string };
+  agentProfile: WritableSignal<{ departureAddress: string }>;
+  buildXmlString(): string;
+  applyXmlPayload(xml: string): void;
   newPropertyDraft: WritableSignal<{
     title: string;
     address: string;
@@ -41,11 +49,26 @@ interface PrintHarness {
   prostoryAccessoryCustomValue(unit?: string): string;
   setProstoryAccessoryCustomValue(unit: string, value: string): void;
   openAddressInMapService(service: 'google' | 'seznam', address: string): void;
+  mortgageSettlementOptions(): string[];
+  podlahyOptions(): string[];
+  propertyTabFieldValue(tab: string, field: string): string;
+  hasPropertyTabMultiValue(tab: string, field: string, value: string): boolean;
+  togglePropertyTabMultiValue(tab: string, field: string, value: string): void;
+  vodaDruhStudnyOptions(): string[];
+  toggleVodaMultiValue(field: string, value: string): void;
+  formatMortgageBalance(): void;
+  setMortgageSettlementCustomValue(value: string): void;
+  togglePravniVadyMultiValue(field: string, value: string): void;
   selectedProstoryRoomEntries(unit?: string): Array<{ room: string }>;
   shouldShowProstoryGeneralFields(): boolean;
   visiblePropertySectionTabs(): Array<{ key: string }>;
   propertySectionTabs(): Array<{ key: string; label: string }>;
+  hlavniPrednostiOptions(): string[];
   dispoziceUnits(): string[];
+  dispoziceUnitName(unit: string): string;
+  setDispoziceUnitName(unit: string, name: string): void;
+  prostoryUnitLabel(label: string, unit: string): string;
+  socialniZazemiUnitTitle(unit: string): string;
   isDispoziceUnitOpen(unit: string): boolean;
   toggleDispoziceUnit(unit: string): void;
   socialniZazemiUnits(): string[];
@@ -72,7 +95,7 @@ describe('Property print fields', () => {
       .overrideComponent(App, { set: { template: '' } }).compileComponents();
   });
 
-  afterEach(() => { vi.restoreAllMocks(); TestBed.resetTestingModule(); });
+  afterEach(() => { vi.restoreAllMocks(); TestBed.resetTestingModule(); vi.useRealTimers(); });
 
   it.each(['Dům', 'Rodinný dům', 'Bytový dům', 'Garáž'])('prints the selected outdoor socket for %s in all reports', type => {
     const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
@@ -117,6 +140,23 @@ describe('Property print fields', () => {
       expect(html).not.toContain('Zásuvka venku');
       expect(html).not.toContain('Venkovní ventil na vodu');
     }
+  });
+
+  it('prints the selected type of an own well and clears it when the well is removed', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, tabValues: {
+      ...draft.tabValues,
+      voda: { 'Další zdroj vody': 'Studna vlastní', 'Druh studny': 'Studna vrtaná' }
+    } }));
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+
+    expect(app.vodaDruhStudnyOptions()).toEqual(['Studna vrtaná', 'Studna kopaná']);
+    app.generateCurrentPropertyBuyerInfo();
+    expect(write.mock.calls[0][0]).toContain('Druh studny</div><div class="info-value">Studna vrtaná');
+
+    app.toggleVodaMultiValue('Další zdroj vody', 'Studna vlastní');
+    expect(app.propertyTabFieldValue('voda', 'Druh studny')).toBe('');
   });
 
   it.each(['ANO', 'NE'])('respects the buyer print switch for an unpermitted building (%s)', visible => {
@@ -189,6 +229,75 @@ describe('Property print fields', () => {
     expect(app.newPropertyDraft().tabValues['pravni-vady']['Informace k černé stavbě']).toBe('Dřívější poznámka');
   });
 
+  it.each(['Vyplacení před prodejem', 'Převedení na jinou nemovitost', 'Vyplacení z částky kupní ceny'])('prints the mortgage balance and settlement %s in all reports', settlement => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    expect(app.mortgageSettlementOptions()).toContain(settlement);
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Rodinný dům', tabValues: {
+      ...draft.tabValues, 'pravni-vady': {
+        'Právní vady a jiná omezení': 'Zatíženo hypotékou', 'Zbývající částka úvěru': '1580000,50', 'Způsob vypořádání hypotéky': settlement
+      }
+    } }));
+    app.formatMortgageBalance();
+    expect(app.newPropertyDraft().tabValues['pravni-vady']['Zbývající částka úvěru'].replace(/\s/g, ' ')).toBe('1 580 000,5 Kč');
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo();
+    app.generateCurrentPropertyBrokerInfo();
+    app.generateCurrentPropertyBlankForm();
+    for (const [html] of write.mock.calls) {
+      const report = new DOMParser().parseFromString(html as string, 'text/html');
+      const rows = [...report.querySelectorAll('.info-row')];
+      const balance = rows.find(row => row.querySelector('.info-label')?.textContent === 'Zbývající částka úvěru')!;
+      const method = rows.find(row => row.querySelector('.info-label')?.textContent === 'Způsob vypořádání hypotéky')!;
+      expect(balance.textContent?.replace(/\s/g, ' ')).toContain('1 580 000,5 Kč');
+      expect(method.querySelector('.info-value')?.textContent).toContain(settlement);
+    }
+  });
+
+  it('preserves mortgage details when deselected but omits them from every report', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Byt', tabValues: {
+      ...draft.tabValues, 'pravni-vady': {
+        'Právní vady a jiná omezení': 'Zatíženo hypotékou', 'Zbývající částka úvěru': '222 000 Kč', 'Způsob vypořádání hypotéky': 'Vlastní dohodnuté řešení'
+      }
+    } }));
+    app.togglePravniVadyMultiValue('Právní vady a jiná omezení', 'Zatíženo hypotékou');
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo();
+    app.generateCurrentPropertyBrokerInfo();
+    app.generateCurrentPropertyBlankForm();
+    for (const [html] of write.mock.calls) {
+      expect(html).not.toContain('Zbývající částka úvěru');
+      expect(html).not.toContain('Způsob vypořádání hypotéky');
+      expect(html).not.toContain('Vlastní dohodnuté řešení');
+    }
+    const saved = app.cloneSavedPropertyRecord({ propertyType: 'Byt', tabValues: app.newPropertyDraft().tabValues });
+    expect(saved.tabValues['pravni-vady']['Zbývající částka úvěru']).toBe('222 000 Kč');
+    expect(saved.tabValues['pravni-vady']['Způsob vypořádání hypotéky']).toBe('Vlastní dohodnuté řešení');
+  });
+
+  it('keeps an empty custom settlement editable without printing its internal marker', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Byt', tabValues: {
+      ...draft.tabValues, 'pravni-vady': { 'Právní vady a jiná omezení': 'Zatíženo hypotékou' }
+    } }));
+    app.setMortgageSettlementCustomValue('');
+    expect(app.newPropertyDraft().tabValues['pravni-vady']['Způsob vypořádání hypotéky']).toBe('__vlastni__');
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo();
+    app.generateCurrentPropertyBrokerInfo();
+    app.generateCurrentPropertyBlankForm();
+    for (const [html] of write.mock.calls) expect(html).not.toContain('__vlastni__');
+    write.mockClear();
+    app.setMortgageSettlementCustomValue('Splacení dle dohody s bankou.');
+    app.generateCurrentPropertyBuyerInfo();
+    app.generateCurrentPropertyBrokerInfo();
+    app.generateCurrentPropertyBlankForm();
+    for (const [html] of write.mock.calls) expect(html).toContain('Splacení dle dohody s bankou.');
+  });
+
   it('prints checked choices first for single, multiple and custom choices', () => {
     const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
     app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Dům', tabValues: {
@@ -206,6 +315,59 @@ describe('Property print fields', () => {
     const cultivation = choices('Pěstování');
     expect(cultivation.slice(0, 2).every(choice => choice.classList.contains('on'))).toBe(true);
     expect(cultivation.slice(2).every(choice => !choice.classList.contains('on'))).toBe(true);
+  });
+
+  it('moves legacy floor selections into PODLAHY in all reports without mutating the property during printing', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Rodinný dům', tabValues: {
+      okna: { 'Druh oken': 'Plastová', Podlahy: 'Linoleum|Betonový základ|Litá' },
+      podlahy: { 'Poznámka k podlahám': 'Podlahy po rekonstrukci.' }
+    } }));
+    const before = JSON.stringify(app.newPropertyDraft());
+    expect(app.hasPropertyTabMultiValue('podlahy', 'Podlahy', 'Litá podlaha')).toBe(true);
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo();
+    app.generateCurrentPropertyBrokerInfo();
+    app.generateCurrentPropertyBlankForm();
+    for (const [html] of write.mock.calls) {
+      const report = new DOMParser().parseFromString(html as string, 'text/html');
+      const cards = [...report.querySelectorAll('.info-card')];
+      const windows = cards.find(card => card.querySelector('h2')?.textContent === 'OKNA A DVEŘE')!;
+      const floors = cards.find(card => card.querySelector('h2')?.textContent === 'PODLAHY')!;
+      expect(windows.textContent).toContain('Plastová');
+      expect(windows.textContent).not.toContain('Betonový základ');
+      expect(windows.textContent).not.toContain('Linoleum');
+      expect([...windows.querySelectorAll('.info-label')].some(label => label.textContent === 'Podlahy')).toBe(false);
+      expect(floors.textContent).toContain('Betonový základ');
+      expect(floors.textContent).toContain('Linoleum');
+      expect(floors.textContent).toContain('Litá podlaha');
+      expect(floors.textContent).toContain('Podlahy po rekonstrukci.');
+    }
+    expect(JSON.stringify(app.newPropertyDraft())).toBe(before);
+    app.togglePropertyTabMultiValue('podlahy', 'Podlahy', 'Vinyl');
+    expect(app.newPropertyDraft().tabValues['okna']['Podlahy']).toBeUndefined();
+    expect(app.hasPropertyTabMultiValue('podlahy', 'Podlahy', 'Linoleum')).toBe(true);
+    expect(app.hasPropertyTabMultiValue('podlahy', 'Podlahy', 'Vinyl')).toBe(true);
+  });
+
+  it('migrates floor notes, custom entries and print switches while preserving explicit canonical values', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    const migrated = app.cloneSavedPropertyRecord({ propertyType: 'Byt', tabValues: {
+      okna: { Podlahy: 'Betonový základ|Litá', 'Podlahy vlastní': 'Vlastní krytina',
+        'Poznámka k podlahám': 'Původní poznámka', 'Podlahy__buyer-info-visible': 'NE', 'Druh oken': 'Dřevěná' }
+    } });
+    expect(migrated.tabValues['podlahy']).toMatchObject({ Podlahy: 'Betonový základ|Litá podlaha',
+      'Podlahy vlastní': 'Vlastní krytina', 'Poznámka k podlahám': 'Původní poznámka', 'Podlahy__buyer-info-visible': 'NE' });
+    expect(migrated.tabValues['okna']).toEqual({ 'Druh oken': 'Dřevěná' });
+    const canonical = app.cloneSavedPropertyRecord({ propertyType: 'Byt', tabValues: {
+      okna: { Podlahy: 'Linoleum', 'Poznámka k podlahám': 'Stará poznámka' },
+      podlahy: { Podlahy: '', 'Poznámka k podlahám': 'Nová poznámka' }
+    } });
+    expect(canonical.tabValues['podlahy']['Podlahy']).toBe('');
+    expect(canonical.tabValues['podlahy']['Poznámka k podlahám']).toBe('Nová poznámka');
+    expect(canonical.tabValues['okna']['Podlahy']).toBeUndefined();
+    expect(app.podlahyOptions()).toEqual([...app.podlahyOptions()].sort((a, b) => a.localeCompare(b, 'cs')));
   });
 
   it('retains a previously saved standalone unpermitted-building selection in the legal-defects list', () => {
@@ -244,6 +406,59 @@ describe('Property print fields', () => {
     expect(buyer.querySelector('style')!.textContent).not.toContain('#dc2626');
     expect(broker.querySelectorAll('.opt')).toHaveLength(0);
     expect(broker.querySelector('main')!.textContent).not.toContain('Elektroměr');
+  });
+
+  it.each(['Rodinný dům', 'Dům'])('hides unit and service-breakdown sections for %s even with saved data and divided units', propertyType => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType, tabValues: {
+      stavba: { 'Rozděleno na jednotky': 'Ano', 'Počet jednotek v domě': '2' },
+      jednotka: { 'Vlastnictví jednotky': 'Osobní', 'Poznámka': 'Skrytá jednotka' },
+      'rozpis-sluzeb': { 'Poznámka': 'Skrytý rozpis služeb' }
+    } }));
+    const tabs = app.visiblePropertySectionTabs().map(tab => tab.key);
+    expect(tabs).not.toContain('jednotka');
+    expect(tabs).not.toContain('rozpis-sluzeb');
+    expect(tabs).toContain('prostory');
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo();
+    app.generateCurrentPropertyBrokerInfo();
+    app.generateCurrentPropertyBlankForm();
+    for (const [html] of write.mock.calls) {
+      const report = new DOMParser().parseFromString(html as string, 'text/html');
+      const headings = [...report.querySelectorAll('h2')].map(heading => heading.textContent);
+      expect(headings).not.toContain('JEDNOTKA');
+      expect(headings).not.toContain('ROZPIS SLUŽEB');
+      expect(report.body.textContent).not.toContain('Skrytý rozpis služeb');
+    }
+    expect(app.newPropertyDraft().tabValues['rozpis-sluzeb']['Poznámka']).toBe('Skrytý rozpis služeb');
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Bytový dům' }));
+    expect(app.visiblePropertySectionTabs().map(tab => tab.key)).toContain('jednotka');
+    expect(app.visiblePropertySectionTabs().map(tab => tab.key)).toContain('rozpis-sluzeb');
+  });
+
+  it('places the access-road section after land in form and all reports, and prints privacy as a main benefit', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    expect(app.hlavniPrednostiOptions()).toContain('Soukromí');
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Rodinný dům', tabValues: {
+      pozemek: { 'Pozemek ano/ne': 'Ano', 'Poznámka k pozemku': 'Rovinatý pozemek.' }, stavba: { 'Rok výstavby': '2000' },
+      'prijezdova-komunikace': { 'Poznámka k příjezdové komunikaci': 'Zpevněná cesta k domu.' },
+      'hlavni-prednosti': { 'Hlavní přednosti': 'Soukromí' }
+    } }));
+    const tabs = app.visiblePropertySectionTabs().map(tab => tab.key);
+    expect(tabs[tabs.indexOf('pozemek') + 1]).toBe('prijezdova-komunikace');
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo();
+    app.generateCurrentPropertyBrokerInfo();
+    app.generateCurrentPropertyBlankForm();
+    for (const [html] of write.mock.calls) {
+      const report = new DOMParser().parseFromString(html as string, 'text/html');
+      const headings = [...report.querySelectorAll('h2')].map(heading => heading.textContent);
+      expect(headings[headings.indexOf('POZEMEK') + 1]).toBe('PŘÍJEZDOVÁ KOMUNIKACE');
+      expect(headings[headings.indexOf('PŘÍJEZDOVÁ KOMUNIKACE') + 1]).toBe('STAVBA');
+      expect(report.body.textContent).toContain('Soukromí');
+    }
   });
 
   it('includes excluded notes and combined rows in the broker summary, while keeping all choices in the third report', () => {
@@ -438,10 +653,10 @@ describe('Property print fields', () => {
     { tab: 'ohrev-vody', field: 'Poznámka k ohřevu vody' },
     { tab: 'topeni', field: 'Poznámka k topení' },
     { tab: 'kanalizace', field: 'Poznámka ke kanalizaci' }
-  ])('prints $field across the full width only when the note is longer than 35 characters', ({ tab, field }) => {
+  ])('prints $field across the full width regardless of the note length', ({ tab, field }) => {
     const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
-    const longNote = 'tato poznámka je záměrně delší než pětatřicet znaků';
-    expect(longNote.length).toBeGreaterThan(35);
+    const longNote = 'tato poznámka je záměrně delší než pětapadesát znaků a přesune se na vlastní řádek';
+    expect(longNote.length).toBeGreaterThan(55);
     app.newPropertyDraft.update(draft => ({ ...draft, tabValues: { ...draft.tabValues, [tab]: { [field]: 'krátká poznámka' } } }));
     const write = vi.fn();
     vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
@@ -449,7 +664,7 @@ describe('Property print fields', () => {
     const shortDocument = new DOMParser().parseFromString(write.mock.calls[0][0] as string, 'text/html');
     const shortRow = [...shortDocument.querySelectorAll('.info-row')].find(row => row.querySelector('.info-label')?.textContent === field)!;
     expect(shortRow.querySelector('.info-value')!.textContent).toBe('krátká poznámka');
-    expect(shortRow.classList.contains('info-row-full')).toBe(false);
+    expect(shortRow.classList.contains('info-row-full')).toBe(true);
     app.newPropertyDraft.update(draft => ({ ...draft, tabValues: { ...draft.tabValues, [tab]: { [field]: longNote } } }));
     app.generateCurrentPropertyBrokerInfo();
     const longDocument = new DOMParser().parseFromString(write.mock.calls[1][0] as string, 'text/html');
@@ -528,7 +743,7 @@ describe('Property print fields', () => {
     expect(app.defaultHandoverPropertyDescription()).toContain('č. e. 17');
   });
 
-  it('keeps a very long building summary on its own Stavba row aligned right instead of the 65 character rule', () => {
+  it('keeps a very long building summary on its own Stavba row aligned right instead of the long value rule', () => {
     const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
     const longType = 'rodinný dům určený k demolici a následné výstavbě se dvěma bytovými jednotkami a podkrovím';
     app.newPropertyDraft.update(draft => ({ ...draft, tabValues: { stavba: {
@@ -542,17 +757,17 @@ describe('Property print fields', () => {
     const row = [...document.querySelectorAll('.info-row')].find(element => element.querySelector('.info-label')?.textContent === 'Stavba 1')!;
     const value = row.querySelector('.info-value')!.textContent!;
     expect(value).toContain(longType);
-    expect(value.length).toBeGreaterThan(65);
+    expect(value.length).toBeGreaterThan(55);
     expect(row.classList.contains('info-row-stavba')).toBe(true);
     expect(row.classList.contains('info-row-full')).toBe(false);
   });
 
-  it('moves values longer than 65 characters to their own full width line aligned left', () => {
+  it('moves Jaké dotace a kdy longer than 55 characters to its own full width line aligned left', () => {
     const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
-    const shortValue = 'krátká poznámka k příjezdové komunikaci';
-    const longValue = `${shortValue} a výrazně delší text přesahující přesně šedesát pět znaků celkem`;
-    expect(shortValue.length).toBeLessThanOrEqual(65);
-    expect(longValue.length).toBeGreaterThan(65);
+    const shortValue = 'státní dotace na fotovoltaiku';
+    const longValue = `${shortValue} vyplacená v roce 2024 a výrazně delší text přesahující pětapadesát znaků celkem`;
+    expect(shortValue.length).toBeLessThanOrEqual(55);
+    expect(longValue.length).toBeGreaterThan(55);
     const write = vi.fn();
     vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
     const generateAll = (): void => {
@@ -562,22 +777,53 @@ describe('Property print fields', () => {
     };
     const rowsFor = (callIndex: number): Element[] => {
       const document = new DOMParser().parseFromString(write.mock.calls[callIndex][0] as string, 'text/html');
-      return [...document.querySelectorAll('.info-row')].filter(row => row.querySelector('.info-label')?.textContent === 'Poznámka k příjezdové komunikaci');
+      return [...document.querySelectorAll('.info-row')].filter(row => row.querySelector('.info-label')?.textContent === 'Jaké dotace a kdy');
     };
-    app.newPropertyDraft.update(draft => ({ ...draft, tabValues: { 'prijezdova-komunikace': { 'Poznámka k příjezdové komunikaci': shortValue } } }));
+    app.newPropertyDraft.update(draft => ({ ...draft, tabValues: { dotace: { 'Čerpané dotace': 'ANO', 'Jaké dotace a kdy': shortValue } } }));
     generateAll();
     for (const callIndex of [0, 1, 2]) {
       const [row] = rowsFor(callIndex);
       expect(row).toBeDefined();
       expect(row.classList.contains('info-row-full')).toBe(false);
     }
-    app.newPropertyDraft.update(draft => ({ ...draft, tabValues: { 'prijezdova-komunikace': { 'Poznámka k příjezdové komunikaci': longValue } } }));
+    app.newPropertyDraft.update(draft => ({ ...draft, tabValues: { dotace: { 'Čerpané dotace': 'ANO', 'Jaké dotace a kdy': longValue } } }));
     generateAll();
     for (const callIndex of [3, 4, 5]) {
       const [row] = rowsFor(callIndex);
       expect(row).toBeDefined();
       expect(row.classList.contains('info-row-full')).toBe(true);
       expect(row.querySelector('.info-value')!.textContent).toBe(longValue);
+    }
+  });
+
+  it('keeps long non note values inline and prints area labels in lowercase', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    const longText = 'velmi dlouhý text přesahující pětapadesát znaků, který se nemá přesouvat na vlastní řádek';
+    expect(longText.length).toBeGreaterThan(55);
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Rodinný dům', tabValues: {
+      okna: { 'Rekonstrukce oken': longText, 'Poznámka k oknům a dveřím': longText },
+      prostory: { 'Seznam místností': 'Obývací pokoj', 'Obývací pokoj__0__width': '5 m', 'Obývací pokoj__0__length': '7 m' }
+    } }));
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo();
+    app.generateCurrentPropertyBrokerInfo();
+    app.generateCurrentPropertyBlankForm();
+    for (const [html] of write.mock.calls) {
+      const document = new DOMParser().parseFromString(html as string, 'text/html');
+      const rows = [...document.querySelectorAll('.info-row')];
+      const labels = rows.map(row => row.querySelector('.info-label')?.textContent || '');
+      const rowFor = (label: string) => rows.find(row => row.querySelector('.info-label')?.textContent === label)!;
+      expect(rowFor('Poznámka k oknům a dveřím').classList.contains('info-row-full')).toBe(true);
+      const reconstruction = rowFor('Rekonstrukce oken');
+      expect(reconstruction).toBeDefined();
+      expect(reconstruction.classList.contains('info-row-full')).toBe(false);
+      expect(reconstruction.querySelector('.info-value')!.textContent).toBe(longText);
+      expect(labels).toContain('Podlahová plocha');
+      expect(labels).toContain('Celková užitná plocha');
+      expect(labels.some(label => label.startsWith('PODLAHOVÁ') || label.startsWith('OBYTNÁ') || label.startsWith('UŽITNÁ'))).toBe(false);
+      expect(rowFor('Podlahová plocha').querySelector('.info-value')!.textContent).toBe('35,00 m²');
+      expect(rowFor('Celková užitná plocha').querySelector('.info-value')!.textContent).toBe('35,00 m²');
     }
   });
 
@@ -668,7 +914,7 @@ describe('Property print fields', () => {
     expect(app.prostoryRoomListOptions()).not.toContain('Sklep');
     expect(app.prostoryUnitAccessoryOptions()).toEqual(['Nepodsklepený', 'Sklep', 'Garáž', 'Sauna']);
     expect(app.prostoryUnitAccessoryChips('A')).toEqual(['Nepodsklepený', 'Sklep', 'Garáž', 'Sauna']);
-    expect(app.prostorySharedAccessoryOptions()).toEqual(['Krytý bazén', 'Pergola', 'Stodola', 'Garáž', 'Bazén', 'Vyhřívaný bazén', 'Sauna']);
+    expect(app.prostorySharedAccessoryOptions()).toEqual(['Krytý bazén', 'Pergola', 'Stodola', 'Garáž', 'Bazén', 'Vyhřívaný bazén', 'Sauna', 'Sklípek']);
     app.toggleProstoryMultiValue('Příslušenství v jednotce', 'Sklep', 'A');
     app.toggleProstoryMultiValue('Příslušenství v jednotce', 'Nepodsklepený', 'B');
     app.toggleProstoryMultiValue('Příslušenství nemovitosti', 'Pergola');
@@ -825,8 +1071,8 @@ describe('Property print fields', () => {
       const card = (label: string) => cards.find(section => section.querySelector('h2')?.textContent === label)!;
       const labels = (label: string) => [...card(label).querySelectorAll('.info-label')].map(element => element.textContent);
       expect(cards.some(section => section.querySelector('h2')?.textContent === 'SOCIÁLNÍ ZÁZEMÍ')).toBe(false);
-      expect(labels('SOCIÁLNÍ ZÁZEMÍ A')).toEqual(['Počet koupelen A', 'Vybavení koupelny A']);
-      expect(labels('SOCIÁLNÍ ZÁZEMÍ B')).toEqual(['Počet koupelen B', 'Poznámka k sociálnímu zázemí B']);
+      expect(labels('SOCIÁLNÍ ZÁZEMÍ A')).toEqual(['Počet koupelen', 'Vybavení koupelny']);
+      expect(labels('SOCIÁLNÍ ZÁZEMÍ B')).toEqual(['Počet koupelen', 'Poznámka k sociálnímu zázemí B']);
       expect(card('SOCIÁLNÍ ZÁZEMÍ B').textContent).toContain('Poznámka pro B');
     }
     app.generateCurrentPropertyBlankForm();
@@ -834,10 +1080,10 @@ describe('Property print fields', () => {
     const blankDocument = new DOMParser().parseFromString(blank, 'text/html');
     const card = (label: string) => [...blankDocument.querySelectorAll('main > section')].find(section => section.querySelector('h2')?.textContent === label)!;
     expect([...card('SOCIÁLNÍ ZÁZEMÍ A').querySelectorAll('.info-label')].map(element => element.textContent)).toEqual([
-      'Bytové jádro A', 'Počet koupelen A', 'Počet WC A', 'V koupelně A', 'Toaleta – Druh toalety A', 'Toaleta – Umístění toalety A', 'Pračka A', 'Poznámka k sociálnímu zázemí A'
+      'Bytové jádro', 'Počet koupelen', 'Počet WC', 'V koupelně', 'Toaleta – Druh toalety A', 'Toaleta – Umístění toalety A', 'Pračka A', 'Poznámka k sociálnímu zázemí A'
     ]);
     expect([...card('SOCIÁLNÍ ZÁZEMÍ B').querySelectorAll('.info-label')].map(element => element.textContent)).toEqual([
-      'Bytové jádro B', 'Počet koupelen B', 'Počet WC B', 'V koupelně B', 'Toaleta – Druh toalety B', 'Toaleta – Umístění toalety B', 'Pračka B', 'Poznámka k sociálnímu zázemí B'
+      'Bytové jádro', 'Počet koupelen', 'Počet WC', 'V koupelně', 'Toaleta – Druh toalety B', 'Toaleta – Umístění toalety B', 'Pračka B', 'Poznámka k sociálnímu zázemí B'
     ]);
     expect(card('SOCIÁLNÍ ZÁZEMÍ B').textContent).toContain('2');
     expect(card('SOCIÁLNÍ ZÁZEMÍ B').textContent).toContain('Poznámka pro B');
@@ -857,8 +1103,73 @@ describe('Property print fields', () => {
     const document = new DOMParser().parseFromString(write.mock.calls[0][0] as string, 'text/html');
     const cards = [...document.querySelectorAll('main > section')];
     const first = cards.find(section => section.querySelector('h2')?.textContent === 'SOCIÁLNÍ ZÁZEMÍ A')!;
-    expect([...first.querySelectorAll('.info-label')].map(element => element.textContent)).toEqual(['Počet WC A']);
+    expect([...first.querySelectorAll('.info-label')].map(element => element.textContent)).toEqual(['Počet WC']);
     expect(cards.some(section => section.querySelector('h2')?.textContent === 'SOCIÁLNÍ ZÁZEMÍ B')).toBe(false);
+  });
+
+  it('uses custom unit names in layouts and social facilities in every report without changing unit keys', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Bytový dům', tabValues: {
+      stavba: { 'Rozděleno na jednotky': 'Ano', 'Počet jednotek v domě': '3' },
+      prostory: { 'Dispozice jednotky A': '2+kk', 'Dispozice jednotky B': '1+kk', 'Dispozice jednotky C': '3+1',
+        'Poznámka k jednotce A': 'Poznámka přízemí', 'Poznámka k jednotce B': 'Poznámka podkroví' },
+      'socialni-zazemi': { 'Počet koupelen A': '1', 'Počet koupelen B': '2', 'Počet koupelen C': '3', 'Počet WC A': '1', 'Vybavení koupelny A': 'Vana' }
+    } }));
+    app.setDispoziceUnitName('A', 'Byt v přízemí');
+    app.setDispoziceUnitName('B', 'Podkroví');
+    expect(app.dispoziceUnits()).toEqual(['A', 'B', 'C']);
+    expect(app.dispoziceUnitName('A')).toBe('Byt v přízemí');
+    expect(app.prostoryUnitLabel('Poznámka k jednotce', 'A')).toBe('Poznámka k jednotce Byt v přízemí');
+    expect(app.socialniZazemiUnitTitle('A')).toBe('SOCIÁLNÍ ZÁZEMÍ Byt v přízemí');
+    expect(app.newPropertyDraft().tabValues['prostory']['Dispozice jednotky A']).toBe('2+kk');
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo();
+    app.generateCurrentPropertyBrokerInfo();
+    app.generateCurrentPropertyBlankForm();
+    for (const [html] of write.mock.calls) {
+      const report = new DOMParser().parseFromString(html as string, 'text/html');
+      const cards = [...report.querySelectorAll('.info-card')];
+      const card = (title: string) => cards.find(section => section.querySelector('h2')?.textContent === title)!;
+      expect(card('Byt v přízemí').textContent).toContain('Poznámka přízemí');
+      expect(card('Podkroví').textContent).toContain('Poznámka podkroví');
+      expect(card('DISPOZICE C')).toBeDefined();
+      const socialLabels = [...card('SOCIÁLNÍ ZÁZEMÍ Byt v přízemí').querySelectorAll('.info-label')].map(label => label.textContent);
+      expect(socialLabels).toContain('Počet koupelen');
+      expect(socialLabels).toContain('Počet WC');
+      expect(socialLabels.some(label => label === 'Vybavení koupelny' || label === 'V koupelně')).toBe(true);
+      expect(socialLabels).not.toContain('Počet koupelen Byt v přízemí');
+      expect(socialLabels).not.toContain('Počet WC Byt v přízemí');
+      expect(socialLabels).not.toContain('Vybavení koupelny Byt v přízemí');
+      expect(card('SOCIÁLNÍ ZÁZEMÍ Podkroví').textContent).not.toContain('Počet koupelen Podkroví');
+      expect(card('SOCIÁLNÍ ZÁZEMÍ C')).toBeDefined();
+      expect(cards.some(section => ['DISPOZICE A', 'DISPOZICE B', 'SOCIÁLNÍ ZÁZEMÍ A', 'SOCIÁLNÍ ZÁZEMÍ B'].includes(section.querySelector('h2')?.textContent || ''))).toBe(false);
+      expect(html).not.toContain('unitName__');
+    }
+    const saved = app.cloneSavedPropertyRecord({ propertyType: 'Bytový dům', tabValues: app.newPropertyDraft().tabValues });
+    expect(saved.tabValues['prostory']['unitName__A']).toBe('Byt v přízemí');
+    expect(saved.tabValues['prostory']['unitName__B']).toBe('Podkroví');
+    expect(saved.tabValues['prostory']['Dispozice jednotky A']).toBe('2+kk');
+  });
+
+  it('updates names immediately and restores the letter when a custom name is cleared', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, tabValues: {
+      stavba: { 'Rozděleno na jednotky': 'Ano', 'Počet jednotek v domě': '2' },
+      prostory: { 'Dispozice jednotky A': '2+kk', 'Dispozice jednotky B': '1+kk' }
+    } }));
+    app.setDispoziceUnitName('A', 'Přízemí');
+    app.setDispoziceUnitName('B', 'Podkroví');
+    app.setDispoziceUnitName('A', 'Byt dole');
+    expect(app.dispoziceUnitName('A')).toBe('Byt dole');
+    expect(app.socialniZazemiUnitTitle('A')).toBe('SOCIÁLNÍ ZÁZEMÍ Byt dole');
+    app.setDispoziceUnitName('A', '   ');
+    expect(app.dispoziceUnitName('A')).toBe('Dispozice A');
+    expect(app.socialniZazemiUnitTitle('A')).toBe('SOCIÁLNÍ ZÁZEMÍ A');
+    expect(app.dispoziceUnitName('B')).toBe('Podkroví');
+    expect(app.newPropertyDraft().tabValues['prostory']['Dispozice jednotky A']).toBe('2+kk');
+    app.setDispoziceUnitName('Z', 'Neexistující jednotka');
+    expect(app.newPropertyDraft().tabValues['prostory']['unitName__Z']).toBeUndefined();
   });
 
   it('opens Google and Seznam maps for an address in a new window', () => {
@@ -870,5 +1181,105 @@ describe('Property print fields', () => {
     expect(open).toHaveBeenCalledTimes(2);
     expect(open.mock.calls[0]).toEqual(['https://www.google.com/maps/search/?api=1&query=%C5%98%C3%ADkovice%20116', '_blank']);
     expect(open.mock.calls[1]).toEqual(['https://mapy.com/fnc/v1/search?query=%C5%98%C3%ADkovice%20116', '_blank']);
+  });
+
+  it.each([false, true])('prints compact driving directions once in the client section (linked client: %s)', linkedClient => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.agentProfile.update(profile => ({ ...profile, departureAddress: 'Výjezd 1' }));
+    app.newPropertyDraft.update(draft => ({ ...draft, address: 'Cíl 2', linkedClientIds: linkedClient ? ['client-1'] : [] }));
+    if (linkedClient) app.savedClientRecords.set([{ id: 'client-1', draft: {
+      fullName: 'Jan Novák', companyName: '', phonePrefix: '+420', phone: '777123456', email: 'jan@example.cz'
+    } }]);
+    const route = new Subject<DrivingRoute>();
+    const calculate = vi.spyOn(TestBed.inject(DrivingRouteService), 'calculate').mockReturnValue(route);
+    const write = vi.fn();
+    const open = vi.spyOn(window, 'open').mockReturnValue({ closed: false, document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBrokerInfo();
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(calculate).toHaveBeenCalledWith('Výjezd 1', 'Cíl 2');
+    expect(write.mock.calls[0][0]).toContain('Počítám silniční trasu');
+    expect(write.mock.calls[0][0]).not.toContain('window.print');
+    route.next({ distanceMeters: 205000, durationSeconds: 10500, originCity: 'Havířov', destinationCity: 'Skorošice' });
+    route.complete();
+    expect(open).toHaveBeenCalledTimes(1);
+    const report = new DOMParser().parseFromString(write.mock.calls[1][0], 'text/html');
+    const client = [...report.querySelectorAll('.info-card')].find(card => card.querySelector('h2')?.textContent === 'KLIENT')!;
+    const drivingRows = [...client.querySelectorAll('.info-row')].filter(row => row.querySelector('.info-label')?.textContent === 'Dojezd');
+    expect(drivingRows).toHaveLength(1);
+    expect(drivingRows[0].querySelector('.info-value')?.textContent).toBe('205 km, 2:55 hod');
+    expect(drivingRows[0].classList.contains('info-row-full')).toBe(false);
+    expect(client.textContent).not.toContain('Havířov');
+    expect(client.textContent).not.toContain('Skorošice');
+    expect(report.body.textContent).not.toContain('DOJEZD MAKLÉŘE');
+    if (linkedClient) expect(client.textContent).toContain('Jan Novák');
+    app.generateCurrentPropertyBuyerInfo();
+    expect(write.mock.calls[2][0]).not.toContain('DOJEZD MAKLÉŘE');
+    expect(write.mock.calls[2][0]).not.toContain('Výjezd 1');
+    expect(write.mock.calls[2][0]).not.toContain('Havířov → Skorošice');
+    expect(write.mock.calls[2][0]).not.toContain('205 km, 2:55 hod');
+    expect(calculate).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses the nearest address as fallback and prints a useful message when routing fails', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.agentProfile.update(profile => ({ ...profile, departureAddress: 'Výjezd 1' }));
+    app.newPropertyDraft.update(draft => ({ ...draft, address: '', tabValues: { zakladni: { 'Nejblížší adresa': 'Orientační bod 3' } } }));
+    const calculate = vi.spyOn(TestBed.inject(DrivingRouteService), 'calculate').mockReturnValue(throwError(() => new Error('Trasa není dostupná.')));
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ closed: false, document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBrokerInfo();
+    expect(calculate).toHaveBeenCalledWith('Výjezd 1', 'Orientační bod 3');
+    expect(write.mock.calls[1][0]).toContain('Trasa není dostupná.');
+    expect(write.mock.calls[1][0]).not.toContain('0 km');
+  });
+
+  it('preserves the departure address in XML and loads older profiles without one', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.agentProfile.update(profile => ({ ...profile, departureAddress: 'Říkovice 116' }));
+    const xml = app.buildXmlString();
+    app.agentProfile.update(profile => ({ ...profile, departureAddress: '' }));
+    app.applyXmlPayload(xml);
+    expect(app.agentProfile().departureAddress).toBe('Říkovice 116');
+    const fresh = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    fresh.applyXmlPayload('<remax-form><payload>{"agentProfile":{"fullName":"Makléř"}}</payload></remax-form>');
+    expect(fresh.agentProfile().departureAddress).toBe('');
+  });
+
+  it('debounces inline driving updates and clears stale results when either address changes', () => {
+    vi.useFakeTimers();
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.activeWorkspace.set('properties');
+    app.propertyWorkspaceMode.set('new');
+    app.agentProfile.update(profile => ({ ...profile, departureAddress: 'Výjezd 1' }));
+    app.newPropertyDraft.update(draft => ({ ...draft, address: 'Cíl 2' }));
+    const first = new Subject<DrivingRoute>();
+    const next = new Subject<DrivingRoute>();
+    const calculate = vi.spyOn(TestBed.inject(DrivingRouteService), 'calculate')
+      .mockReturnValueOnce(first).mockReturnValue(next);
+    TestBed.tick();
+    expect(app.propertyDrivingInfo().status).toBe('loading');
+    expect(calculate).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(700);
+    first.next({ distanceMeters: 205000, durationSeconds: 10500, originCity: 'Havířov', destinationCity: 'Skorošice' });
+    expect(app.propertyDrivingInfo().summary).toBe('205 km, 2:55 hod');
+    app.newPropertyDraft.update(draft => ({ ...draft, address: 'Cíl 3' }));
+    expect(app.propertyDrivingInfo().summary).toBe('');
+    TestBed.tick();
+    first.next({ distanceMeters: 1000, durationSeconds: 60 });
+    expect(app.propertyDrivingInfo().summary).toBe('');
+    vi.advanceTimersByTime(700);
+    expect(calculate).toHaveBeenLastCalledWith('Výjezd 1', 'Cíl 3');
+    next.next({ distanceMeters: 10000, durationSeconds: 900, originCity: 'Havířov', destinationCity: 'Karviná' });
+    expect(app.propertyDrivingInfo().summary).toBe('10 km, 0:15 hod');
+    app.agentProfile.update(profile => ({ ...profile, departureAddress: 'Výjezd 4' }));
+    expect(app.propertyDrivingInfo().summary).toBe('');
+    TestBed.tick();
+    vi.advanceTimersByTime(700);
+    expect(calculate).toHaveBeenLastCalledWith('Výjezd 4', 'Cíl 3');
+    next.error(new Error('Nedostupné mapy'));
+    expect(app.propertyDrivingInfo().status).toBe('error');
+    expect(app.propertyDrivingInfo().summary).toBe('');
+    app.agentProfile.update(profile => ({ ...profile, departureAddress: '' }));
+    expect(app.propertyDrivingInfo().status).toBe('idle');
   });
 });

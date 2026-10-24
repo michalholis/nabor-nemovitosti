@@ -4,3 +4,13 @@ body {
   height: 100%;
   overflow: hidden;
 }
+
+button.custom-option-choice,
+option.custom-option-choice {
+  color: #6b7280 !important;
+}
+
+button.custom-option-choice:not(.active),
+option.custom-option-choice {
+  background-color: #f1f2f4;
+}

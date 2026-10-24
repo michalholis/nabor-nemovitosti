@@ -1,10 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { AddressAutocompleteDirective } from './address-autocomplete.directive';
 import { SelectedFirstPipe, selectedOptionsFirst } from './selected-first.pipe';
 import { IntakeControl, IntakeSection, PROPERTY_INTAKE_FORM } from './property-intake-form';
+import { DrivingRoute, DrivingRouteService, formatDrivingRouteSummary } from './driving-route.service';
+import { HandoverContactOption, HandoverContactPicker } from './handover-contact-picker';
+import { HandoverReturnFields } from './handover-return-fields';
+import { formatHandoverPropertyAddress, renderHandoverReturnSections } from './handover-return';
+import { BlankHandoverEditor } from './blank-handover-editor';
 
 interface PropertyPrintRow {
   field: string;
@@ -12,7 +18,25 @@ interface PropertyPrintRow {
   value: string;
 }
 
+interface PropertyDrivingInfo {
+  key: string;
+  status: 'idle' | 'loading' | 'ready' | 'error';
+  summary: string;
+  error?: string;
+}
+
+interface HandoverProtocolParty { name: string; birthDate: string; address: string; phone: string; email: string; clientInterest?: string }
+interface HandoverProtocolSource {
+  values: Record<string, string>;
+  delivering: HandoverProtocolParty[];
+  receiving: HandoverProtocolParty[];
+  title: string;
+}
+
 type YesNo = 'ANO' | 'NE' | null;
+type HandoverClientRole = 'predavajici' | 'prebirajici' | 'nezahrnovat';
+type HandoverConfirmationPreset = 'basic' | 'custom';
+type HandoverEnergyTransferPreset = 'sale' | 'lease' | 'leaseReturn';
 type StavbaParcelField = 'parcel' | 'type' | 'area' | 'buildingNumber' | 'buildingNumberType';
 type ClientAccentTheme = 'pink' | 'gray' | 'emerald' | 'yellow';
 
@@ -374,7 +398,7 @@ const LAND_RENT_PERIOD_OPTIONS: string[] = ['Týdně', 'Měsíčně', 'Za půlro
 
 const LAND_FENCING_OPTIONS: string[] = ['Žádné', 'Částečné', 'Plné'];
 
-const LAND_FENCE_OPTIONS: string[] = ['Dřevo', 'Pletivo', 'Plast', 'Hliník', 'Živý plot'];
+const LAND_FENCE_OPTIONS: string[] = ['Dřevo', 'Pletivo', 'Plast', 'Hliník', 'Živý plot', 'Kamenný plot', 'Betonový plot'];
 
 const LAND_GARDEN_OPTIONS: string[] = ['Není', 'Vlastní', 'Společná'];
 
@@ -402,6 +426,7 @@ const LAND_CULTIVATION_OPTIONS: string[] = [
   'Meruňky',
   'Moruše',
   'Nektarinky',
+  'Ořech',
   'Ostružiník',
   'Rakytník',
   'Rybíz bílý',
@@ -522,7 +547,14 @@ const PROPERTY_SALES_PHASES: string[] = [
   'Kupní smlouva',
   'Katastr',
   'Předání',
-  'Uzavřeno'
+  'Uzavřeno',
+  'Archivováno'
+];
+
+const PROPERTY_ARCHIVE_REASONS = [
+  'Již prodal – dobíhající smlouva u jiné RK',
+  'Již prodal – bez RK',
+  'Nechce už prodávat'
 ];
 
 const JEDNOTKA_OWNERSHIP_OPTIONS: string[] = ['Osobní', 'Družstevní', 'Podílové', 'V nájmu'];
@@ -601,7 +633,7 @@ const STRECHA_TYPE_OPTIONS: string[] = [
 
 const STRECHA_INSULATION_OPTIONS: string[] = ['Ano', 'Ne', 'Částečně'];
 
-const STRECHA_INSULATION_TYPE_OPTIONS: string[] = ['Zatepleno vata', 'Zatepleno PES', 'Zatepleno PUR'];
+const STRECHA_INSULATION_TYPE_OPTIONS: string[] = ['Zatepleno vata', 'Zatepleno PES', 'Zatepleno PUR', 'Celulóza'];
 
 const STRECHA_ACCESS_OPTIONS: string[] = ['Zevnitř nemovitosti', 'Servisní otvor na střechu', 'Zvenku'];
 
@@ -643,10 +675,10 @@ const PODLAHY_OPTIONS: string[] = [
   'Lamino',
   'Plovoucí podlahy',
   'Koberec',
-  'Litá',
+  'Litá podlaha',
   'Betonová',
   'Dřevěná'
-];
+].sort((a, b) => a.localeCompare(b, 'cs'));
 
 const PRIJEZD_CESTA_OPTIONS: string[] = [
   'Zpevněná',
@@ -761,18 +793,20 @@ const PROSTORY_ROOM_LIST_OPTIONS: string[] = [
   'Kuchyně větší než 12m²',
   'Ložnice',
   'Obývací pokoj',
+  'Dětský pokoj',
   'Obývací pokoj + kuchyně',
   'Obytná místnost'
 ];
 
 const PROSTORY_UNIT_ACCESSORY_OPTIONS = ['Nepodsklepený', 'Sklep', 'Garáž', 'Sauna'];
 const PROSTORY_UNIT_ACCESSORY_VALUES = ['Nepodsklepený', 'Sklep', 'Garáž', 'Bazén', 'Sauna'];
-const PROSTORY_SHARED_ACCESSORY_OPTIONS = ['Krytý bazén', 'Pergola', 'Stodola', 'Garáž', 'Bazén', 'Vyhřívaný bazén', 'Sauna'];
+const PROSTORY_SHARED_ACCESSORY_OPTIONS = ['Krytý bazén', 'Pergola', 'Stodola', 'Garáž', 'Bazén', 'Vyhřívaný bazén', 'Sauna', 'Sklípek'];
 const PROSTORY_SHARED_FIELDS = new Set(['Poznámka k dispozici', 'Příslušenství nemovitosti', 'Poznámka k příslušenství mimo jednotku']);
 
-const PROPERTY_PRINT_LONG_NOTE_LABELS = ['Poznámka k elektřině', 'Poznámka k ohřevu vody', 'Poznámka k topení', 'Poznámka ke kanalizaci'];
-const PROPERTY_PRINT_LONG_NOTE_MIN_LENGTH = 35;
-const PROPERTY_PRINT_LONG_VALUE_LENGTH = 65;
+const PROPERTY_PRINT_NOTE_LABEL_PATTERN = /^poznámka/;
+const PROPERTY_PRINT_WRAPPED_LABEL_PATTERN = /^(?:zajímavosti v okolí|v koupelně|jaké dotace a kdy)|vybavení/;
+const PROPERTY_PRINT_LONG_VALUE_LENGTH = 55;
+const MORTGAGE_DETAIL_FIELDS = ['Zbývající částka úvěru', 'Způsob vypořádání hypotéky'];
 
 const PROSTORY_CELLAR_TYPE_OPTIONS: string[] = ['Zděný sklep', 'Sklepní kóje', 'Částečně podsklepený', 'Celopodsklepený'];
 
@@ -791,6 +825,7 @@ const PROSTORY_OBYTNA_ROOMS: string[] = [
   'Kuchyně větší než 12m²',
   'Ložnice',
   'Obývací pokoj',
+  'Dětský pokoj',
   'Obývací pokoj + kuchyně',
   'Obytná místnost'
 ];
@@ -802,6 +837,7 @@ const PROSTORY_UZITNA_EXCLUDED_ROOMS: string[] = ['Kočárkárna', 'Kolárna', '
 const PROPERTY_SECTION_TABS: Array<{ key: NewPropertyTabKey; label: string }> = [
   { key: 'zakladni', label: 'ZÁKLADNÍ INFORMACE' },
   { key: 'pozemek', label: 'POZEMEK' },
+  { key: 'prijezdova-komunikace', label: 'PŘÍJEZDOVÁ KOMUNIKACE' },
   { key: 'stavba', label: 'STAVBA' },
   { key: 'jednotka', label: 'JEDNOTKA' },
   { key: 'prostory', label: 'DISPOZICE' },
@@ -811,7 +847,6 @@ const PROPERTY_SECTION_TABS: Array<{ key: NewPropertyTabKey; label: string }> = 
   { key: 'okna', label: 'OKNA A DVEŘE' },
   { key: 'podlahy', label: 'PODLAHY' },
   { key: 'dotace', label: 'DOTACE' },
-  { key: 'prijezdova-komunikace', label: 'PŘÍJEZDOVÁ KOMUNIKACE' },
   { key: 'sluzby', label: 'SLUŽBY' },
   { key: 'elektina', label: 'ELEKTŘINA' },
   { key: 'voda', label: 'VODA' },
@@ -1113,6 +1148,7 @@ interface ClientDirectoryEntry {
   email: string;
   createdAt: string;
   type: string;
+  missingInterest: boolean;
   status: 'Aktivní' | 'Neaktivní';
   notes: ClientNote[];
 }
@@ -1126,8 +1162,10 @@ interface PropertyDirectoryEntry {
   price: string;
   seller: string;
   createdAt: string;
-  status: 'Aktivní' | 'Neaktivní';
+  status: 'Aktivní' | 'Neaktivní' | 'Archivováno';
   phase: string;
+  archiveReason?: string;
+  archiveDescription?: string;
 }
 
 interface NoteCard {
@@ -1150,7 +1188,7 @@ interface ClientNote {
 
 interface NewClientDraft {
   clientType: 'fyzicka' | 'pravnicka';
-  clientInterest: 'zajemce' | 'kupujici' | 'prodavajici' | 'poptavajici' | 'pronajimatel' | 'zastupce' | 'developer' | 'najemce' | 'jiny';
+  clientInterest: 'zajemce' | 'kupujici' | 'prodavajici' | 'poptavajici' | 'pronajimatel' | 'zastupce' | 'developer' | 'najemce' | 'jiny' | '';
   hasTitle: boolean;
   titleText: string;
   actingMode: 'sam' | 'zastoupeni';
@@ -1222,6 +1260,7 @@ interface AgentProfile {
   ico: string;
   companyName: string;
   address: string;
+  departureAddress: string;
   accountNumber: string;
   web: string;
 }
@@ -1240,8 +1279,10 @@ interface SavedPropertyRecord {
   address: string;
   price: string;
   seller: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'archived';
   phase: string;
+  archiveReason?: string;
+  archiveDescription?: string;
   linkedClientId?: string;
   linkedClientIds?: string[];
   tabValues?: Partial<Record<NewPropertyTabKey, Record<string, string>>>;
@@ -1295,6 +1336,8 @@ interface NewPropertyDraft {
   price: string;
   seller: string;
   phase: string;
+  archiveReason?: string;
+  archiveDescription?: string;
   linkedClientId?: string;
   linkedClientIds?: string[];
   tabValues: Partial<Record<NewPropertyTabKey, Record<string, string>>>;
@@ -1362,12 +1405,34 @@ interface RoomAreaTotal {
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, FormsModule, AddressAutocompleteDirective, SelectedFirstPipe],
+  imports: [CommonModule, FormsModule, AddressAutocompleteDirective, SelectedFirstPipe, HandoverContactPicker, HandoverReturnFields, BlankHandoverEditor],
   templateUrl: './app.html',
-  styleUrl: './app.scss'
+  styleUrls: ['./app.scss', './property-archive.scss']
 })
 export class App {
+  protected readonly handoverCellarConditions = [
+    { key: 'cleared', label: 'Vyklizený, bez osobních věcí pronajímatele' },
+    { key: 'defects', label: 'Se závadami nebo poškozením uvedenými níže' },
+    { key: 'items', label: 'S ponechaným vybavením nebo věcmi uvedenými níže' }
+  ];
   private readonly http = inject(HttpClient);
+  private readonly drivingRoutes = inject(DrivingRouteService);
+  private readonly normalizedPropertyTabCollection = computed(() => this.clonePropertyTabValues(this.newPropertyDraft().tabValues));
+  private readonly propertyDrivingState = signal<PropertyDrivingInfo>({ key: '', status: 'idle', summary: '' });
+  private readonly activeDrivingRouteKey = computed(() => {
+    if (!this.isWorkspaceActive('properties') || this.propertyWorkspaceMode() !== 'new') return '';
+    const { origin, destination } = this.currentDrivingAddresses();
+    return origin && destination ? JSON.stringify([origin, destination]) : '';
+  });
+  protected readonly propertyDrivingInfo = computed<PropertyDrivingInfo>(() => {
+    const key = this.activeDrivingRouteKey();
+    const state = this.propertyDrivingState();
+    return state.key === key ? state : { key, status: key ? 'loading' : 'idle', summary: '' };
+  });
+  protected readonly agentProfileSaved = signal(false);
+  protected readonly blankHandoverEditorOpen = signal(false);
+  protected readonly blankHandoverValues = signal<Record<string, string>>({});
+  protected readonly blankHandoverSettingsSaved = signal(false);
   private readonly customOptionLabel = 'Dopsat vlastní možnost';
   protected readonly workspaceItems: WorkspaceNavItem[] = [
     {
@@ -1520,6 +1585,7 @@ export class App {
     ico: '',
     companyName: '',
     address: '',
+    departureAddress: '',
     accountNumber: '',
     web: ''
   });
@@ -1527,6 +1593,10 @@ export class App {
   private readonly activePropertyId = signal('');
   private readonly propertyDirectorySort = signal<{ key: PropertyDirectorySortKey; direction: 'asc' | 'desc' } | null>(null);
   private readonly propertyDirectoryView = signal<PropertyDirectoryView>('all');
+  protected readonly propertyArchiveReasons = PROPERTY_ARCHIVE_REASONS;
+  protected readonly propertyArchiveDialog = signal<{
+    propertyId: string; reason: string; description: string; error: string;
+  } | null>(null);
   protected readonly propertySearchQuery = signal('');
   protected readonly propertyClientSearchQuery = signal('');
   protected readonly propertyClientSort = signal<{ key: 'name' | 'role'; direction: 'asc' | 'desc' } | null>(null);
@@ -1652,6 +1722,7 @@ export class App {
       email: record.draft.email.trim(),
       createdAt: record.createdAt,
       type: this.newClientInterestLabel(record.draft.clientInterest),
+      missingInterest: !record.draft.clientInterest,
       status: this.clientRecordStatus(record),
       notes: this.activeClientNotesForDraft(record.draft)
     }))
@@ -1730,8 +1801,10 @@ export class App {
        price: record.price || '',
        seller: record.seller || '',
        createdAt: record.createdAt,
-       status: record.status === 'active' ? 'Aktivní' : 'Neaktivní',
-       phase: record.phase || PROPERTY_SALES_PHASES[0]
+       status: record.status === 'archived' || record.phase === 'Archivováno' ? 'Archivováno' : record.status === 'active' ? 'Aktivní' : 'Neaktivní',
+       phase: record.phase || PROPERTY_SALES_PHASES[0],
+       archiveReason: record.archiveReason,
+       archiveDescription: record.archiveDescription
      }))
    );
 
@@ -1748,11 +1821,10 @@ export class App {
        : entries;
 
      const sort = this.propertyDirectorySort();
-     if (!sort) {
-       return filtered;
-     }
-
      return [...filtered].sort((a, b) => {
+       const archivedOrder = Number(a.status === 'Archivováno') - Number(b.status === 'Archivováno');
+       if (archivedOrder) return archivedOrder;
+       if (!sort) return 0;
        const aValue = this.normalizeForLooseMatch(String(a[sort.key] || ''));
        const bValue = this.normalizeForLooseMatch(String(b[sort.key] || ''));
        const result = aValue.localeCompare(bValue, 'cs');
@@ -1989,6 +2061,7 @@ export class App {
   }
 
   protected activateWorkspace(workspace: WorkspaceKey): void {
+    this.propertyArchiveDialog.set(null);
     if (workspace === 'clients') {
       this.activateClientWorkspaceMode('directory');
       return;
@@ -2077,7 +2150,8 @@ export class App {
     return ['svobodný', 'ženatý', 'rozvedený', 'ovdovělý', 'svobodná', 'vdaná', 'rozvedená', 'ovdovělá'];
   }
 
-  protected newClientInterestLabel(value: NewClientDraft['clientInterest'] | ''): string {
+  protected newClientInterestLabel(value: NewClientDraft['clientInterest'] | null | undefined): string {
+    if (!value) return '🚩';
     if (value === 'poptavajici') {
       return 'Poptávající';
     }
@@ -2155,7 +2229,8 @@ export class App {
       { value: 'zastupce', label: 'Zástupce' },
       { value: 'developer', label: 'Developer' },
       { value: 'najemce', label: 'Nájemce' },
-      { value: 'jiny', label: 'Jiný' }
+      { value: 'jiny', label: 'Jiný' },
+      { value: '', label: '🚩' }
     ];
   }
 
@@ -2269,6 +2344,7 @@ export class App {
   }
 
   protected activatePropertyWorkspaceMode(mode: PropertyWorkspaceMode): void {
+    this.propertyArchiveDialog.set(null);
     this.activeWorkspace.set('properties');
     this.propertyWorkspaceMode.set(mode);
     this.activeGroupKey.set('');
@@ -2361,6 +2437,13 @@ export class App {
 
   protected setAgentProfileField(field: keyof AgentProfile, value: string): void {
     this.agentProfile.update((profile) => ({ ...profile, [field]: value }));
+    this.agentProfileSaved.set(false);
+  }
+
+  protected async saveAgentProfile(): Promise<void> {
+    const profile = this.agentProfile();
+    await this.saveState(this.buildXmlString());
+    if (this.agentProfile() === profile) this.agentProfileSaved.set(true);
   }
 
   private closeSidebarOnMobile(): void {
@@ -3294,7 +3377,7 @@ export class App {
   private createDefaultNewClientDraft(): NewClientDraft {
     return {
       clientType: 'fyzicka',
-      clientInterest: 'zajemce',
+      clientInterest: '',
       hasTitle: false,
       titleText: '',
       actingMode: 'sam',
@@ -3364,6 +3447,7 @@ export class App {
     return {
       ...this.createDefaultNewClientDraft(),
       ...draft,
+      clientInterest: draft.clientInterest || '',
       acceptedOptions: [...(draft.acceptedOptions || [])],
       deliveredDocuments: [...(draft.deliveredDocuments || [])],
       amlSourceOfFunds: [...(draft.amlSourceOfFunds || [])],
@@ -3491,6 +3575,8 @@ export class App {
       price: record.price || '',
       seller: record.seller || '',
       phase: record.phase || PROPERTY_SALES_PHASES[0],
+      archiveReason: record.archiveReason || '',
+      archiveDescription: record.archiveDescription || '',
       linkedClientId: record.linkedClientId || '',
       linkedClientIds: this.normalizeLinkedClientIds(record),
       tabValues: this.clonePropertyTabValues(record.tabValues)
@@ -3783,6 +3869,10 @@ export class App {
 
   protected saveCurrentProperty(): void {
     const draft = this.newPropertyDraft();
+    if (draft.phase === 'Archivováno' && !PROPERTY_ARCHIVE_REASONS.includes(draft.archiveReason || '')) {
+      this.setPropertyPhase('Archivováno');
+      return;
+    }
     const linkedClientIds = this.propertyLinkedClientIds(draft);
     const activeId = this.activeSavedPropertyId();
 
@@ -3790,7 +3880,7 @@ export class App {
       this.savedPropertyRecords.update((records) =>
         records.map((record) =>
           record.id === activeId
-          ? { ...record, title: draft.title, propertyType: draft.propertyType, address: draft.address, price: draft.price, seller: draft.seller, phase: draft.phase || record.phase, linkedClientId: linkedClientIds[0] || '', linkedClientIds, tabValues: this.clonePropertyTabValues(draft.tabValues) }
+          ? { ...record, title: draft.title, propertyType: draft.propertyType, address: draft.address, price: draft.price, seller: draft.seller, ...this.propertyLifecycleFields(draft, record), linkedClientId: linkedClientIds[0] || '', linkedClientIds, tabValues: this.clonePropertyTabValues(draft.tabValues) }
             : record
         )
       );
@@ -3806,8 +3896,7 @@ export class App {
         address: draft.address,
         price: draft.price,
         seller: draft.seller,
-        status: 'active' as const,
-        phase: draft.phase || PROPERTY_SALES_PHASES[0],
+        ...this.propertyLifecycleFields(draft),
         linkedClientId: linkedClientIds[0] || '',
         linkedClientIds,
         tabValues: this.clonePropertyTabValues(draft.tabValues)
@@ -3836,11 +3925,42 @@ export class App {
       price: record.price || '',
       seller: record.seller || '',
       phase: record.phase || PROPERTY_SALES_PHASES[0],
+      archiveReason: record.archiveReason || '',
+      archiveDescription: record.archiveDescription || '',
       linkedClientId: record.linkedClientId || '',
       linkedClientIds: this.normalizeLinkedClientIds(record),
       tabValues: this.clonePropertyTabValues(record.tabValues)
     });
+    this.syncHandoverDetailsFromPropertyInfo();
     this.activatePropertyWorkspaceMode('new');
+  }
+
+  private syncHandoverDetailsFromPropertyInfo(): void {
+    const draft = this.newPropertyDraft();
+    const spaces = this.normalizePropertyTabValues('prostory', draft.tabValues['prostory'] || {});
+    const cellarNumbers = this.dispoziceUnits().flatMap(unit => {
+      const accessoryKey = this.prostoryKey('Příslušenství v jednotce', unit);
+      const legacyKey = this.prostoryKey('Seznam místností', unit);
+      const accessories = (spaces[accessoryKey] ?? spaces[legacyKey] ?? '').split('|').map(value => value.trim());
+      if (!accessories.includes('Sklep')) return [];
+      return [spaces[this.prostoryKey('Sklep číslo', unit)] || ''];
+    });
+    const services = draft.tabValues['sluzby'] || {};
+    const selectedServices = (services['Služby'] || '').split('|').filter(Boolean);
+    const managerExists = ['Předseda / správce', 'Správce jmenovaný svazem zahrádkářů'].some(item => selectedServices.includes(item))
+      || Boolean(services['Jméno správce'] || services['Telefon na správce'] || services['E-mail na správce']);
+    this.newPropertyDraft.update(current => {
+      const values = { ...(current.tabValues['predavaci-protokol'] || {}) };
+      values['cellarVisible'] = cellarNumbers.length ? 'ANO' : 'NE';
+      values['cellarReturnSectionVisible'] = cellarNumbers.length ? 'ANO' : 'NE';
+      const designation = [...new Set(cellarNumbers.filter(Boolean))].join(', ');
+      if (designation) values['cellar'] = designation;
+      values['managerVisible'] = managerExists ? 'ANO' : 'NE';
+      values['managerName'] = services['Jméno správce'] || '';
+      values['managerPhone'] = services['Telefon na správce'] || '';
+      values['managerEmail'] = services['E-mail na správce'] || '';
+      return { ...current, tabValues: { ...current.tabValues, 'predavaci-protokol': values } };
+    });
   }
 
   protected createNewProperty(): void {
@@ -3860,10 +3980,59 @@ export class App {
   }
 
   protected setPropertyPhase(phase: string): void {
-    this.newPropertyDraft.update((draft) => ({ ...draft, phase }));
+    if (!PROPERTY_SALES_PHASES.includes(phase)) return;
+    if (phase === 'Archivováno') {
+      const propertyId = this.activeSavedPropertyId();
+      if (!propertyId) return;
+      const draft = this.newPropertyDraft();
+      this.propertyArchiveDialog.set({ propertyId, reason: draft.archiveReason || '', description: draft.archiveDescription || '', error: '' });
+      setTimeout(() => document.getElementById('property-archive-reason')?.focus());
+      return;
+    }
+    this.newPropertyDraft.update((draft) => ({ ...draft, phase, archiveReason: '', archiveDescription: '' }));
+  }
+
+  protected setPropertyArchiveField(field: 'reason' | 'description', value: string): void {
+    this.propertyArchiveDialog.update(dialog => dialog ? { ...dialog, [field]: value, error: '' } : null);
+  }
+
+  protected cancelPropertyArchive(): void {
+    this.propertyArchiveDialog.set(null);
+  }
+
+  protected confirmPropertyArchive(): void {
+    const dialog = this.propertyArchiveDialog();
+    if (!dialog) return;
+    if (dialog.propertyId !== this.activeSavedPropertyId() || !this.savedPropertyRecords().some(record => record.id === dialog.propertyId)) {
+      this.cancelPropertyArchive();
+      return;
+    }
+    if (!PROPERTY_ARCHIVE_REASONS.includes(dialog.reason)) {
+      this.propertyArchiveDialog.set({ ...dialog, error: 'Vyberte důvod archivace.' });
+      return;
+    }
+    this.newPropertyDraft.update(draft => ({
+      ...draft, phase: 'Archivováno', archiveReason: dialog.reason, archiveDescription: dialog.description.trim()
+    }));
+    if (this.pinnedPropertyId() === dialog.propertyId) this.pinnedPropertyId.set('');
+    this.propertyDirectoryView.set('all');
+    this.cancelPropertyArchive();
+    this.saveCurrentProperty();
+  }
+
+  private propertyLifecycleFields(draft: NewPropertyDraft, record?: SavedPropertyRecord): Pick<SavedPropertyRecord, 'phase' | 'status' | 'archiveReason' | 'archiveDescription'> {
+    const phase = draft.phase || record?.phase || PROPERTY_SALES_PHASES[0];
+    const archived = phase === 'Archivováno';
+    return {
+      phase,
+      status: archived ? 'archived' : record?.status === 'archived' ? 'active' : record?.status || 'active',
+      archiveReason: archived ? draft.archiveReason || '' : undefined,
+      archiveDescription: archived ? draft.archiveDescription || '' : undefined
+    };
   }
 
   protected isCurrentPropertyPhaseActive(phase: string): boolean {
+    if (this.currentPropertyPhase() === 'Archivováno') return phase === 'Archivováno';
     const currentIdx = this.phaseIndex(this.currentPropertyPhase());
     const phaseIdx = this.phaseIndex(phase);
     return phaseIdx >= 0 && currentIdx >= 0 && phaseIdx <= currentIdx;
@@ -3874,6 +4043,7 @@ export class App {
   }
 
   protected isPhaseActive(entry: PropertyDirectoryEntry, phase: string): boolean {
+    if (entry.phase === 'Archivováno') return phase === 'Archivováno';
     const currentIdx = this.phaseIndex(entry.phase || PROPERTY_SALES_PHASES[0]);
     const phaseIdx = this.phaseIndex(phase);
     return phaseIdx <= currentIdx;
@@ -3888,6 +4058,7 @@ export class App {
   }
 
   protected isActivePropertyTab(tab: NewPropertyTabKey): boolean {
+    if (this.isFamilyHouseHiddenSection(this.activePropertyFormTab())) this.activePropertyFormTab.set('zakladni');
     if (tab === 'jednotka' && !this.isJednotkaTabVisible() && this.activePropertyFormTab() === 'jednotka') {
       this.activePropertyFormTab.set('zakladni');
     }
@@ -3906,16 +4077,52 @@ export class App {
   }
 
   protected propertyTabFieldValue(tab: NewPropertyTabKey, field: string): string {
+    if (tab === 'podlahy') return this.normalizedPropertyTabCollection().podlahy?.[field] || '';
     const draft = this.newPropertyDraft();
     return draft.tabValues?.[tab]?.[field] || '';
   }
 
   protected setPropertyTabFieldValue(tab: NewPropertyTabKey, field: string, value: string): void {
     this.newPropertyDraft.update((draft) => {
-      const tabValues = { ...draft.tabValues };
+      const tabValues = tab === 'podlahy' ? this.clonePropertyTabValues(draft.tabValues) : { ...draft.tabValues };
       const currentTab = { ...(tabValues[tab] || {}) };
       currentTab[field] = value;
+      if (tab === 'predavaci-protokol' && (field === 'cellarVisible' || field === 'cellarReturnSectionVisible')) {
+        const cellarState = value === 'ANO' ? 'ANO' : 'NE';
+        currentTab['cellarVisible'] = cellarState;
+        currentTab['cellarReturnSectionVisible'] = cellarState;
+      }
       tabValues[tab] = currentTab;
+      if (tab === 'prostory') {
+        const source = this.normalizePropertyTabValues('prostory', currentTab);
+        const units = this.dispoziceUnits();
+        const selectedCellars = units.flatMap(unit => {
+          const accessoryKey = this.prostoryKey('Příslušenství v jednotce', unit);
+          const legacyKey = this.prostoryKey('Seznam místností', unit);
+          const accessories = (source[accessoryKey] ?? source[legacyKey] ?? '').split('|').filter(Boolean);
+          if (!accessories.includes('Sklep')) return [];
+          return [source[this.prostoryKey('Sklep číslo', unit)] || ''];
+        });
+        const handover = { ...(tabValues['predavaci-protokol'] || {}) };
+        handover['cellarVisible'] = selectedCellars.length ? 'ANO' : 'NE';
+        handover['cellarReturnSectionVisible'] = selectedCellars.length ? 'ANO' : 'NE';
+        const designations = selectedCellars.filter(Boolean);
+        if (designations.length) handover['cellar'] = [...new Set(designations)].join(', ');
+        else if (field === 'Sklep číslo' || field.startsWith('Příslušenství v jednotce') || field.startsWith('Seznam místností')) handover['cellar'] = '';
+        tabValues['predavaci-protokol'] = handover;
+      }
+      if (tab === 'sluzby') {
+        const selectedServices = (currentTab['Služby'] || '').split('|').filter(Boolean);
+        const managerServices = ['Předseda / správce', 'Správce jmenovaný svazem zahrádkářů'];
+        const hasManager = managerServices.some(service => selectedServices.includes(service))
+          || Boolean(currentTab['Jméno správce'] || currentTab['Telefon na správce'] || currentTab['E-mail na správce']);
+        const handover = { ...(tabValues['predavaci-protokol'] || {}) };
+        handover['managerVisible'] = hasManager ? 'ANO' : 'NE';
+        handover['managerName'] = currentTab['Jméno správce'] || '';
+        handover['managerPhone'] = currentTab['Telefon na správce'] || '';
+        handover['managerEmail'] = currentTab['E-mail na správce'] || '';
+        tabValues['predavaci-protokol'] = handover;
+      }
       return { ...draft, tabValues };
     });
   }
@@ -4507,7 +4714,9 @@ export class App {
   }
 
   protected toggleVodaMultiValue(field: string, value: string): void {
+    const clearingWellType = field === 'Další zdroj vody' && value === 'Studna vlastní' && this.hasVodaMultiValue(field, value);
     this.togglePropertyTabMultiValue('voda', field, value);
+    if (clearingWellType) this.setPropertyTabFieldValue('voda', 'Druh studny', '');
   }
 
   protected vodaSingleSelectValue(field: string, options: string[]): string {
@@ -4566,8 +4775,8 @@ export class App {
 
   protected TOPENI_STAV_OPTIONS: string[] = ['Není řešeno', 'Původní', 'Rekonstruováno'];
   protected TOPENI_VYTAPENI_OPTIONS: string[] = ['Plyn', 'Elektřina', 'Tuhá paliva', 'Solární', 'Tepelné čerpadlo', 'Ústřední vytápění', 'Centrální dálkové'];
-  protected TOPENI_TELESO_OPTIONS: string[] = ['Podlahové vytápění', 'Radiátory', 'Elektrický přímotop', 'Infrapanel', 'Krb na dřevo', 'Krb s výměníkem', 'Plynový krb', 'Kotel na tuhá paliva', 'Vafky', 'Klimatizace', 'Akumulační kamna', 'Kamna (PETRY)', 'S regulací topení'];
-  protected TOPENI_UMISTENI_OPTIONS: string[] = ['V bytě', 'V místnosti', 'V domě (Ústřední vytápění)', 'V chatě', 'Ve sklepě', 'Dálkové'];
+  protected TOPENI_TELESO_OPTIONS: string[] = ['Podlahové vytápění', 'Radiátory', 'Elektrický přímotop', 'Elektrokotel', 'Infrapanel', 'Krb na dřevo', 'Krb s výměníkem', 'Krbová kamna s teplovodním výměníkem (radiátory)', 'Krbová kamna s teplovodním výměníkem (podlahové vytápění)', 'Plynový krb', 'Kotel na tuhá paliva', 'Vafky', 'Klimatizace', 'Akumulační kamna', 'Kamna (PETRY)', 'S regulací topení'];
+  protected TOPENI_UMISTENI_OPTIONS: string[] = ['V bytě', 'V místnosti', 'V domě', 'V domě (Ústřední vytápění)', 'V chatě', 'Ve sklepě', 'Dálkové'];
   protected TOPENI_KOMIN_OPTIONS: string[] = ['Není', 'Vyvložkovaný', 'Nevyvložkovaný', 'Dvoukomín'];
 
   protected topeniStavOptions(): string[] { return this.TOPENI_STAV_OPTIONS; }
@@ -4790,7 +4999,7 @@ export class App {
   protected hlavniPrednostiOptions(): string[] {
     return [
       'Dobrá příjezdová cesta', 'Parkování před domem', 'Parkování před chatou',
-      'Vlastní parkování', 'Sídliště', 'Klid', 'Samota', 'Polosamota', 'Zahrada u domu',
+      'Vlastní parkování', 'Sídliště', 'Klid', 'Soukromí', 'Samota', 'Polosamota', 'Zahrada u domu',
       'Krajina / okolí', 'Zeleň v okolí', 'Výhled', 'Dostupnost služeb', 'Rekonstrukce',
       'Prostor pro pračku', 'Možnost trvalého pobytu', 'Úklid společných prostor',
       'Kamery v domě', 'Koupání', 'Ráj houbařů', 'Rybářské lokality', 'Dostatek úložného prostoru'
@@ -4809,7 +5018,7 @@ export class App {
   protected pravniVadyOptions(): string[] {
     return [
       'Nejsou známa žádná', 'Dluh na družstvu', 'Břemena chůze, jízdy',
-      'Břemena elektřina', 'Břemena vodovod', 'Břemena kanalizace', 'Bankovní zástavy',
+      'Břemena elektřina', 'Břemena vodovod', 'Břemena kanalizace', 'Bankovní zástavy', 'Zatíženo hypotékou',
       'Předkupní právo', 'Památková zóna', 'Chráněná krajinná oblast', 'Podnájemník do:',
       'Dluh na bytě nájemník', 'Černá stavba'
     ];
@@ -4821,6 +5030,22 @@ export class App {
 
   protected togglePravniVadyMultiValue(field: string, value: string): void {
     this.togglePropertyTabMultiValue('pravni-vady', field, value);
+  }
+
+  protected mortgageSettlementOptions(): string[] {
+    return ['Vyplacení před prodejem', 'Převedení na jinou nemovitost', 'Vyplacení z částky kupní ceny'];
+  }
+
+  protected setMortgageSettlementCustomValue(value: string): void {
+    this.setPropertyTabFieldValue('pravni-vady', 'Způsob vypořádání hypotéky', value.trim() ? value : this.propertyCustomOption);
+  }
+
+  protected formatMortgageBalance(): void {
+    const raw = this.propertyTabFieldValue('pravni-vady', 'Zbývající částka úvěru')
+      .replace(/\s/g, '').replace(/Kč/gi, '').replace(/\./g, '').replace(',', '.');
+    const value = raw ? Number(raw) : Number.NaN;
+    this.setPropertyTabFieldValue('pravni-vady', 'Zbývající částka úvěru', Number.isFinite(value) && value >= 0
+      ? `${value.toLocaleString('cs-CZ', { maximumFractionDigits: 2 })} Kč` : '');
   }
 
   // --- PRODEJ helpers ---
@@ -5359,11 +5584,44 @@ export class App {
     return this.hasOknaMultiValue('Druh oken', 'bez oken');
   }
 
-  protected handoverResolvedParties(role: 'predavajici' | 'prebirajici'): Array<{ name: string; birthDate: string; address: string; phone: string; email: string }> {
-    const allowed = role === 'predavajici' ? new Set(['prodavajici', 'pronajimatel']) : new Set(['kupujici', 'najemce']);
-    return this.handoverLinkedClients()
-      .filter((record) => allowed.has(record.draft.clientInterest))
+  protected handoverLinkedClientRole(client: SavedClientRecord, linkedIds?: ReadonlySet<string>): HandoverClientRole {
+    const role = this.propertyTabFieldValue('predavaci-protokol', `clientRole__${client.id}`);
+    if (role === 'predavajici' || role === 'prebirajici' || role === 'nezahrnovat') return role;
+    const linked = linkedIds || new Set(this.handoverLinkedClients().map(record => record.id));
+    if (!linked.has(client.id)) return 'nezahrnovat';
+    return client.draft.clientInterest === 'kupujici' || client.draft.clientInterest === 'najemce' ? 'prebirajici' : 'predavajici';
+  }
+
+  protected setHandoverLinkedClientRole(clientId: string, role: string): void {
+    if (role !== 'predavajici' && role !== 'prebirajici' && role !== 'nezahrnovat') return;
+    if (!this.savedClientRecords().some(client => client.id === clientId)) return;
+    this.setPropertyTabFieldValue('predavaci-protokol', `clientRole__${clientId}`, role);
+  }
+
+  protected handoverContactOptions(role: 'predavajici' | 'prebirajici'): HandoverContactOption[] {
+    const linkedIds = new Set(this.handoverLinkedClients().map(client => client.id));
+    return this.savedClientRecords().map(client => ({
+      id: client.id, name: this.handoverClientName(client.draft) || 'Kontakt bez jména',
+      pinned: linkedIds.has(client.id), selected: this.handoverLinkedClientRole(client, linkedIds) === role
+    }));
+  }
+
+  protected toggleHandoverContact(role: 'predavajici' | 'prebirajici', clientId: string): void {
+    const client = this.savedClientRecords().find(record => record.id === clientId);
+    if (client) this.setHandoverLinkedClientRole(clientId, this.handoverLinkedClientRole(client) === role ? 'nezahrnovat' : role);
+  }
+
+  protected handoverResolvedParties(role: 'predavajici' | 'prebirajici'): Array<{ clientId: string; name: string; birthDate: string; address: string; phone: string; email: string }> {
+    const linkedIds = new Set(this.handoverLinkedClients().map(client => client.id));
+    const seen = new Set<string>();
+    return this.savedClientRecords()
+      .filter(record => {
+        if (seen.has(record.id) || this.handoverLinkedClientRole(record, linkedIds) !== role) return false;
+        seen.add(record.id);
+        return true;
+      })
       .map((record) => ({
+        clientId: record.id,
         name: this.handoverClientName(record.draft),
         birthDate: record.draft.birthDate.trim(),
         address: this.handoverClientAddress(record.draft),
@@ -5435,9 +5693,76 @@ export class App {
   }
 
   protected handoverBuyerObligationText(): string {
-    const defaultText = this.defaultHandoverBuyerObligationText();
+    const defaultText = this.defaultHandoverBuyerObligationText(this.handoverBuyerObligationPreset());
     const value = this.propertyTabFieldValue('predavaci-protokol', 'buyerObligationText');
     return this.sameTextIgnoringWhitespace(value, defaultText) ? defaultText : value || defaultText;
+  }
+
+  protected handoverBuyerObligationOptions(): Array<{ preset: HandoverEnergyTransferPreset; text: string }> {
+    return (['sale', 'lease', 'leaseReturn'] as HandoverEnergyTransferPreset[]).map(preset => ({
+      preset, text: this.defaultHandoverBuyerObligationText(preset)
+    }));
+  }
+
+  protected handoverBuyerObligationOptionVisible(preset: HandoverEnergyTransferPreset): boolean {
+    const value = this.propertyTabFieldValue('predavaci-protokol', `buyerObligation${preset}Visible`);
+    return value ? value === 'ANO' : this.handoverBuyerObligationVisible() && this.handoverBuyerObligationPreset() === preset;
+  }
+
+  protected toggleHandoverBuyerObligationOption(preset: HandoverEnergyTransferPreset): void {
+    this.setPropertyTabFieldValue('predavaci-protokol', `buyerObligation${preset}Visible`, this.handoverBuyerObligationOptionVisible(preset) ? 'NE' : 'ANO');
+  }
+
+  private handoverBuyerObligationTexts(): string[] {
+    const texts = this.handoverBuyerObligationOptions()
+      .filter(option => this.handoverBuyerObligationOptionVisible(option.preset))
+      .map(option => option.text);
+    const custom = this.propertyTabFieldValue('predavaci-protokol', 'buyerObligationCustomText').trim();
+    if (this.handoverExtraTextVisible('buyerObligationCustom') && custom) texts.push(custom);
+    return texts;
+  }
+
+  protected handoverExtraTextVisible(key: string): boolean {
+    return this.propertyTabFieldValue('predavaci-protokol', `${key}Visible`) === 'ANO';
+  }
+
+  protected toggleHandoverExtraText(key: string): void {
+    this.setPropertyTabFieldValue('predavaci-protokol', `${key}Visible`, this.handoverExtraTextVisible(key) ? 'NE' : 'ANO');
+  }
+
+  protected handoverSectionCollapsed(key: string): boolean {
+    return this.propertyTabFieldValue('predavaci-protokol', `collapsed-${key}`) === 'ANO';
+  }
+
+  protected handoverCellarConditionChecked(group: string, key: string): boolean {
+    return this.propertyTabFieldValue('predavaci-protokol', `${group}-${key}`) === 'ANO';
+  }
+
+  protected toggleHandoverCellarCondition(group: string, key: string): void {
+    this.setPropertyTabFieldValue('predavaci-protokol', `${group}-${key}`, this.handoverCellarConditionChecked(group, key) ? 'NE' : 'ANO');
+  }
+
+  protected toggleHandoverSectionCollapsed(key: string): void {
+    this.setPropertyTabFieldValue('predavaci-protokol', `collapsed-${key}`, this.handoverSectionCollapsed(key) ? 'NE' : 'ANO');
+  }
+
+  protected handoverBasicSummary(): { delivering: string; receiving: string; address: string } {
+    const names = (role: 'predavajici' | 'prebirajici') => this.handoverResolvedParties(role).map(party => party.name).filter(Boolean).join(', ') || ' ';
+    const address = (this.propertyTabFieldValue('predavaci-protokol', 'address') || this.newPropertyDraft().address).replace(/\s*\([^)]*(?:kraj|Praha)[^)]*\)/gi, '').trim() || 'neuvedena';
+    return { delivering: names('predavajici'), receiving: names('prebirajici'), address };
+  }
+
+  protected handoverBuyerObligationPreset(): HandoverEnergyTransferPreset {
+    const preset = this.propertyTabFieldValue('predavaci-protokol', 'buyerObligationPreset');
+    return preset === 'lease' || preset === 'leaseReturn' ? preset : 'sale';
+  }
+
+  protected setHandoverBuyerObligationPreset(preset: string): void {
+    if (preset !== 'sale' && preset !== 'lease' && preset !== 'leaseReturn') return;
+    this.newPropertyDraft.update(draft => ({ ...draft, tabValues: { ...draft.tabValues, 'predavaci-protokol': {
+      ...draft.tabValues['predavaci-protokol'], buyerObligationPreset: preset,
+      buyerObligationText: this.defaultHandoverBuyerObligationText(preset)
+    } } }));
   }
 
   protected handoverBuyerObligationVisible(): boolean {
@@ -5448,20 +5773,6 @@ export class App {
     this.setPropertyTabFieldValue('predavaci-protokol', 'buyerObligationVisible', this.handoverBuyerObligationVisible() ? 'NE' : 'ANO');
   }
 
-  protected handoverPhotoNoticeText(): string {
-    const defaultText = this.defaultHandoverPhotoNoticeText();
-    const value = this.propertyTabFieldValue('predavaci-protokol', 'photoNoticeText');
-    return this.sameTextIgnoringWhitespace(value, defaultText) ? defaultText : value || defaultText;
-  }
-
-  protected handoverPhotoNoticeVisible(): boolean {
-    return this.propertyTabFieldValue('predavaci-protokol', 'photoNoticeVisible') !== 'NE';
-  }
-
-  protected toggleHandoverPhotoNoticeVisibility(): void {
-    this.setPropertyTabFieldValue('predavaci-protokol', 'photoNoticeVisible', this.handoverPhotoNoticeVisible() ? 'NE' : 'ANO');
-  }
-
   protected handoverMeterVisible(field: 'electricMeterVisible' | 'electricT1MeterVisible' | 'electricT2MeterVisible' | 'hotWaterMeterVisible' | 'coldWaterMeterVisible' | 'gasMeterVisible' | 'customMeterVisible'): boolean {
     return this.propertyTabFieldValue('predavaci-protokol', field) !== 'NE';
   }
@@ -5470,22 +5781,103 @@ export class App {
     this.setPropertyTabFieldValue('predavaci-protokol', field, this.handoverMeterVisible(field) ? 'NE' : 'ANO');
   }
 
-  protected handoverMeterConfirmationText(): string {
-    const defaultText = this.defaultHandoverMeterConfirmationText();
-    const value = this.propertyTabFieldValue('predavaci-protokol', 'meterConfirmationText');
-    return this.sameTextIgnoringWhitespace(value, defaultText) ? defaultText : value || defaultText;
+  protected handoverCustomMeterIndexes(): number[] {
+    const raw = this.propertyTabFieldValue('predavaci-protokol', 'customMeterCount');
+    const count = raw === '' ? 1 : Math.max(0, Math.min(10, Number.parseInt(raw, 10) || 0));
+    return Array.from({ length: count }, (_, index) => index);
   }
 
-  protected handoverMeterConfirmationVisible(): boolean {
-    return this.propertyTabFieldValue('predavaci-protokol', 'meterConfirmationVisible') !== 'NE';
+  private handoverCustomMeterField(index: number, field: 'label' | 'number' | 'state' | 'unit'): string {
+    const suffix = field[0].toUpperCase() + field.slice(1);
+    return index === 0 ? `customMeter${suffix}` : `customMeter${index}${suffix}`;
   }
 
-  protected toggleHandoverMeterConfirmationVisibility(): void {
-    this.setPropertyTabFieldValue('predavaci-protokol', 'meterConfirmationVisible', this.handoverMeterConfirmationVisible() ? 'NE' : 'ANO');
+  protected handoverCustomMeterValue(index: number, field: 'label' | 'number' | 'state' | 'unit'): string {
+    return this.propertyTabFieldValue('predavaci-protokol', this.handoverCustomMeterField(index, field));
+  }
+
+  protected setHandoverCustomMeterValue(index: number, field: 'label' | 'number' | 'state' | 'unit', value: string): void {
+    this.setPropertyTabFieldValue('predavaci-protokol', this.handoverCustomMeterField(index, field), value);
+  }
+
+  protected handoverCustomMeterVisible(index: number): boolean {
+    return this.propertyTabFieldValue('predavaci-protokol', index === 0 ? 'customMeterVisible' : `customMeter${index}Visible`) !== 'NE';
+  }
+
+  protected toggleHandoverCustomMeterVisible(index: number): void {
+    this.setPropertyTabFieldValue('predavaci-protokol', index === 0 ? 'customMeterVisible' : `customMeter${index}Visible`, this.handoverCustomMeterVisible(index) ? 'NE' : 'ANO');
+  }
+
+  protected addHandoverCustomMeter(): void {
+    const indexes = this.handoverCustomMeterIndexes();
+    if (indexes.length >= 10) return;
+    const next = indexes.length;
+    this.setPropertyTabFieldValue('predavaci-protokol', 'customMeterCount', String(next + 1));
+    this.setPropertyTabFieldValue('predavaci-protokol', next === 0 ? 'customMeterVisible' : `customMeter${next}Visible`, 'ANO');
+  }
+
+  protected removeHandoverCustomMeter(indexToRemove: number): void {
+    const indexes = this.handoverCustomMeterIndexes();
+    if (!indexes.includes(indexToRemove)) return;
+    const fields = ['label', 'number', 'state', 'unit'] as const;
+    for (let index = indexToRemove; index < indexes.length - 1; index++) {
+      for (const field of fields) this.setHandoverCustomMeterValue(index, field, this.handoverCustomMeterValue(index + 1, field));
+      this.setPropertyTabFieldValue('predavaci-protokol', index === 0 ? 'customMeterVisible' : `customMeter${index}Visible`, this.handoverCustomMeterVisible(index + 1) ? 'ANO' : 'NE');
+    }
+    const last = indexes.length - 1;
+    for (const field of fields) this.setHandoverCustomMeterValue(last, field, '');
+    this.setPropertyTabFieldValue('predavaci-protokol', last === 0 ? 'customMeterVisible' : `customMeter${last}Visible`, 'NE');
+    this.setPropertyTabFieldValue('predavaci-protokol', 'customMeterCount', String(last));
+  }
+
+  protected handoverKeysConfirmationText(values: Record<string, string> = this.newPropertyDraft().tabValues['predavaci-protokol'] || {}): string {
+    return this.handoverKeysConfirmationPreset(values) === 'basic' ? this.defaultHandoverKeysConfirmationText()
+      : values['keysConfirmationCustomText'] ?? values['keysConfirmationText'] ?? '';
+  }
+
+  protected handoverKeysConfirmationPreset(values: Record<string, string> = this.newPropertyDraft().tabValues['predavaci-protokol'] || {}): HandoverConfirmationPreset {
+    const preset = values['keysConfirmationPreset'];
+    if (preset === 'basic' || preset === 'custom') return preset;
+    const value = values['keysConfirmationText'] || '';
+    return !value.trim() || this.sameTextIgnoringWhitespace(value, this.defaultHandoverKeysConfirmationText()) ? 'basic' : 'custom';
+  }
+
+  protected setHandoverKeysConfirmationPreset(preset: string): void {
+    if (preset !== 'basic' && preset !== 'custom') return;
+    const custom = this.handoverKeysConfirmationPreset() === 'custom' ? this.handoverKeysConfirmationText()
+      : this.propertyTabFieldValue('predavaci-protokol', 'keysConfirmationCustomText');
+    const text = preset === 'basic' ? this.defaultHandoverKeysConfirmationText() : custom;
+    this.newPropertyDraft.update(draft => ({ ...draft, tabValues: { ...draft.tabValues, 'predavaci-protokol': {
+      ...draft.tabValues['predavaci-protokol'], keysConfirmationPreset: preset,
+      keysConfirmationCustomText: custom, keysConfirmationText: text
+    } } }));
+  }
+
+  protected setHandoverKeysConfirmationCustomText(text: string): void {
+    this.newPropertyDraft.update(draft => ({ ...draft, tabValues: { ...draft.tabValues, 'predavaci-protokol': {
+      ...draft.tabValues['predavaci-protokol'], keysConfirmationPreset: 'custom',
+      keysConfirmationCustomText: text, keysConfirmationText: text
+    } } }));
+  }
+
+  protected handoverKeysConfirmationVisible(): boolean {
+    return this.propertyTabFieldValue('predavaci-protokol', 'keysConfirmationVisible') !== 'NE';
+  }
+
+  protected toggleHandoverKeysConfirmationVisibility(): void {
+    this.setPropertyTabFieldValue('predavaci-protokol', 'keysConfirmationVisible', this.handoverKeysConfirmationVisible() ? 'NE' : 'ANO');
   }
 
   protected handoverOptionalGroupVisible(field: 'cellarVisible' | 'doorbellVisible' | 'managerVisible'): boolean {
     return this.propertyTabFieldValue('predavaci-protokol', field) === 'ANO';
+  }
+
+  protected handoverReturnEquipmentVisible(): boolean {
+    return this.propertyTabFieldValue('predavaci-protokol', 'returnEquipmentVisible') !== 'NE';
+  }
+
+  protected toggleHandoverReturnEquipment(): void {
+    this.setPropertyTabFieldValue('predavaci-protokol', 'returnEquipmentVisible', this.handoverReturnEquipmentVisible() ? 'NE' : 'ANO');
   }
 
   protected toggleHandoverOptionalGroupVisibility(field: 'cellarVisible' | 'doorbellVisible' | 'managerVisible'): void {
@@ -5500,15 +5892,15 @@ export class App {
     this.setPropertyTabFieldValue('predavaci-protokol', field, this.handoverPrintSectionVisible(field) ? 'NE' : 'ANO');
   }
 
-  protected handoverKeyItemVisible(field: 'keysCountVisible' | 'chipsCountVisible' | 'keyCardsCountVisible'): boolean {
+  protected handoverKeyItemVisible(field: 'keysCountVisible' | 'chipsCountVisible' | 'keyCardsCountVisible' | 'keysDescriptionVisible'): boolean {
     return this.propertyTabFieldValue('predavaci-protokol', field) !== 'NE';
   }
 
-  protected toggleHandoverKeyItemVisibility(field: 'keysCountVisible' | 'chipsCountVisible' | 'keyCardsCountVisible'): void {
+  protected toggleHandoverKeyItemVisibility(field: 'keysCountVisible' | 'chipsCountVisible' | 'keyCardsCountVisible' | 'keysDescriptionVisible'): void {
     this.setPropertyTabFieldValue('predavaci-protokol', field, this.handoverKeyItemVisible(field) ? 'NE' : 'ANO');
   }
 
-  private handoverLinkedClients(): SavedClientRecord[] {
+  protected handoverLinkedClients(): SavedClientRecord[] {
     const propertyId = this.activeSavedPropertyId();
     const directClientIds = this.propertyLinkedClientIds();
     const seen = new Set<string>();
@@ -5522,12 +5914,16 @@ export class App {
     });
   }
 
-  private handoverClientName(draft: NewClientDraft): string {
+  protected handoverClientName(draft: NewClientDraft): string {
     return draft.fullName.trim() || draft.companyName.trim();
   }
 
   private handoverClientAddress(draft: NewClientDraft): string {
-    return [draft.permanentResidence.trim(), draft.permanentResidenceState.trim()].filter(Boolean).join(', ');
+    return this.stripHandoverPartyRegion([draft.permanentResidence.trim(), draft.permanentResidenceState.trim()].filter(Boolean).join(', '));
+  }
+
+  private stripHandoverPartyRegion(address: string): string {
+    return address.replace(/\s*\([^)]*\bkraj\b[^)]*\)/gi, '').replace(/\s{2,}/g, ' ').trim();
   }
 
   private defaultHandoverPropertyDescription(): string {
@@ -5555,16 +5951,17 @@ export class App {
     return parts.join(', ');
   }
 
-  private defaultHandoverBuyerObligationText(): string {
-    return 'Kupující se podpisem kupní smlouvy zavázal, že nejpozději do 10-ti pracovních dnů od protokolárního předání a převzetí předmětné nemovité věci, bude mít na svou osobu přepsány smlouvy o dodávkách veškerých energií a služeb, které se týkají předmětné nemovité věci, přičemž k přepisu energií je prodávající povinna poskytnout kupujícímu potřebnou a nezbytnou součinnost.';
+  private defaultHandoverBuyerObligationText(preset: HandoverEnergyTransferPreset = 'sale'): string {
+    if (preset === 'leaseReturn') {
+      return 'Předávající a přebírající svými podpisy stvrzují, že specifikovaná, výše uvedená nemovitost byla předána s výše uvedenými konečnými stavy měřidel.';
+    }
+    return preset === 'lease'
+      ? 'Nájemce se zavazuje, že nejpozději do 10-ti pracovních dnů od protokolárního předání a převzetí nemovitosti bude mít na svou osobu přepsány smlouvy o dodávkách energií a služeb, přičemž pronajímatel poskytne nájemci potřebnou a nezbytnou součinnost.'
+      : 'Kupující se podpisem kupní smlouvy zavázal, že nejpozději do 10-ti pracovních dnů od protokolárního předání a převzetí předmětné nemovité věci, bude mít na svou osobu přepsány smlouvy o dodávkách veškerých energií a služeb, které se týkají předmětné nemovité věci, přičemž k přepisu energií je prodávající povinna poskytnout kupujícímu potřebnou a nezbytnou součinnost.';
   }
 
-  private defaultHandoverPhotoNoticeText(): string {
-    return 'Tento Předávací protokol bude společně s fotografiemi pořízenými při předání nemovitosti zaslán na emaily uvedené v záhlaví stránky.';
-  }
-
-  private defaultHandoverMeterConfirmationText(): string {
-    return 'Předávající i přebírající svými podpisy stvrzují, že specifikovaná, výše uvedená nemovitost byla řádně předána ve stavu odpovídajícím smluvní dohodě, s výše uvedenými konečnými stavy měřidel a zároveň byly předány klíče od nemovitosti.';
+  private defaultHandoverKeysConfirmationText(): string {
+    return 'Předávající i přebírající svými podpisy stvrzují, že byly předány tyto klíče od nemovitosti.';
   }
 
   private sameTextIgnoringWhitespace(first: string, second: string): boolean {
@@ -5617,6 +6014,35 @@ export class App {
     return Array.from({ length: safeCount }, (_, index) => (safeCount > 1 ? String.fromCharCode(65 + index) : ''));
   }
 
+  protected dispoziceUnitCustomName(unit: string): string {
+    return unit ? this.propertyTabFieldValue('prostory', `unitName__${unit}`).trim() : '';
+  }
+
+  protected setDispoziceUnitName(unit: string, name: string): void {
+    if (unit && this.dispoziceUnits().includes(unit)) this.setPropertyTabFieldValue('prostory', `unitName__${unit}`, name);
+  }
+
+  protected dispoziceUnitName(unit: string): string {
+    return this.dispoziceUnitCustomName(unit) || (unit ? `Dispozice ${unit}` : 'Dispozice');
+  }
+
+  private dispoziceUnitReference(unit: string): string {
+    return this.dispoziceUnitCustomName(unit) || unit;
+  }
+
+  private dispoziceUnitPrintTitle(unit: string): string {
+    return this.dispoziceUnitCustomName(unit) || (unit ? `DISPOZICE ${unit}` : 'DISPOZICE');
+  }
+
+  protected socialniZazemiUnitTitle(unit: string): string {
+    return unit ? `SOCIÁLNÍ ZÁZEMÍ ${this.dispoziceUnitReference(unit)}` : 'SOCIÁLNÍ ZÁZEMÍ';
+  }
+
+  private socialniZazemiUnitLabel(label: string, unit: string): string {
+    if (['Bytové jádro', 'Počet koupelen', 'Počet WC', 'Vybavení koupelny', 'V koupelně'].includes(label)) return label;
+    return unit ? `${label} ${this.dispoziceUnitReference(unit)}` : label;
+  }
+
   protected hasMultipleDispoziceUnits(): boolean {
     return this.dispoziceUnits().length > 1;
   }
@@ -5662,7 +6088,8 @@ export class App {
     if (!unit) {
       return label;
     }
-    return label === 'Seznam místností' ? `Seznam místností v jednotce ${unit}` : `${label} ${unit}`;
+    const name = this.dispoziceUnitReference(unit);
+    return label === 'Seznam místností' ? `Seznam místností v jednotce ${name}` : `${label} ${name}`;
   }
 
   protected prostoryKey(field: string, unit: string): string {
@@ -5917,7 +6344,11 @@ export class App {
   }
 
   protected isJednotkaTabVisible(): boolean {
-    return this.isNewPropertyByt() || this.propertyTabFieldValue('stavba', 'Rozděleno na jednotky') === 'Ano';
+    return !this.isCurrentPropertyType('Rodinný dům') && (this.isNewPropertyByt() || this.propertyTabFieldValue('stavba', 'Rozděleno na jednotky') === 'Ano');
+  }
+
+  private isFamilyHouseHiddenSection(tab: NewPropertyTabKey): boolean {
+    return this.isCurrentPropertyType('Rodinný dům') && (tab === 'jednotka' || tab === 'rozpis-sluzeb');
   }
 
   protected isCurrentPropertyType(type: string): boolean {
@@ -5938,6 +6369,7 @@ export class App {
 
   protected visiblePropertySectionTabs(): Array<{ key: NewPropertyTabKey; label: string }> {
     return this.propertySectionTabs().filter((tab) => {
+      if (this.isFamilyHouseHiddenSection(tab.key)) return false;
       if (tab.key === 'jednotka') {
         return this.isJednotkaTabVisible();
       }
@@ -6168,10 +6600,27 @@ export class App {
       clone[tabKey as NewPropertyTabKey] = this.normalizePropertyTabValues(tabKey as NewPropertyTabKey, { ...(values as Record<string, string>) });
     }
 
+    // Older forms accidentally saved floor selections in the windows tab.
+    // An explicit value in the correct tab, including an empty selection, wins.
+    const windows = clone.okna;
+    if (windows) {
+      for (const field of ['Podlahy', 'Podlahy vlastní', 'Poznámka k podlahám']) {
+        for (const key of [field, `${field}__buyer-info-visible`]) {
+          if (!(key in windows)) continue;
+          const floors = clone.podlahy || (clone.podlahy = {});
+          if (!(key in floors)) floors[key] = windows[key];
+          delete windows[key];
+        }
+      }
+    }
+
     return clone;
   }
 
   private normalizePropertyTabValues(tabKey: NewPropertyTabKey, values: Record<string, string>): Record<string, string> {
+    if ((tabKey === 'podlahy' || tabKey === 'okna') && values['Podlahy']) {
+      return { ...values, Podlahy: values['Podlahy'].split('|').map(value => value.trim() === 'Litá' ? 'Litá podlaha' : value).join('|') };
+    }
     if (tabKey === 'voda' && values['Vodovod'] === 'Zaveden') {
       return { ...values, Vodovod: 'Napojen' };
     }
@@ -6261,7 +6710,8 @@ export class App {
     return {
       ...record,
       propertyType: this.normalizedPropertyType(record.propertyType),
-      phase: record.phase || PROPERTY_SALES_PHASES[0],
+      phase: record.status === 'archived' ? 'Archivováno' : record.phase || PROPERTY_SALES_PHASES[0],
+      status: record.phase === 'Archivováno' ? 'archived' : record.status,
       linkedClientIds: this.normalizeLinkedClientIds(record),
       tabValues: this.clonePropertyTabValues(record.tabValues)
     };
@@ -6980,6 +7430,24 @@ export class App {
   }
 
   constructor() {
+    effect(onCleanup => {
+      const key = this.activeDrivingRouteKey();
+      this.propertyDrivingState.set({ key, status: key ? 'loading' : 'idle', summary: '' });
+      if (!key) return;
+      const [origin, destination] = JSON.parse(key) as [string, string];
+      let subscription: Subscription | undefined;
+      const timer = setTimeout(() => {
+        subscription = this.drivingRoutes.calculate(origin, destination).subscribe({
+          next: route => this.propertyDrivingState.set({
+            key, status: 'ready', summary: formatDrivingRouteSummary(route)
+          }),
+          error: error => this.propertyDrivingState.set({
+            key, status: 'error', summary: '', error: this.drivingRouteError(error)
+          })
+        });
+      }, 700);
+      onCleanup(() => { clearTimeout(timer); subscription?.unsubscribe(); });
+    });
     void this.loadState().then(() => {
       this.loading.set(false);
     });
@@ -10296,23 +10764,71 @@ export class App {
     this.generateCurrentPropertySummary('buyer');
   }
 
-  protected generateCurrentPropertyBrokerInfo(): void {
-    this.generateCurrentPropertySummary('broker');
+  private currentDrivingAddresses(): { origin: string; destination: string } {
+    return {
+      origin: this.agentProfile().departureAddress.trim(),
+      destination: [this.newPropertyDraft().address, this.propertyTabFieldValue('zakladni', 'Adresa nemovitosti'),
+        this.propertyTabFieldValue('zakladni', 'Nejblížší adresa')].map(value => value.trim()).find(Boolean) || ''
+    };
   }
 
-  private generateCurrentPropertySummary(audience: 'buyer' | 'broker'): void {
+  private drivingRouteError(error: unknown): string {
+    return error instanceof Error && error.name === 'Error'
+      ? error.message : 'Dojezd se nepodařilo vypočítat. Zkontrolujte připojení a zkuste to znovu.';
+  }
+
+  protected generateCurrentPropertyBrokerInfo(): void {
+    const { origin, destination } = this.currentDrivingAddresses();
+    if (!origin) {
+      this.generateCurrentPropertySummary('broker');
+      return;
+    }
+    const draft = this.newPropertyDraft();
+    // Reserve the popup during the click, before the asynchronous route lookup.
+    const win = window.open('', '_blank', 'width=1100,height=1200');
+    if (!win) {
+      window.alert('Nepodařilo se otevřít sestavu. Zkontrolujte blokování vyskakovacích oken.');
+      return;
+    }
+    win.document.open();
+    win.document.write('<!doctype html><html lang="cs"><head><meta charset="utf-8"><title>Informace pro makléře</title></head><body><p role="status">Počítám silniční trasu a dobu dojezdu…</p></body></html>');
+    win.document.close();
+    const render = (route?: DrivingRoute, error?: string): void => {
+      if (win.closed) return;
+      if (this.newPropertyDraft() !== draft || this.agentProfile().departureAddress.trim() !== origin) {
+        win.document.body.textContent = 'Údaje se během výpočtu změnily. Zavřete toto okno a sestavu vygenerujte znovu.';
+        return;
+      }
+      const drivingInfo = route
+        ? this.brokerInfoSimpleRow('Dojezd', formatDrivingRouteSummary(route), false)
+        : this.brokerInfoSimpleRow('Dojezd', error || 'Výpočet trasy není dostupný.', true);
+      this.generateCurrentPropertySummary('broker', win, drivingInfo);
+    };
+    if (!destination) {
+      render(undefined, 'Doplňte adresu nemovitosti nebo nejbližší adresu v základních informacích.');
+      return;
+    }
+    this.drivingRoutes.calculate(origin, destination).subscribe({
+      next: route => render(route),
+      error: error => render(undefined, this.drivingRouteError(error))
+    });
+  }
+
+  private generateCurrentPropertySummary(audience: 'buyer' | 'broker', printWindow?: Window, drivingInfo = ''): void {
     const includeExcluded = audience === 'broker';
     const reportTitle = includeExcluded ? 'Informace pro makléře' : 'Informace pro zájemce';
     const draft = this.newPropertyDraft();
+    const normalizedTabs = this.normalizedPropertyTabCollection();
     const clientDetails = includeExcluded ? this.linkedPropertyClients().map(({ draft: client }) => {
       const phone = this.escapeHtml(this.displayNewClientPhone(client) || 'Telefon neuveden');
       const email = this.escapeHtml(client.email.trim() || 'E-mail neuveden');
       return `<div class="client-details">${this.brokerInfoSimpleRow('Jméno a příjmení', this.handoverClientName(client) || 'Jméno neuvedeno')}<div class="info-row"><div class="info-label">Telefon</div><div class="info-value">${phone}</div></div><div class="info-row"><div class="info-label">E-mail</div><div class="info-value">${email}</div></div></div>`;
     }).join('') : '';
-    const clientSection = clientDetails ? `<section class="info-card"><h2>KLIENT</h2><div class="info-card-body">${clientDetails}</div></section>` : '';
+    const clientContent = clientDetails + (includeExcluded && drivingInfo ? `<div class="client-details">${drivingInfo}</div>` : '');
+    const clientSection = clientContent ? `<section class="info-card"><h2>KLIENT</h2><div class="info-card-body">${clientContent}</div></section>` : '';
     const skippedKeys = new Set(['informace-do-letaku', 'predavaci-protokol', 'cena-nemovitosti']);
     const sections = clientSection + this.propertySectionTabs()
-      .filter((tab) => !skippedKeys.has(tab.key))
+      .filter((tab) => !skippedKeys.has(tab.key) && !this.isFamilyHouseHiddenSection(tab.key))
       .map((tab) => {
         if (tab.key === 'prostory') {
           return this.prostorySummarySections(draft.tabValues?.prostory || {}, includeExcluded)
@@ -10326,7 +10842,7 @@ export class App {
         }
         const sourceTabs: NewPropertyTabKey[] = tab.key === 'hlavni-prednosti' ? ['hlavni-prednosti', 'pravni-vady'] : [tab.key];
         const rows = sourceTabs.flatMap((sourceTab) => {
-          const rawValues = draft.tabValues?.[sourceTab] || {};
+          const rawValues = (sourceTab === 'okna' || sourceTab === 'podlahy' ? normalizedTabs[sourceTab] : draft.tabValues?.[sourceTab]) || {};
           const values = sourceTab === 'pravni-vady' ? this.legalDefectPrintValues(rawValues, !includeExcluded) : sourceTab === 'prostory' ? this.normalizePropertyTabValues('prostory', rawValues) : rawValues;
           const combinedRows = this.combinedPropertyInfoValues(sourceTab, values, includeExcluded);
           const combinedFieldKeys = this.combinedBuyerInfoFieldKeys(sourceTab, values);
@@ -10336,7 +10852,7 @@ export class App {
               .filter(([key, value]) => !combinedFieldKeys.has(key) && (includeExcluded || this.isPropertyBuyerInfoFieldVisible(sourceTab, key)) && !key.includes('__') && !key.endsWith(' počet') && !key.startsWith('parcel-') && !key.startsWith('stavba-parcel-') && Boolean(String(value).trim()))
               .map(([key, value]) => ({ field: key, label: sourceTab === 'prostory' ? (key === 'Příslušenství nemovitosti' ? 'Příslušenství' : key.replace(/^Dispozice jednotky(?= [A-Z]$|$)/, 'Dispozice')) : sourceTab === 'elektina' && key === 'Zásuvka venku' ? 'Venkovní zásuvka' : key, value: String(value).replace(/\|/g, ', ') }))
           ];
-          return this.orderPropertyPrintRows(sourceTab, fieldRows).map(row => this.brokerInfoSimpleRow(row.label, row.value, (sourceTab === 'doplnkove-informace' && row.field === 'Doplnění') || undefined));
+          return this.orderPropertyPrintRows(sourceTab, fieldRows).map(row => this.brokerInfoSimpleRow(row.label, row.value));
         }).join('');
         return rows ? `<section class="info-card"><h2>${this.escapeHtml(tab.label)}</h2><div class="info-card-body">${rows}</div></section>` : '';
       })
@@ -10358,7 +10874,7 @@ export class App {
       .info-row-stavba{grid-template-columns:max-content minmax(0,1fr)}.info-row-stavba .info-value{text-align:right}
     </style></head><body><div class="page"><header class="top"><h1>${reportTitle.toLocaleUpperCase('cs-CZ')}</h1><div class="subtitle">${this.escapeHtml(title)}</div></header><main class="grid">${sections || '<p class="empty">Nejsou vyplněné žádné informace k nemovitosti.</p>'}</main><footer class="footer"><div class="contact"><strong>${this.escapeHtml(agent.fullName || 'Eliška Petrášová')}</strong><div>${this.escapeHtml(email)}</div><div>${this.escapeHtml(phone)}</div></div></footer></div><script>window.onload=()=>setTimeout(()=>window.print(),200)</script></body></html>`;
 
-    const win = window.open('', '_blank', 'width=1100,height=1200');
+    const win = printWindow || window.open('', '_blank', 'width=1100,height=1200');
     if (!win) {
       window.alert(`Nepodařilo se otevřít okno pro ${reportTitle.toLocaleLowerCase('cs-CZ')}. Zkontrolujte blokování vyskakovacích oken.`);
       return;
@@ -10371,17 +10887,18 @@ export class App {
 
   protected generateCurrentPropertyBlankForm(): void {
     const draft = this.newPropertyDraft();
+    const normalizedTabs = this.normalizedPropertyTabCollection();
     const visibleTabs = this.visiblePropertySectionTabs();
     const labels = new Map(visibleTabs.map((tab) => [tab.key as string, tab.label] as const));
-    const allowed = new Set(visibleTabs.map((tab) => tab.key as string));
     const blocks: string[] = [];
 
-    for (const section of PROPERTY_INTAKE_FORM) {
-      if (!allowed.has(section.key) || section.key === 'predavaci-protokol') {
+    for (const tab of visibleTabs) {
+      const section = PROPERTY_INTAKE_FORM.find(source => source.key === tab.key);
+      if (!section || section.key === 'predavaci-protokol') {
         continue;
       }
 
-      const values = draft.tabValues?.[section.key as NewPropertyTabKey] ?? {};
+      const values = (section.key === 'okna' || section.key === 'podlahy' ? normalizedTabs[section.key] : draft.tabValues?.[section.key as NewPropertyTabKey]) ?? {};
       if (section.key === 'prostory') {
         blocks.push(...this.brokerInfoProstorySections(section, values));
         continue;
@@ -10398,10 +10915,11 @@ export class App {
         ? [section, ...PROPERTY_INTAKE_FORM.filter((source) => source.key === 'pravni-vady')]
         : [section];
       rows = sourceSections.map((source) => {
-        const rawValues = draft.tabValues?.[source.key as NewPropertyTabKey] ?? {};
+        const rawValues = (source.key === 'okna' || source.key === 'podlahy' ? normalizedTabs[source.key] : draft.tabValues?.[source.key as NewPropertyTabKey]) ?? {};
         const sourceValues = source.key === 'pravni-vady' ? this.legalDefectPrintValues(rawValues, false) : rawValues;
         const fieldRows = source.fields
           .filter((field) => source.key !== 'pravni-vady' || field.field !== 'Informace k černé stavbě' || (sourceValues['Právní vady a jiná omezení'] || '').split('|').includes('Černá stavba'))
+          .filter((field) => source.key !== 'pravni-vady' || !MORTGAGE_DETAIL_FIELDS.includes(field.field || '') || (sourceValues['Právní vady a jiná omezení'] || '').split('|').includes('Zatíženo hypotékou'))
           .filter((field) => source.key !== 'elektina' || this.isCurrentPropertyType('Garáž') || !['Počet světel', 'Počet zásuvek'].includes(field.field || ''))
           .filter((field) => source.key !== 'voda' || field.field !== 'Stoupačky' || (!this.isCurrentPropertyType('Dům') && !this.isCurrentPropertyType('Rodinný dům')))
           .filter((field) => this.shouldShowOutdoorUtilityFields() || !((source.key === 'elektina' && field.field === 'Zásuvka venku') || (source.key === 'voda' && field.field === 'Venkovní ventil na vodu')))
@@ -10449,18 +10967,19 @@ export class App {
       selected = selected.filter(value => value !== 'Černá stavba');
     }
     if (!selected.includes('Černá stavba')) delete next['Informace k černé stavbě'];
+    if (!selected.includes('Zatíženo hypotékou')) {
+      for (const field of MORTGAGE_DETAIL_FIELDS) delete next[field];
+    }
+    if (next['Způsob vypořádání hypotéky'] === this.propertyCustomOption) delete next['Způsob vypořádání hypotéky'];
     next['Právní vady a jiná omezení'] = selected.join('|');
     return next;
   }
 
   private isFullWidthPropertyPrintLabel(label: string, value = ''): boolean {
-    if (PROPERTY_PRINT_LONG_NOTE_LABELS.includes(label) && value.trim().length > PROPERTY_PRINT_LONG_NOTE_MIN_LENGTH) return true;
-    if (!/^Stavba \d+$/.test(label) && value.trim().length > PROPERTY_PRINT_LONG_VALUE_LENGTH) return true;
-    return label === 'Doplnění'
-      || label === 'Poznámka'
-      || label === 'Seznam místností'
-      || label.startsWith('Seznam místností ')
-      || label.startsWith('Zajímavosti v okolí');
+    const text = label.toLowerCase();
+    if (PROPERTY_PRINT_NOTE_LABEL_PATTERN.test(text)) return true;
+    if (!PROPERTY_PRINT_WRAPPED_LABEL_PATTERN.test(text)) return false;
+    return value.trim().length > PROPERTY_PRINT_LONG_VALUE_LENGTH;
   }
 
   private brokerInfoRow(field: IntakeControl, values: Record<string, string>, keyOverride?: string, labelOverride?: string): string {
@@ -10519,7 +11038,11 @@ export class App {
   }
 
   private printUnitLabel(label: string, unit: string): string {
-    return unit && label.endsWith(` ${unit}`) ? label.slice(0, -(unit.length + 1)) : label;
+    if (!unit) return label;
+    for (const suffix of [this.dispoziceUnitReference(unit), unit]) {
+      if (label.endsWith(` ${suffix}`)) return label.slice(0, -(suffix.length + 1));
+    }
+    return label;
   }
 
   private prostorySummarySections(values: Record<string, string>, includeExcluded: boolean): Array<{ label: string; rows: PropertyPrintRow[] }> {
@@ -10563,7 +11086,7 @@ export class App {
           seen.add(id);
           return true;
         });
-      if (rows.length) sections.push({ label: `DISPOZICE ${unit}`, rows: withRoomNote(rows, unit) });
+      if (rows.length) sections.push({ label: this.dispoziceUnitPrintTitle(unit), rows: withRoomNote(rows, unit) });
     }
     const sharedRows = allRows.filter((row) => unitOf(row.field) === '@shared');
     const accessoryRows = sharedRows.filter((row) => row.field !== 'Poznámka k dispozici');
@@ -10597,9 +11120,9 @@ export class App {
         if (!sourceKey) continue;
         const value = String(values[sourceKey] ?? '').trim();
         if (!value || (!includeExcluded && !this.isPropertyBuyerInfoFieldVisible('socialni-zazemi', sourceKey))) continue;
-        rows.push({ field: sourceKey, label: unit ? `${field} ${unit}` : field, value: value.replace(/\|/g, ', ') });
+        rows.push({ field: sourceKey, label: this.socialniZazemiUnitLabel(field, unit), value: value.replace(/\|/g, ', ') });
       }
-      if (rows.length) sections.push({ label: `SOCIÁLNÍ ZÁZEMÍ ${unit}`, rows: this.orderPropertyPrintRows('socialni-zazemi', rows) });
+      if (rows.length) sections.push({ label: this.socialniZazemiUnitTitle(unit), rows: this.orderPropertyPrintRows('socialni-zazemi', rows) });
     }
     return sections;
   }
@@ -10612,8 +11135,8 @@ export class App {
         const sourceKey = field.field ? this.socialniZazemiResolvedKey(field.field, unit, values) : null;
         unitValues[field.field || field.label] = sourceKey ? values[sourceKey] ?? '' : '';
       }
-      const rows = section.fields.map((field) => ({ field: field.field || field.label, html: this.brokerInfoRow(field, unitValues, undefined, unit ? `${field.label} ${unit}` : field.label) }));
-      sections.push(this.propertyPrintSectionHtml(unit ? `SOCIÁLNÍ ZÁZEMÍ ${unit}` : 'SOCIÁLNÍ ZÁZEMÍ', this.orderPropertyPrintRows('socialni-zazemi', rows).map((row) => row.html).join('')));
+      const rows = section.fields.map((field) => ({ field: field.field || field.label, html: this.brokerInfoRow(field, unitValues, undefined, this.socialniZazemiUnitLabel(field.label, unit)) }));
+      sections.push(this.propertyPrintSectionHtml(this.socialniZazemiUnitTitle(unit), this.orderPropertyPrintRows('socialni-zazemi', rows).map((row) => row.html).join('')));
     }
     return sections;
   }
@@ -10651,7 +11174,7 @@ export class App {
     const sections: string[] = [];
     for (const unit of units) {
       const rows = unitRows(unit);
-      if (rows.length) sections.push(this.propertyPrintSectionHtml(`DISPOZICE ${unit}`, rows.map((row) => row.html).join('')));
+      if (rows.length) sections.push(this.propertyPrintSectionHtml(this.dispoziceUnitPrintTitle(unit), rows.map((row) => row.html).join('')));
     }
     const accessoryRows = sharedRows.filter((row) => row.field !== 'Poznámka k dispozici');
     sections.push(this.propertyPrintSectionHtml('SAMOSTATNĚ STOJÍCÍ VYBAVENÍ', this.orderPropertyPrintRows('prostory', accessoryRows).map((row) => row.html).join('')));
@@ -10830,7 +11353,7 @@ export class App {
       }
       for (const [label, kind] of [['PODLAHOVÁ PLOCHA', 'podlahova'], ['OBYTNÁ PLOCHA', 'obytna'], ['UŽITNÁ PLOCHA', 'uzitna'], ['CELKOVÁ UŽITNÁ PLOCHA', 'celkovaUzitna']] as const) {
         if (kind === 'obytna' && this.isCurrentPropertyType('Garáž')) continue;
-        add(this.prostoryKey(label, unit), this.prostoryUnitLabel(label, unit), this.prostoryAreaTotal(kind, unit));
+        add(this.prostoryKey(label, unit), this.prostoryUnitLabel(label.charAt(0) + label.slice(1).toLowerCase(), unit), this.prostoryAreaTotal(kind, unit));
       }
     }
     return rows;
@@ -11049,8 +11572,7 @@ export class App {
         address: draft.address,
         price: draft.price,
         seller: draft.seller,
-        status: 'active' as const,
-        phase: draft.phase || PROPERTY_SALES_PHASES[0],
+        ...this.propertyLifecycleFields(draft),
         linkedClientId: linkedClientIds[0] || '',
         linkedClientIds,
         tabValues: this.clonePropertyTabValues(draft.tabValues)
@@ -11062,7 +11584,7 @@ export class App {
     this.savedPropertyRecords.update((records) =>
       records.map((record) =>
         record.id === activeId
-          ? { ...record, title: draft.title, propertyType: draft.propertyType, address: draft.address, price: draft.price, seller: draft.seller, phase: draft.phase || record.phase, linkedClientId: linkedClientIds[0] || '', linkedClientIds, tabValues: this.clonePropertyTabValues(draft.tabValues) }
+          ? { ...record, title: draft.title, propertyType: draft.propertyType, address: draft.address, price: draft.price, seller: draft.seller, ...this.propertyLifecycleFields(draft, record), linkedClientId: linkedClientIds[0] || '', linkedClientIds, tabValues: this.clonePropertyTabValues(draft.tabValues) }
           : record
       )
     );
@@ -11190,7 +11712,8 @@ export class App {
           customParcelRows: state.customParcelRows
         }
       })),
-      agentProfile: this.agentProfile()
+      agentProfile: this.agentProfile(),
+      blankHandoverValues: this.blankHandoverValues()
     };
 
     const payloadJson = JSON.stringify(payload);
@@ -11440,7 +11963,36 @@ ${`<div class="aml aml-page">
   }
 
   protected printBlankHandoverProtocol(): void {
-    this.generateHandoverProtocol();
+    this.printHandoverProtocol({ values: this.blankHandoverPrintValues(), delivering: [], receiving: [], title: 'Prázdný předávací protokol' });
+  }
+
+  protected openBlankHandoverProtocol(): void {
+    this.blankHandoverEditorOpen.set(true);
+  }
+
+  protected setBlankHandoverField(field: string, value: string): void {
+    this.blankHandoverValues.update(values => ({ ...values, [field]: value }));
+    this.blankHandoverSettingsSaved.set(false);
+  }
+
+  protected resetBlankHandoverSettings(): void {
+    this.blankHandoverValues.set({});
+    this.blankHandoverSettingsSaved.set(false);
+  }
+
+  protected async saveBlankHandoverSettings(): Promise<void> {
+    const values = this.blankHandoverValues();
+    await this.saveState(this.buildXmlString());
+    if (this.blankHandoverValues() === values) this.blankHandoverSettingsSaved.set(true);
+  }
+
+  protected blankHandoverPrintValues(): Record<string, string> {
+    const values = this.blankHandoverValues();
+    return {
+      ...values,
+      buyerObligationText: values['buyerObligationText'] ?? this.defaultHandoverBuyerObligationText(),
+      keysConfirmationText: this.handoverKeysConfirmationText(values),
+    };
   }
 
   private renderBlankPropertyFormHtml(sections: Section[]): string {
@@ -11472,46 +12024,61 @@ ${sections.map((section) => `<section class="section"><div class="section-title"
   }
 
   protected generateHandoverProtocol(): void {
+    const delivering = this.handoverProtocolParties('predavajici');
+    const receiving = this.handoverProtocolParties('prebirajici');
+    try {
+      this.printHandoverProtocol({
+        values: {
+          ...this.newPropertyDraft().tabValues['predavaci-protokol'],
+          propertyDescription: this.handoverPropertyDescriptionValue(),
+          address: this.propertyTabFieldValue('predavaci-protokol', 'address') || this.newPropertyDraft().address,
+          buyerObligationText: this.handoverBuyerObligationTexts().join('\n\n'),
+          keysConfirmationText: [this.handoverKeysConfirmationText(), this.handoverExtraTextVisible('keysConfirmationCustom') ? this.propertyTabFieldValue('predavaci-protokol', 'keysConfirmationCustomExtraText') : ''].filter(Boolean).join('\n\n'),
+        },
+        delivering, receiving, title: this.handoverProtocolDocumentTitle(delivering, receiving)
+      });
+    } catch (error) {
+      console.error('Generování předávacího protokolu selhalo.', error);
+      window.alert(`Generování předávacího protokolu selhalo: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  private printHandoverProtocol(source: HandoverProtocolSource): void {
     const win = window.open('', '_blank', 'width=980,height=1200');
     if (!win) {
       window.alert('Nepodařilo se otevřít okno pro Předávací protokol. Zkontrolujte blokování vyskakovacích oken.');
       return;
     }
-
-    const delivering = this.handoverProtocolParties('predavajici');
-    const receiving = this.handoverProtocolParties('prebirajici');
-    const documentTitle = this.handoverProtocolDocumentTitle(delivering, receiving);
-    const city = this.handoverCityValue().trim();
-    const date = this.handoverDateValue().trim();
-    const propertyDescription = this.handoverPropertyDescriptionValue().trim();
-    const propertyAddress = (this.propertyTabFieldValue('predavaci-protokol', 'address') || this.newPropertyDraft().address).trim();
-    const cellarVisible = this.handoverOptionalGroupVisible('cellarVisible');
-    const doorbellVisible = this.handoverOptionalGroupVisible('doorbellVisible');
-    const managerVisible = this.handoverOptionalGroupVisible('managerVisible');
-    const metersSectionVisible = this.handoverPrintSectionVisible('metersSectionVisible');
-    const keysSectionVisible = this.handoverPrintSectionVisible('keysSectionVisible');
-    const remainsSectionVisible = this.handoverPrintSectionVisible('remainsSectionVisible');
-    const cellar = this.propertyTabFieldValue('predavaci-protokol', 'cellar').trim();
-    const mailbox = this.propertyTabFieldValue('predavaci-protokol', 'mailbox').trim();
-    const cellarNumber = this.propertyTabFieldValue('predavaci-protokol', 'cellarNumber').trim();
-    const doorbell = this.propertyTabFieldValue('predavaci-protokol', 'doorbell').trim();
-    const doorbellLabel = this.propertyTabFieldValue('predavaci-protokol', 'doorbellLabel').trim();
-    const cellarRemains = this.propertyTabFieldValue('predavaci-protokol', 'cellarRemains').trim();
-    const managerName = this.propertyTabFieldValue('predavaci-protokol', 'managerName').trim();
-    const managerEmail = this.propertyTabFieldValue('predavaci-protokol', 'managerEmail').trim();
-    const managerPhone = this.propertyTabFieldValue('predavaci-protokol', 'managerPhone').trim();
-    const cellarSection = cellarVisible ? `<div class="section">
-      <div class="section-title">SKLEP</div>
-      <div class="handover-details-grid single-column">
-        <div class="handover-detail"><div class="handover-detail-label">Označení sklepu:</div><div class="handover-detail-value">${this.escapeHtml(cellar || cellarNumber)}</div></div>
-        <div class="handover-detail"><div class="handover-detail-label">Ve sklepě zůstává:</div><div class="handover-detail-value">${this.escapeHtml(cellarRemains)}</div></div>
-      </div>
-    </div>` : '';
+    try {
+    const { values, delivering, receiving, title: documentTitle } = source;
+    const field = (key: string): string => String(values[key] ?? '').trim();
+    const visible = (key: string): boolean => values[key] !== 'NE';
+    const city = field('city');
+    const date = field('date');
+    const propertyDescription = field('propertyDescription');
+    const propertyAddress = field('address');
+    const propertyAddressLines = formatHandoverPropertyAddress(propertyAddress);
+    const returnSections = renderHandoverReturnSections(values, value => this.escapeHtml(value));
+    const cellarVisible = values['cellarVisible'] === 'ANO';
+    const doorbellVisible = values['doorbellVisible'] === 'ANO';
+    const managerVisible = values['managerVisible'] === 'ANO';
+    const metersSectionVisible = visible('metersSectionVisible');
+    const keysSectionVisible = visible('keysSectionVisible');
+    const remainsSectionVisible = visible('remainsSectionVisible');
+    const cellar = field('cellar');
+    const mailbox = field('mailbox');
+    const doorbell = field('doorbell');
+    const doorbellLabel = field('doorbellLabel');
+    const cellarRemains = field('cellarRemains');
+    const cellarRemainsWritingRows = Math.min(10, Math.max(1, Number.parseInt(field('cellarRemainsWritingRows'), 10) || 1));
+    const managerName = field('managerName');
+    const managerEmail = field('managerEmail');
+    const managerPhone = field('managerPhone');
     const supplementalRows = [
       doorbellVisible ? `<div class="handover-detail"><div class="handover-detail-label">Schránka:</div><div class="handover-detail-value">${this.escapeHtml(mailbox)}</div></div><div class="handover-detail"><div class="handover-detail-label">Zvonek:</div><div class="handover-detail-value">${this.escapeHtml(doorbell)}</div></div><div class="handover-detail"><div class="handover-detail-label">Označení:</div><div class="handover-detail-value">${this.escapeHtml(doorbellLabel)}</div></div>` : ''
     ].filter(Boolean).join('');
     const supplementalSection = supplementalRows ? `<div class="section">
-      <div class="section-title">DOPLŇUJÍCÍ INFORMACE</div>
+      <div class="section-title">SCHRÁNKA A ZVONEK</div>
       <div class="handover-details-grid single-column">${supplementalRows}</div>
     </div>` : '';
     const managerSection = managerVisible ? `<div class="section">
@@ -11522,30 +12089,43 @@ ${sections.map((section) => `<section class="section"><div class="section-title"
         <div class="handover-detail handover-detail-full"><div class="handover-detail-label">Telefon:</div><div class="handover-detail-value">${this.escapeHtml(managerPhone)}</div></div>
       </div>
     </div>` : '';
-    const remains = this.propertyTabFieldValue('predavaci-protokol', 'remainsInProperty').trim();
-    const keysDescription = this.propertyTabFieldValue('predavaci-protokol', 'keysDescription').trim();
-    const photoRecorded = this.propertyTabFieldValue('predavaci-protokol', 'photoRecorded') === 'ANO';
-    const keysCount = this.propertyTabFieldValue('predavaci-protokol', 'keysCount').trim();
-    const chipsCount = this.propertyTabFieldValue('predavaci-protokol', 'chipsCount').trim();
-    const keyCardsCount = this.propertyTabFieldValue('predavaci-protokol', 'keyCardsCount').trim();
-    const keysCountVisible = this.handoverKeyItemVisible('keysCountVisible');
-    const chipsCountVisible = this.handoverKeyItemVisible('chipsCountVisible');
-    const keyCardsCountVisible = this.handoverKeyItemVisible('keyCardsCountVisible');
-    const buyerObligationText = this.handoverBuyerObligationText().trim();
-    const meterConfirmationText = this.handoverMeterConfirmationText().trim();
-    const photoNoticeText = this.handoverPhotoNoticeText().trim();
+    const remains = field('remainsInProperty');
+    const remainsWritingRows = Math.min(10, Math.max(1, Number.parseInt(field('remainsInPropertyWritingRows'), 10) || 1));
+    const handoverPropertyCondition = field('handoverPropertyCondition');
+    const keysDescription = field('keysDescription');
+    const photoRecorded = values['photoRecorded'] === 'ANO';
+    const keysCount = field('keysCount');
+    const chipsCount = field('chipsCount');
+    const keyCardsCount = field('keyCardsCount');
+    const keysCountVisible = visible('keysCountVisible');
+    const chipsCountVisible = visible('chipsCountVisible');
+    const keyCardsCountVisible = visible('keyCardsCountVisible');
+    const keysDescriptionVisible = visible('keysDescriptionVisible');
+    const buyerObligationText = field('buyerObligationText');
+    const keysConfirmationText = field('keysConfirmationText');
+    const returnEquipment = field('returnEquipment');
+    const returnEquipmentRows = Math.min(10, Math.max(1, Number.parseInt(field('returnEquipmentWritingRows'), 10) || 3));
+    const additionalEquipmentSection = visible('returnEquipmentVisible') ? `<div class="section">
+      <div class="section-title">DALŠÍ VYBAVENÍ A DOKUMENTACE</div>
+      <div class="handover-write-label">Nájemce předal pronajímateli následující vybavení, dokumenty či další předměty:</div>
+      <div class="handover-write-boxes">${Array.from({ length: returnEquipmentRows }, (_, index) => `<div class="handover-write-box">${index === 0 && returnEquipment ? this.escapeHtml(returnEquipment) : '&nbsp;'}</div>`).join('')}</div>
+    </div>` : '';
     const meters = [
-      { visible: this.handoverMeterVisible('electricMeterVisible'), label: 'Elektřina', number: this.propertyTabFieldValue('predavaci-protokol', 'electricMeterNumber').trim(), state: this.propertyTabFieldValue('predavaci-protokol', 'electricMeterState').trim(), unit: 'kWh' },
-      { visible: this.handoverMeterVisible('electricT1MeterVisible'), label: 'Elektřina T1', number: this.propertyTabFieldValue('predavaci-protokol', 'electricT1MeterNumber').trim(), state: this.propertyTabFieldValue('predavaci-protokol', 'electricT1MeterState').trim(), unit: 'kWh' },
-      { visible: this.handoverMeterVisible('electricT2MeterVisible'), label: 'Elektřina T2', number: this.propertyTabFieldValue('predavaci-protokol', 'electricT2MeterNumber').trim(), state: this.propertyTabFieldValue('predavaci-protokol', 'electricT2MeterState').trim(), unit: 'kWh' },
-      { visible: this.handoverMeterVisible('hotWaterMeterVisible'), label: 'Voda teplá', number: this.propertyTabFieldValue('predavaci-protokol', 'hotWaterMeterNumber').trim(), state: this.propertyTabFieldValue('predavaci-protokol', 'hotWaterMeterState').trim(), unit: 'm3' },
-      { visible: this.handoverMeterVisible('coldWaterMeterVisible'), label: 'Voda studená', number: this.propertyTabFieldValue('predavaci-protokol', 'coldWaterMeterNumber').trim(), state: this.propertyTabFieldValue('predavaci-protokol', 'coldWaterMeterState').trim(), unit: 'm3' },
-      { visible: this.handoverMeterVisible('gasMeterVisible'), label: 'Plyn', number: this.propertyTabFieldValue('predavaci-protokol', 'gasMeterNumber').trim(), state: this.propertyTabFieldValue('predavaci-protokol', 'gasMeterState').trim(), unit: 'm3' },
-      { visible: this.handoverMeterVisible('customMeterVisible'), label: this.propertyTabFieldValue('predavaci-protokol', 'customMeterLabel').trim() || '', number: this.propertyTabFieldValue('predavaci-protokol', 'customMeterNumber').trim(), state: this.propertyTabFieldValue('predavaci-protokol', 'customMeterState').trim(), unit: '' }
+      { visible: visible('electricMeterVisible'), label: 'Elektřina', number: field('electricMeterNumber'), state: field('electricMeterState'), unit: 'kWh' },
+      { visible: visible('electricT1MeterVisible'), label: 'Elektřina T1', number: field('electricT1MeterNumber'), state: field('electricT1MeterState'), unit: 'kWh' },
+      { visible: visible('electricT2MeterVisible'), label: 'Elektřina T2', number: field('electricT2MeterNumber'), state: field('electricT2MeterState'), unit: 'kWh' },
+      { visible: visible('hotWaterMeterVisible'), label: 'Voda teplá', number: field('hotWaterMeterNumber'), state: field('hotWaterMeterState'), unit: 'm3' },
+      { visible: visible('coldWaterMeterVisible'), label: 'Voda studená', number: field('coldWaterMeterNumber'), state: field('coldWaterMeterState'), unit: 'm3' },
+      { visible: visible('gasMeterVisible'), label: 'Plyn', number: field('gasMeterNumber'), state: field('gasMeterState'), unit: 'm3' },
+      ...Array.from({ length: field('customMeterCount') === '' ? 1 : Math.max(0, Math.min(10, Number.parseInt(field('customMeterCount'), 10) || 0)) }, (_, index) => {
+        const suffix = index === 0 ? '' : String(index);
+        const key = (name: string) => `customMeter${suffix}${name}`;
+        return {
+          visible: values[index === 0 ? 'customMeterVisible' : `customMeter${index}Visible`] !== 'NE',
+          label: field(key('Label')), number: field(key('Number')), state: field(key('State')), unit: field(key('Unit'))
+        };
+      })
     ].filter((meter) => meter.visible);
-    const agent = this.agentProfile();
-    const agentName = agent.fullName || 'Petrášová Eliška';
-    const agentPhone = agent.phone || '+420 775 946 596';
 
     const html = `<!doctype html>
 <html lang="cs"><head><meta charset="utf-8" /><title>${this.escapeHtml(documentTitle)}</title>
@@ -11587,18 +12167,32 @@ body { font-family: Arial, sans-serif; margin: 0; color: #0b2138; font-size: 11p
 .party-line-icon { display:none; }
 .party-name { font-weight:900; margin-bottom:3px; }
 .meta { margin:2px 0; }
-.property-text { margin:4px 0 0; font-weight:700; }
-.property-card { display:grid; grid-template-columns:1fr 1px 1fr; gap:22px; align-items:center; }
+.property-text { margin:0; font-weight:400; }
+.property-card { display:grid; grid-template-columns:1fr 1px 1fr; gap:22px; align-items:start; }
 .property-divider { background:#bdd0e2; height:54px; }
 .property-address { margin:0; }
 .address-pin { display:none; }
-.property-address-label { font-weight:400; }
-.property-address-value { display:block; font-size:12px; font-weight:900; margin-top:2px; }
+.property-address-label { display:block; font-weight:400; }
+.property-address-value { display:block; font-size:13px; font-weight:900; margin-top:2px; }
+.property-address-value > span { display:block; }
 .handover-details-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px 18px; }
 .handover-details-grid.single-column { grid-template-columns:1fr; }
 .handover-detail { align-items:center; display:grid; grid-template-columns:130px 1fr; gap:7px; margin-bottom:6px; }
+.handover-detail.cellar-main-label { grid-template-columns:max-content minmax(0,1fr); gap:3px; }
+.cellar-details .handover-detail { margin-bottom:6px; }
+.cellar-details { row-gap:0; }
+.cellar-details .handover-detail:not(.cellar-remains-detail) { grid-template-columns:max-content minmax(0,1fr); }
+.cellar-details .handover-detail:not(.cellar-remains-detail) .handover-detail-value { min-width:0; }
+.cellar-remains-summary { margin-top:9px; }
+.cellar-details + .handover-write-label { margin-top:12px; }
+.cellar-remains-detail { display:block; }
+.cellar-remains-detail .handover-detail-label { font-weight:700; margin-bottom:3px; }
+.cellar-remains-detail > .handover-detail-value.cellar-remains-write-boxes { background:transparent; border-radius:0; display:grid; gap:4px; min-height:0; padding:0; }
+.cellar-remains-write-boxes > div { background:#f0f5fa; border-radius:4px; min-height:20px; padding:2px 6px; }
 .handover-detail-label { color:#0b2138; font-weight:400; text-transform:none; }
 .handover-detail-value { background:#f0f5fa; border-radius:4px; min-height:20px; padding:2px 6px; white-space:pre-wrap; }
+.handover-money-detail { grid-template-columns:max-content minmax(50ch, 1fr); }
+.handover-money-detail .handover-detail-label, .handover-money-detail .handover-detail-value { white-space:nowrap; }
 .handover-detail-full { grid-column:1 / -1; }
 .manager-grid { grid-template-columns:1fr 1fr; }
 .meter-table { border:1px solid #c4d7e8; border-collapse:separate; border-radius:6px; border-spacing:0; overflow:hidden; width:100%; }
@@ -11615,21 +12209,25 @@ body { font-family: Arial, sans-serif; margin: 0; color: #0b2138; font-size: 11p
 .meter-table td:nth-child(3) .meter-fill { border-bottom-right-radius:4px; border-top-right-radius:4px; }
 .meter-unit { text-align:center; }
 .notice { margin:14px 0 16px; line-height:1.25; }
-.keys-summary { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; font-size:10px; font-weight:500; margin:4px 0 8px; }
-.keys-summary-row { align-items:center; display:flex; gap:6px; margin:0; white-space:nowrap; }
-.keys-summary-row:nth-child(1) { justify-content:flex-start; text-align:left; }
-.keys-summary-row:nth-child(2) { justify-content:center; text-align:center; }
-.keys-summary-row:nth-child(3) { justify-content:flex-end; text-align:right; }
-.keys-summary .keys-count { background:#fff; border:1px solid #aac4dc; border-radius:5px; display:inline-block; min-height:24px; min-width:82px; margin:5px 6px 0 0; padding:4px 8px; text-align:center; text-decoration:none; }
-.keys-summary-row .keys-count { margin:0; }
+.party-fill-box { background:#f0f5fa; border-radius:4px; display:block; min-height:18px; }
+.handover-currency { float:right; font-weight:700; }
+.keys-summary { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; margin-bottom:8px; }
+.keys-summary .handover-detail { grid-template-columns:auto minmax(24px, 1fr); gap:3px; margin:0; font-size:9px; }
+.keys-summary .handover-detail-label { white-space:nowrap; }
+.keys-summary .handover-detail-value { min-height:16px; padding:1px 4px; }
 .keys-lines { display:grid; grid-template-columns:1fr; row-gap:10px; margin:0; }
-.keys-line { border-bottom:1px solid rgba(17, 17, 17, 0.22); min-height:16px; white-space:pre-wrap; }
-.remain-text { background:#edf6fc; border-radius:5px; margin:0; min-height:34px; padding:7px 8px; white-space:pre-wrap; }
+.keys-description { display:grid; grid-template-columns:1fr; row-gap:4px; margin:8px 0 0; }
+.keys-description-cell { background:#f0f5fa; border-radius:4px; min-height:18px; padding:2px 6px; white-space:pre-wrap; }
+.keys-line, .handover-write-line { border-bottom:1px solid rgba(17, 17, 17, 0.22); }
+.keys-line { min-height:16px; white-space:pre-wrap; }
+.remain-text { background:#f0f5fa; border-radius:4px; margin:0; min-height:20px; padding:2px 6px; white-space:pre-wrap; }
 .info-box { align-items:center; background:linear-gradient(135deg,#edf6fc,#f8fcff); border-radius:8px; color:#0b2138; display:grid; grid-template-columns:52px 1fr; gap:8px; margin:8px 0; padding:9px 12px; }
 .info-icon { align-items:center; background:#d6e9f8; border-radius:50%; color:#0b355d; display:flex; font-size:22px; font-weight:900; height:40px; justify-content:center; width:40px; }
 .photo-notice, .final-notice { font-size:10px; line-height:1.28; margin:0; white-space:pre-wrap; }
-.meter-photo-notice { color:#34495e; font-size:9.5px; line-height:1.28; margin:5px 0 0; white-space:normal; }
+.meter-photo-notice { color:#34495e; font-size:9.5px; line-height:1.28; margin:5px 0 0; white-space:pre-line; }
 .meter-confirmation { color:#34495e; font-size:9.5px; line-height:1.28; margin:8px 0 0; white-space:normal; }
+.key-confirmation { border-top:1px solid #d6e4f0; margin-top:10px; padding-top:8px; }
+.handover-finance-note { border-top:1px solid #d6e4f0; color:#34495e; font-size:9.5px; line-height:1.28; margin:10px 0 0; padding-top:8px; white-space:normal; }
 .final-notice { font-weight:500; }
 .signature-grid { break-before:avoid-page; display:grid; grid-template-columns:1fr 1fr; gap:70px; margin:27px 4px 0; page-break-before:avoid; }
 .sign-city { margin-bottom:29px; min-height:18px; padding-bottom:2px; }
@@ -11637,8 +12235,26 @@ body { font-family: Arial, sans-serif; margin: 0; color: #0b2138; font-size: 11p
 .sign-box { height:45px; border-bottom:1.5px solid #0b355d; margin-bottom:5px; }
 .sign-name { font-weight:900; }
 .sign-role { color:#4c596b; margin-top:4px; }
+.page.extended-handover { display:block; }
+.handover-return-section { break-inside:auto; page-break-inside:auto; }
+.handover-return-section .section-title { break-after:avoid; page-break-after:avoid; }
+.handover-return-section[data-return-section="conclusion"] p { margin:8px 0; line-height:1.55; orphans:3; widows:3; }
+.handover-return-section:not([data-return-section="conclusion"]) p { margin:8px 0; line-height:1.4; orphans:3; widows:3; }
+.handover-write-field { margin:9px 0; break-inside:avoid; page-break-inside:avoid; }
+.handover-write-field[data-return-field="returnDefects"] { margin-top:16px; }
+.handover-return-section[data-return-section="condition"] > .handover-write-label { margin-top:16px; }
+.handover-write-label { font-weight:700; margin-bottom:3px; break-after:avoid; }
+.status-writing-subheading { margin-top:8px; }
+.handover-write-value { white-space:pre-wrap; overflow-wrap:anywhere; line-height:22px; }
+.handover-write-line { height:22px; }
+.handover-write-boxes { display:grid; grid-template-columns:1fr; row-gap:4px; }
+.handover-write-box { background:#f0f5fa; border-radius:4px; min-height:18px; padding:2px 6px; white-space:pre-wrap; }
+.handover-inline-amount { display:inline-block; min-width:100px; }
+.handover-return-check { display:flex; align-items:baseline; gap:7px; margin:6px 0; break-inside:avoid; }
+.handover-return-check > span { flex:0 0 16px; font-size:15px; }
+.signature-grid { break-inside:avoid; page-break-inside:avoid; }
 </style></head><body>
-  <section class="page">
+  <section class="page${returnSections.extended ? ' extended-handover' : ''}">
     <div class="hero">
       <div class="hero-mark"></div>
       <div>
@@ -11664,37 +12280,53 @@ body { font-family: Arial, sans-serif; margin: 0; color: #0b2138; font-size: 11p
       <div class="section-icon"></div>
       <div class="section-title">NEMOVITOST</div>
       <div class="property-card">
-        <div class="property-text">${this.escapeHtml(propertyDescription || '—')}</div>
+        <div class="property-text">${propertyDescription ? this.escapeHtml(propertyDescription) : '<div class="keys-lines"><div class="keys-line">&nbsp;</div><div class="keys-line">&nbsp;</div></div>'}</div>
         <div class="property-divider"></div>
-        <div class="property-address"><div class="address-pin">●</div><div><span class="property-address-label">Adresa nemovitosti:</span><span class="property-address-value">${this.escapeHtml(propertyAddress || '')}</span></div></div>
+        <div class="property-address"><div class="address-pin">●</div><div><span class="property-address-label">Adresa nemovitosti:</span><span class="property-address-value">${propertyAddressLines.length ? propertyAddressLines.map(line => `<span>${this.escapeHtml(line)}</span>`).join('') : '<span class="keys-line">&nbsp;</span><span class="keys-line">&nbsp;</span>'}</span></div></div>
       </div>
     </div>
-
-    ${cellarSection}
 
     ${metersSectionVisible ? `<div class="section">
       <div class="section-icon"></div>
       <div class="section-title">STAVY MĚŘIČŮ</div>
       ${meters.length > 0 ? `<table class="meter-table"><colgroup><col class="meter-source-col"><col class="meter-number-col"><col class="meter-state-col"><col class="meter-unit-col"></colgroup><thead><tr><th>Energetický zdroj</th><th>Č. měřiče</th><th>Stav</th><th>Jednotka</th></tr></thead><tbody>${meters.map((meter) => `<tr><td>${meter.label ? this.escapeHtml(meter.label) : '<span class="meter-fill">&nbsp;</span>'}</td><td><span class="meter-fill">${this.escapeHtml(meter.number)}</span></td><td><span class="meter-fill">${this.escapeHtml(meter.state)}</span></td><td class="meter-unit">${this.escapeHtml(meter.unit)}</td></tr>`).join('')}</tbody></table>` : '<div class="party">Měřiče nejsou součástí protokolu.</div>'}
-      ${this.handoverBuyerObligationVisible() && buyerObligationText ? `<div class="meter-photo-notice">${this.escapeHtml(buyerObligationText)}</div>` : ''}
+      ${buyerObligationText ? `<div class="meter-photo-notice">${this.escapeHtml(buyerObligationText)}</div>` : ''}
     </div>` : ''}
 
     ${keysSectionVisible ? `<div class="section">
       <div class="section-icon"></div>
       <div class="section-title">KLÍČE</div>
-      ${this.renderHandoverKeysBlock(keysCount, chipsCount, keyCardsCount, keysDescription, keysCountVisible, chipsCountVisible, keyCardsCountVisible)}
-      ${this.handoverMeterConfirmationVisible() && meterConfirmationText ? `<div class="meter-confirmation">${this.escapeHtml(meterConfirmationText)}</div>` : ''}
+      ${this.renderHandoverKeysBlock(keysCount, chipsCount, keyCardsCount, keysDescription, keysCountVisible, chipsCountVisible, keyCardsCountVisible, keysDescriptionVisible, field('keysDescriptionWritingRows'))}
+      ${visible('keysConfirmationVisible') && keysConfirmationText ? `<div class="key-confirmation meter-confirmation">${this.escapeHtml(keysConfirmationText)}</div>` : ''}
     </div>` : ''}
+
+    ${additionalEquipmentSection}
+
+    ${returnSections.beforeRemains}
 
     ${remainsSectionVisible ? `<div class="section">
       <div class="section-icon"></div>
-      <div class="section-title">V NEMOVITOSTI ZŮSTÁVÁ</div>
-      <div class="remain-text">${photoRecorded ? 'vše zaznamenáno na fotografiích\n' : ''}${this.escapeHtml(remains)}</div>
-      ${this.handoverPhotoNoticeVisible() && photoNoticeText ? `<div class="meter-photo-notice">${this.escapeHtml(photoNoticeText)}</div>` : ''}
+      <div class="section-title">STAV NEMOVITOSTI PŘI PŘEDÁNÍ</div>
+      <div class="handover-write-label">Nemovitost je předávána:</div>
+      <div class="handover-return-check"><span>${handoverPropertyCondition === 'cleared' ? '☑' : '☐'}</span> Vyklizená, bez osobních věcí pronajímatele</div>
+      <div class="handover-return-check"><span>${handoverPropertyCondition === 'defects' ? '☑' : '☐'}</span> Se závadami nebo poškozením uvedenými níže</div>
+      <div class="handover-return-check"><span>${handoverPropertyCondition === 'items' ? '☑' : '☐'}</span> S ponechaným vybavením nebo věcmi uvedenými níže</div>
+      <div class="handover-write-label status-writing-subheading">V nemovitosti zůstává:</div>
+      <div class="handover-write-boxes">${Array.from({ length: remainsWritingRows }, (_, index) => `<div class="handover-write-box">${index === 0 && remains ? this.escapeHtml(remains) : '&nbsp;'}</div>`).join('')}</div>
+      ${cellarVisible ? `<div class="handover-write-label status-writing-subheading">Sklep je předáván</div>
+      <div class="handover-detail cellar-main-label"><div class="handover-detail-label">Označení sklepu:</div><div class="handover-detail-value">${this.escapeHtml(cellar)}</div></div>${[
+        ['cleared', 'Vyklizený, bez osobních věcí pronajímatele'],
+        ['defects', 'Se závadami nebo poškozením uvedenými níže'],
+        ['items', 'S ponechaným vybavením nebo věcmi uvedenými níže']
+      ].map(([key, label]) => `<div class="handover-return-check"><span>${field(`property-section-${key}`) === 'ANO' ? '☑' : '☐'}</span> ${label}</div>`).join('')}
+      <div class="handover-write-label cellar-remains-print-label">Ve sklepě zůstává:</div>
+      <div class="handover-write-boxes cellar-remains-print-boxes">${Array.from({ length: cellarRemainsWritingRows }, (_, index) => `<div class="handover-write-box">${index === 0 && cellarRemains ? this.escapeHtml(cellarRemains) : '&nbsp;'}</div>`).join('')}</div>
+      ` : ''}
     </div>` : ''}
 
     ${supplementalSection}
     ${managerSection}
+    ${returnSections.afterDetails}
 
     <div class="signature-grid">
       <div>
@@ -11715,7 +12347,7 @@ body { font-family: Arial, sans-serif; margin: 0; color: #0b2138; font-size: 11p
     setTimeout(() => {
       const doc = win.document;
       const page = doc.querySelector('.page') as HTMLElement | null;
-      if (page) {
+      if (page && !returnSections.extended) {
         const probe = doc.createElement('div');
         probe.style.height = '277mm';
         probe.style.left = '-9999px';
@@ -11751,10 +12383,20 @@ body { font-family: Arial, sans-serif; margin: 0; color: #0b2138; font-size: 11p
       }
       win.print();
     }, 250);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('Generování předávacího protokolu selhalo.', error);
+      win.document.open();
+      win.document.write(`<!doctype html><title>Chyba tisku</title><pre>Generování předávacího protokolu selhalo:\n${this.escapeHtml(message)}</pre>`);
+      win.document.close();
+    }
   }
 
-  private handoverProtocolParties(role: 'predavajici' | 'prebirajici'): Array<{ name: string; birthDate: string; address: string; phone: string; email: string }> {
-    const resolved = this.handoverResolvedParties(role);
+  private handoverProtocolParties(role: 'predavajici' | 'prebirajici'): HandoverProtocolParty[] {
+    const resolved = this.handoverResolvedParties(role).map(party => ({
+      ...party,
+      clientInterest: this.savedClientRecords().find(client => client.id === party.clientId)?.draft.clientInterest
+    }));
     const extras = this.handoverExtraPartyIndexes(role)
       .map((index) => ({
         name: this.handoverExtraPartyField(role, index, 'name').trim(),
@@ -11768,12 +12410,23 @@ body { font-family: Arial, sans-serif; margin: 0; color: #0b2138; font-size: 11p
   }
 
   private handoverProtocolDocumentTitle(
-    delivering: Array<{ name: string }>,
-    receiving: Array<{ name: string }>
+    delivering: HandoverProtocolParty[],
+    receiving: HandoverProtocolParty[]
   ): string {
-    const sellers = this.handoverPartySurnames(delivering) || 'prodávající';
-    const buyers = this.handoverPartySurnames(receiving) || 'kupující';
-    return `PP ${sellers} x ${buyers}`;
+    const service = this.propertyTabFieldValue('zakladni', 'Služba');
+    const rolePair: [string, string] = service === 'Pronájem'
+      ? ['pronajímatel', 'nájemník']
+      : service === 'Podnájem' ? ['pronajímatel', 'podnájemník'] : ['prodávající', 'kupující'];
+    const leading: HandoverProtocolParty[] = [];
+    const counterpart: HandoverProtocolParty[] = [];
+    for (const [parties, fallback] of [[delivering, leading], [receiving, counterpart]] as const) {
+      for (const party of parties) {
+        if (party.clientInterest === 'prodavajici' || party.clientInterest === 'pronajimatel') leading.push(party);
+        else if (party.clientInterest === 'kupujici' || party.clientInterest === 'najemce') counterpart.push(party);
+        else fallback.push(party);
+      }
+    }
+    return `PP ${this.handoverPartySurnames(leading) || rolePair[0]} x ${this.handoverPartySurnames(counterpart) || rolePair[1]}`;
   }
 
   private handoverPartySurnames(parties: Array<{ name: string }>): string {
@@ -11784,12 +12437,14 @@ body { font-family: Arial, sans-serif; margin: 0; color: #0b2138; font-size: 11p
   }
 
   private renderHandoverProtocolPartyList(parties: Array<{ name: string; birthDate: string; address: string; phone: string; email: string }>, label: string): string {
-    if (parties.length === 0) {
-      return `<div class="party"><div class="meta">................................</div><div class="meta">................................</div><div class="meta">................................</div></div>`;
-    }
-    return parties.map((party) => {
-      const birthLine = party.birthDate ? `nar.: ${party.birthDate}` : '';
-      return `<div class="party"><div class="party-line"><span class="party-line-icon">●</span><div><span class="party-name">${this.escapeHandoverPrintText(party.name || '—')}</span>${birthLine ? `, ${this.escapeHandoverPrintText(birthLine)}` : ''}</div></div><div class="party-line"><span class="party-line-icon">⌖</span><div class="meta">${this.escapeHandoverPrintText(party.address || '—')}</div></div>${party.email ? `<div class="party-line"><span class="party-line-icon">✉</span><div class="meta">${this.escapeHandoverPrintText(party.email)}</div></div>` : ''}${party.phone ? `<div class="party-line"><span class="party-line-icon">☎</span><div class="meta">${this.escapeHandoverPrintText(party.phone)}</div></div>` : ''}</div>`;
+    const rows = parties.length > 0 ? parties : [{ name: '', birthDate: '', address: '', phone: '', email: '' }];
+    return rows.map((party) => {
+      const name = party.name
+        ? `<span class="party-name">${this.escapeHandoverPrintText(party.name)}</span>${party.birthDate ? `, ${this.escapeHandoverPrintText(`nar.: ${party.birthDate}`)}` : ''}`
+        : '<span class="party-fill-box"></span>';
+      const address = this.stripHandoverPartyRegion(party.address);
+      const box = '<span class="party-fill-box"></span>';
+      return `<div class="party"><div class="party-line"><span class="party-line-icon">●</span><div>${name}</div></div><div class="party-line"><span class="party-line-icon">⌖</span><div class="meta">${address ? this.escapeHandoverPrintText(address) : box}</div></div><div class="party-line"><span class="party-line-icon">✉</span><div class="meta">${party.email ? this.escapeHandoverPrintText(party.email) : box}</div></div><div class="party-line"><span class="party-line-icon">☎</span><div class="meta">${party.phone ? this.escapeHandoverPrintText(party.phone) : box}</div></div></div>`;
     }).join('');
   }
 
@@ -11798,25 +12453,23 @@ body { font-family: Arial, sans-serif; margin: 0; color: #0b2138; font-size: 11p
   }
 
   private renderHandoverSignatureList(parties: Array<{ name: string; birthDate: string; address: string; phone: string; email: string }>, role: string): string {
-    const list = parties.length > 0 ? parties : [{ name: role, birthDate: '', address: '', phone: '', email: '' }];
-    return list.map((party) => `<div class="sign-row"><div class="sign-box"></div><div>${this.escapeHtml(party.name || '................')}</div><div class="sign-role">${this.escapeHtml(role)}</div></div>`).join('');
+    const list = parties.length > 0 ? parties : [{ name: '', birthDate: '', address: '', phone: '', email: '' }];
+    return list.map((party) => `<div class="sign-row"><div class="sign-box"></div><div>${party.name ? this.escapeHtml(party.name) : '&nbsp;'}</div><div class="sign-role">${this.escapeHtml(role)}</div></div>`).join('');
   }
 
-  private renderHandoverKeysBlock(keysCount: string, chipsCount: string, keyCardsCount: string, keysDescription: string, keysCountVisible = true, chipsCountVisible = true, keyCardsCountVisible = true): string {
-    const descriptionLines = keysDescription
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .slice(0, 2);
-    const lines = Array.from({ length: 2 }, (_, index) => descriptionLines[index] || '&nbsp;');
+  private handoverPrintDetail(label: string, value: string, unit?: string): string {
+    const content = value ? `${this.escapeHtml(value)}${unit ? ` ${this.escapeHtml(unit)}` : ''}` : '';
+    return `<div class="handover-detail"><div class="handover-detail-label">${this.escapeHtml(label)}${unit ? ` (${unit})` : ''}:</div><div class="handover-detail-value">${content}</div></div>`;
+  }
 
+  private renderHandoverKeysBlock(keysCount: string, chipsCount: string, keyCardsCount: string, keysDescription: string, keysCountVisible = true, chipsCountVisible = true, keyCardsCountVisible = true, keysDescriptionVisible = true, writingRows = ''): string {
     const summaryRows = [
-      keysCountVisible ? `<div class="keys-summary-row">Klíče celkem <span class="keys-count">${this.escapeHtml(keysCount)}</span> ks</div>` : '',
-      chipsCountVisible ? `<div class="keys-summary-row">Přístupové čipy <span class="keys-count">${this.escapeHtml(chipsCount)}</span> ks</div>` : '',
-      keyCardsCountVisible ? `<div class="keys-summary-row">Výrobní karty klíčů <span class="keys-count">${this.escapeHtml(keyCardsCount)}</span> ks</div>` : ''
+      keysCountVisible ? this.handoverPrintDetail('Klíče celkem', keysCount, 'ks') : '',
+      chipsCountVisible ? this.handoverPrintDetail('Přístupové čipy', chipsCount, 'ks') : '',
+      keyCardsCountVisible ? this.handoverPrintDetail('Výrobní karty klíčů', keyCardsCount, 'ks') : ''
     ].filter(Boolean).join('');
     return `${summaryRows ? `<div class="keys-summary">${summaryRows}</div>` : ''}
-      <div class="keys-lines">${lines.map((line) => `<div class="keys-line">${line === '&nbsp;' ? line : this.escapeHtml(line)}</div>`).join('')}</div>`;
+      ${keysDescriptionVisible ? `<div class="handover-write-label">Informace ke klíčům:</div><div class="keys-description">${Array.from({ length: Math.min(10, Math.max(1, Number.parseInt(writingRows, 10) || 4)) }, (_, index) => `<div class="keys-description-cell">${index === 0 && keysDescription ? this.escapeHtml(keysDescription) : '&nbsp;'}</div>`).join('')}</div>` : ''}`;
   }
 
   protected loadFromXmlFile(event: Event): void {
@@ -11871,10 +12524,14 @@ body { font-family: Arial, sans-serif; margin: 0; color: #0b2138; font-size: 11p
       savedPropertyRecords?: SavedPropertyRecord[];
       pinnedPropertyId?: string;
       agentProfile?: Partial<AgentProfile>;
+      blankHandoverValues?: Record<string, unknown>;
       states?: Array<{ itemId?: string; itemKey?: string; state: Partial<ItemState> & { selectedOptions?: string[] } }>;
     };
 
     this.states.clear();
+    this.blankHandoverValues.set(payload.blankHandoverValues && typeof payload.blankHandoverValues === 'object' && !Array.isArray(payload.blankHandoverValues)
+      ? Object.fromEntries(Object.entries(payload.blankHandoverValues).filter((entry): entry is [string, string] => typeof entry[1] === 'string')) : {});
+    this.blankHandoverSettingsSaved.set(false);
     this.selectedPropertyType.set(payload.selectedPropertyType || '');
     this.selectedService.set(payload.selectedService || '');
     this.selectedOwnership.set(payload.selectedOwnership || '');

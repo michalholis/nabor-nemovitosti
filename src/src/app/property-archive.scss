@@ -1,0 +1,64 @@
+.property-phase-btn.archive {
+  color: #a34c4c;
+  background: #f5eeee;
+}
+
+.property-phase-btn.archive.current {
+  background: #eddada;
+}
+
+.property-phase-btn.archive.active .property-phase-check {
+  background: #b35d5d;
+}
+
+.property-archive-dialog {
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+}
+
+.property-archive-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.property-archive-summary {
+  margin: 0.6rem 0;
+  padding: 0.7rem;
+  border-left: 3px solid #b35d5d;
+  background: #f5eeee;
+  color: #8d5151;
+  white-space: pre-wrap;
+}
+
+.client-directory-table .property-archive-separator td {
+  border-top: 2px solid #b98686;
+  padding-top: 1rem;
+  background: #f4eeee;
+  color: #985858;
+  font-weight: 700;
+}
+
+.client-directory-table .property-archived-row td {
+  background: #f2eeee;
+  color: #887c7c;
+}
+
+.property-archive-label {
+  margin-top: 0.3rem;
+  color: #ac5353;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.property-archive-detail {
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.property-archived-row .property-phase-dot.current,
+.property-archived-row .client-status-chip.inactive {
+  background: #b98686;
+}
