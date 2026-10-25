@@ -1,18 +1,24 @@
-import { Component, input, output } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { HANDOVER_RETURN_CONCLUSIONS, HANDOVER_RETURN_GROUPS, HandoverConclusion, HandoverReturnValues, handoverConclusionChecked, handoverReturnCellarEnabled, handoverReturnCheckChanges } from './handover-return';
 
 @Component({
   selector: 'app-handover-return-fields',
-  host: { '[class.handover-final-fields]': 'finalSectionsOnly()' },
+  host: { '[class.handover-final-fields]': 'finalSectionsOnly()', '[class.handover-return-collapsed]': '!finalSectionsOnly() && collapsed("return")' },
   template: `
     @if (!finalSectionsOnly()) {
+      <div class="handover-section-heading">
       <label class="section-toggle handover-section-switch"><input type="checkbox" [checked]="values()['leaseReturnSectionVisible'] === 'ANO'" (change)="check('leaseReturnSectionVisible', $any($event.target).checked)" /> STAV NEMOVITOSTI PŘI VRÁCENÍ NÁJMU</label>
-      @if (values()['leaseReturnSectionVisible'] === 'ANO') {
+      <button type="button" class="handover-collapse-arrow" [attr.aria-expanded]="!collapsed('return')" aria-label="Sbalit / rozbalit stav nemovitosti při vrácení nájmu" (click)="toggleCollapsed('return')">{{ collapsed('return') ? '⌄' : '⌃' }}</button>
+      </div>
+      @if (!collapsed('return')) {
         @for (group of mainGroups(); track group.key) {
           @if (group.key === 'finance') {
+            <div class="handover-section-heading">
             <label class="section-toggle handover-section-switch finance-section-toggle"><input type="checkbox" [checked]="financeVisible()" (change)="set('returnFinanceVisible', $any($event.target).checked ? 'ANO' : 'NE')" /> {{ group.title }}</label>
+            <button type="button" class="handover-collapse-arrow" [attr.aria-expanded]="!collapsed('finance')" aria-label="Sbalit / rozbalit finanční vypořádání" (click)="toggleCollapsed('finance')">{{ collapsed('finance') ? '⌄' : '⌃' }}</button>
+            </div>
           }
-          @if (group.key !== 'finance' || financeVisible()) {
+          @if (group.key !== 'finance' || !collapsed('finance')) {
           <fieldset [class.condition-group-content]="group.key === 'condition'">
             @if (group.key !== 'condition' && group.key !== 'finance') { <legend>{{ group.title }}</legend> }
             @if (group.key === 'condition') {
@@ -30,20 +36,6 @@ import { HANDOVER_RETURN_CONCLUSIONS, HANDOVER_RETURN_GROUPS, HandoverConclusion
               @for (option of group.checks || []; track option.key) {
                 <label class="check-line"><input type="checkbox" [checked]="values()[option.key] === 'ANO'" (change)="check(option.key, $any($event.target).checked)" /> {{ option.label }}</label>
               }
-            }
-            @if (group.key === 'condition') {
-              <fieldset class="cellar-return-condition"><legend><label class="cellar-switch"><input type="checkbox" [checked]="cellarEnabled()" (change)="set('cellarReturnSectionVisible', $any($event.target).checked ? 'ANO' : 'NE')" /><span></span></label><span>Sklep je předáván</span></legend>
-                @if (cellarEnabled()) {
-                  <label class="field cellar-return-field"><span>Označení sklepu</span><input type="text" [value]="values()['cellar'] || ''" (input)="set('cellar', $any($event.target).value)" /></label>
-                  @for (condition of cellarConditions; track condition.key) {
-                    <label class="check-line"><input type="checkbox" [checked]="values()['cellar-section-' + condition.key] === 'ANO'" (change)="set('cellar-section-' + condition.key, $any($event.target).checked ? 'ANO' : 'NE')" /> {{ condition.label }}</label>
-                  }
-                  <div class="handover-writing-control">
-                    <label class="field cellar-return-field"><span>Ve sklepě zůstává</span><textarea rows="2" [value]="values()['cellarRemains'] || ''" (input)="set('cellarRemains', $any($event.target).value)"></textarea></label>
-                    <label class="writing-rows">Počet řádků k dopsání:<input type="number" min="1" max="10" [value]="values()['cellarRemainsWritingRows'] || 1" (input)="set('cellarRemainsWritingRows', $any($event.target).value)" /></label>
-                  </div>
-                }
-              </fieldset>
             }
             @for (field of group.fields || []; track field.key) {
               <div class="field" [class.money-field]="field.money">
@@ -93,11 +85,14 @@ import { HANDOVER_RETURN_CONCLUSIONS, HANDOVER_RETURN_GROUPS, HandoverConclusion
       <fieldset><legend>Závěrečná prohlášení</legend>@for (conclusion of conclusions; track conclusion.key) { <label class="check-line"><input type="checkbox" [checked]="conclusionChecked(conclusion)" (change)="check(conclusion.key, $any($event.target).checked)" /> {{ conclusion.text }}</label> }</fieldset>
     }
   `,
+  styleUrls: ['./handover-writing-rows.css', './handover-collapse.css'],
   styles: [`
     :host { display:block; min-width:0; color:#26384a; }
+    :host(.handover-return-collapsed) .section-toggle { margin:0; }
     :host(.handover-final-fields) { display:contents; }
     :host(.handover-final-fields) > fieldset { margin:0; }
     .section-toggle, .check-line { display:flex; align-items:flex-start; gap:.5rem; margin:.6rem 0; line-height:1.45; }
+    .handover-section-heading .section-toggle { margin:0; min-height:19.2px; }
     .section-toggle { align-items:center; }
     .section-toggle { font-size:.8rem; font-weight:800; }
     .section-toggle input { box-sizing:border-box; flex:none; height:1rem; margin:0; min-height:1rem; padding:0; width:1rem; }
@@ -123,7 +118,6 @@ import { HANDOVER_RETURN_CONCLUSIONS, HANDOVER_RETURN_GROUPS, HandoverConclusion
     .cellar-switch span::after { background:#fff; border-radius:50%; content:''; height:.8rem; left:.15rem; position:absolute; top:.15rem; transition:transform .15s; width:.8rem; }
     .cellar-switch input:checked + span { background:var(--client-accent,#25804d); }
     .cellar-switch input:checked + span::after { transform:translateX(.9rem); }
-    .writing-rows input { appearance:textfield; background:transparent; border:0; box-sizing:border-box; color:#6b7b8c; font:inherit; height:1rem; line-height:1; min-height:0; padding:0; width:100%; }
     .finance-section-toggle { margin:.4rem 0 .6rem; }
     .money-field { align-items:center; grid-template-columns:max-content minmax(0, 1fr); }
     .money-field label { white-space:nowrap; }
@@ -137,6 +131,9 @@ export class HandoverReturnFields {
   readonly values = input.required<HandoverReturnValues>();
   readonly finalSectionsOnly = input(false);
   readonly excludeEquipment = input(false);
+  readonly collapsedSections = input<Record<string, boolean> | null>(null);
+  private readonly localCollapsedSections = signal<Record<string, boolean>>({});
+  readonly collapseChanged = output<{ key: string; collapsed: boolean }>();
   readonly fieldChanged = output<{ field: string; value: string }>();
   protected mainGroups() { return HANDOVER_RETURN_GROUPS.filter(group => group.key !== 'photos' && (!this.excludeEquipment() || group.key !== 'equipment')); }
   protected readonly finalGroups = HANDOVER_RETURN_GROUPS.filter(group => group.key === 'photos');
@@ -155,6 +152,14 @@ export class HandoverReturnFields {
   }
   protected cellarEnabled(): boolean { return handoverReturnCellarEnabled(this.values()); }
   protected financeVisible(): boolean { return this.values()['returnFinanceVisible'] !== 'NE'; }
+  protected collapsed(key: string): boolean { return (this.collapsedSections() ?? this.localCollapsedSections())[key] ?? true; }
+  private setCollapsed(key: string, collapsed: boolean): void {
+    this.localCollapsedSections.update(sections => ({ ...sections, [key]: collapsed }));
+    this.collapseChanged.emit({ key, collapsed });
+  }
+  protected toggleCollapsed(key: string): void {
+    this.setCollapsed(key, !this.collapsed(key));
+  }
   protected check(field: string, checked: boolean): void {
     for (const [key, value] of Object.entries(handoverReturnCheckChanges(field, checked))) this.set(key, value);
   }

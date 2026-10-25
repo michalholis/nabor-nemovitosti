@@ -1,0 +1,39 @@
+/* Loaded inside both Angular components so encapsulation cannot hide these rules. */
+.handover-writing-rows,
+.writing-rows,
+.field label.writing-rows {
+  align-items: center;
+  color: #6b7b8c;
+  display: grid;
+  font: 400 0.7rem/1.2 var(--font-main, 'Source Sans 3', 'Segoe UI', sans-serif);
+  gap: 0.4rem;
+  grid-template-columns: max-content 2rem;
+  justify-content: start;
+  margin: -0.65rem 0 0 7px;
+}
+
+.handover-writing-rows > input[type='number'],
+.writing-rows > input[type='number'] {
+  appearance: textfield;
+  background: transparent;
+  border: 0;
+  box-sizing: border-box;
+  color: inherit;
+  font: inherit;
+  height: 1rem;
+  line-height: 1;
+  margin: 0;
+  min-height: 0;
+  min-width: 0;
+  padding: 0;
+  width: 2rem;
+}
+
+.handover-writing-control {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.handover-writing-control > .field {
+  margin-bottom: 0;
+}

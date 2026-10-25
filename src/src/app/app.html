@@ -2397,8 +2397,8 @@
                 <div class="handover-form-content-grid">
               <div class="handover-form-two-columns handover-form-body">
               <section class="handover-form-column">
-              <article class="new-client-field-card new-client-field-card-full handover-left-column-card handover-basic-card">
-                <div class="handover-collapse-header"><div class="new-client-label">Základní informace</div><button type="button" class="new-client-toggle-btn" (click)="toggleHandoverSectionCollapsed('basic')">{{ handoverSectionCollapsed('basic') ? 'Rozbalit' : 'Sbalit' }}</button></div>
+              <article class="new-client-field-card new-client-field-card-full handover-left-column-card handover-basic-card handover-collapse-card" [class.handover-is-collapsed]="handoverSectionCollapsed('basic')">
+                <div class="handover-collapse-header"><div class="new-client-label">Základní informace</div><button type="button" class="handover-collapse-arrow" [attr.aria-expanded]="!handoverSectionCollapsed('basic')" [attr.aria-label]="(handoverSectionCollapsed('basic') ? 'Rozbalit' : 'Sbalit') + ' základní informace'" (click)="toggleHandoverSectionCollapsed('basic')">{{ handoverSectionCollapsed('basic') ? '⌄' : '⌃' }}</button></div>
                 <div class="handover-collapse-summary" *ngIf="handoverSectionCollapsed('basic')"><strong>{{ handoverBasicSummary().delivering }}</strong>&nbsp;<span class="handover-summary-separator">x</span>&nbsp;<strong>{{ handoverBasicSummary().receiving }}</strong>&nbsp;<span class="handover-summary-separator">-</span>&nbsp;<strong>{{ handoverBasicSummary().address }}</strong></div>
                 <ng-container *ngIf="!handoverSectionCollapsed('basic')">
                 <div class="handover-app-stack">
@@ -2463,61 +2463,29 @@
                 </ng-container>
               </article>
 
-              <article class="new-client-field-card new-client-field-card-full handover-left-column-card handover-meter-card handover-toggle-card" [class.handover-toggle-enabled]="handoverPrintSectionVisible('metersSectionVisible')">
+              <article class="new-client-field-card new-client-field-card-full handover-left-column-card handover-meter-card handover-toggle-card handover-collapse-card" [class.handover-is-collapsed]="handoverSectionCollapsed('meters')" [class.handover-toggle-enabled]="handoverPrintSectionVisible('metersSectionVisible')">
+                  <button type="button" class="handover-collapse-arrow" [attr.aria-expanded]="!handoverSectionCollapsed('meters')" aria-label="Sbalit / rozbalit stavy měřičů" (click)="toggleHandoverSectionCollapsed('meters')">{{ handoverSectionCollapsed('meters') ? '⌄' : '⌃' }}</button>
                   <section class="handover-app-section">
                     <label class="section-toggle handover-section-switch"><input type="checkbox" [checked]="handoverPrintSectionVisible('metersSectionVisible')" (change)="toggleHandoverPrintSectionVisibility('metersSectionVisible')" /> STAVY MĚŘIČŮ</label>
-                    <div class="section-body" *ngIf="handoverPrintSectionVisible('metersSectionVisible')">
+                    <div class="section-body" *ngIf="!handoverSectionCollapsed('meters')">
                     <div class="handover-meter-list">
-                    <div class="handover-form-row handover-meter-entry">
-                      <label class="new-client-label handover-meter-label"><input type="checkbox" class="new-client-checklist-box" [checked]="handoverMeterVisible('electricMeterVisible')" (change)="toggleHandoverMeterVisibility('electricMeterVisible')" /> Elektřina</label>
-                      <div class="new-client-room-pair-row handover-meter-row">
-                        <input type="text" class="new-client-input handover-meter-input" maxlength="40" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'electricMeterNumber')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'electricMeterNumber', $event)" placeholder="č. měřiče" />
-                        <div class="new-client-room-times">/</div>
-                        <input type="text" class="new-client-input handover-meter-input" maxlength="40" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'electricMeterState')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'electricMeterState', $event)" placeholder="stav kWh" />
-                      </div>
+                    <div class="handover-meter-headings">
+                      <div class="new-client-label">Název měřiče</div>
+                      <div class="handover-meter-value-headings"><div class="new-client-label">Číslo měřiče</div><div></div><div class="new-client-label">Stav / jednotka</div></div>
                     </div>
-                    <div class="handover-form-row handover-meter-entry">
-                      <label class="new-client-label handover-meter-label"><input type="checkbox" class="new-client-checklist-box" [checked]="handoverMeterVisible('electricT1MeterVisible')" (change)="toggleHandoverMeterVisibility('electricT1MeterVisible')" /> Elektřina T1</label>
-                      <div class="new-client-room-pair-row handover-meter-row">
-                        <input type="text" class="new-client-input handover-meter-input" maxlength="40" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'electricT1MeterNumber')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'electricT1MeterNumber', $event)" placeholder="č. měřiče" />
-                        <div class="new-client-room-times">/</div>
-                        <input type="text" class="new-client-input handover-meter-input" maxlength="40" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'electricT1MeterState')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'electricT1MeterState', $event)" placeholder="stav kWh" />
-                      </div>
-                    </div>
-                    <div class="handover-form-row handover-meter-entry">
-                      <label class="new-client-label handover-meter-label"><input type="checkbox" class="new-client-checklist-box" [checked]="handoverMeterVisible('electricT2MeterVisible')" (change)="toggleHandoverMeterVisibility('electricT2MeterVisible')" /> Elektřina T2</label>
-                      <div class="new-client-room-pair-row handover-meter-row">
-                        <input type="text" class="new-client-input handover-meter-input" maxlength="40" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'electricT2MeterNumber')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'electricT2MeterNumber', $event)" placeholder="č. měřiče" />
-                        <div class="new-client-room-times">/</div>
-                        <input type="text" class="new-client-input handover-meter-input" maxlength="40" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'electricT2MeterState')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'electricT2MeterState', $event)" placeholder="stav kWh" />
-                      </div>
-                    </div>
-                    <div class="handover-form-row handover-meter-entry">
-                      <label class="new-client-label handover-meter-label"><input type="checkbox" class="new-client-checklist-box" [checked]="handoverMeterVisible('hotWaterMeterVisible')" (change)="toggleHandoverMeterVisibility('hotWaterMeterVisible')" /> Voda teplá</label>
-                      <div class="new-client-room-pair-row handover-meter-row">
-                        <input type="text" class="new-client-input handover-meter-input" maxlength="40" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'hotWaterMeterNumber')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'hotWaterMeterNumber', $event)" placeholder="č. měřiče" />
-                        <div class="new-client-room-times">/</div>
-                        <input type="text" class="new-client-input handover-meter-input" maxlength="40" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'hotWaterMeterState')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'hotWaterMeterState', $event)" placeholder="stav m3" />
-                      </div>
-                    </div>
-                    <div class="handover-form-row handover-meter-entry">
-                      <label class="new-client-label handover-meter-label"><input type="checkbox" class="new-client-checklist-box" [checked]="handoverMeterVisible('coldWaterMeterVisible')" (change)="toggleHandoverMeterVisibility('coldWaterMeterVisible')" /> Voda studená</label>
-                      <div class="new-client-room-pair-row handover-meter-row">
-                        <input type="text" class="new-client-input handover-meter-input" maxlength="40" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'coldWaterMeterNumber')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'coldWaterMeterNumber', $event)" placeholder="č. měřiče" />
-                        <div class="new-client-room-times">/</div>
-                        <input type="text" class="new-client-input handover-meter-input" maxlength="40" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'coldWaterMeterState')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'coldWaterMeterState', $event)" placeholder="stav m3" />
-                      </div>
-                    </div>
-                    <div class="handover-form-row handover-meter-entry">
-                      <label class="new-client-label handover-meter-label"><input type="checkbox" class="new-client-checklist-box" [checked]="handoverMeterVisible('gasMeterVisible')" (change)="toggleHandoverMeterVisibility('gasMeterVisible')" /> Plyn</label>
-                      <div class="new-client-room-pair-row handover-meter-row">
-                        <input type="text" class="new-client-input handover-meter-input" maxlength="40" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'gasMeterNumber')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'gasMeterNumber', $event)" placeholder="č. měřiče" />
-                        <div class="new-client-room-times">/</div>
-                        <input type="text" class="new-client-input handover-meter-input" maxlength="40" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'gasMeterState')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'gasMeterState', $event)" placeholder="stav m3" />
-                      </div>
-                    </div>
-                    @for (meterIndex of handoverCustomMeterIndexes(); track meterIndex) {
-                      <div class="handover-form-row handover-meter-entry handover-custom-meter-entry">
+                    @for (meter of handoverMeterRows(); track meter.key) {
+                      @if (meter.customIndex === null) {
+                        <div class="handover-form-row handover-meter-entry" [attr.data-meter-name]="meter.label">
+                          <label class="new-client-label handover-meter-label"><input type="checkbox" class="new-client-checklist-box" [checked]="propertyTabFieldValue('predavaci-protokol', meter.key) !== 'NE'" (change)="setPropertyTabFieldValue('predavaci-protokol', meter.key, $any($event.target).checked ? 'ANO' : 'NE')" /> {{ meter.label }}</label>
+                          <div class="new-client-room-pair-row handover-meter-row">
+                            <input type="text" class="new-client-input handover-meter-input" maxlength="40" [ngModel]="propertyTabFieldValue('predavaci-protokol', meter.numberKey)" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', meter.numberKey, $event)" placeholder="č. měřiče" />
+                            <div class="new-client-room-times">/</div>
+                            <input type="text" class="new-client-input handover-meter-input" maxlength="40" [ngModel]="propertyTabFieldValue('predavaci-protokol', meter.stateKey)" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', meter.stateKey, $event)" [placeholder]="'stav ' + meter.unit" />
+                          </div>
+                        </div>
+                      } @else {
+                      @let meterIndex = meter.customIndex;
+                      <div class="handover-form-row handover-meter-entry handover-custom-meter-entry" [attr.data-meter-name]="meter.label">
                         <div class="handover-custom-meter-name">
                           <input type="checkbox" class="new-client-checklist-box" [checked]="handoverCustomMeterVisible(meterIndex)" (change)="toggleHandoverCustomMeterVisible(meterIndex)" />
                           <input type="text" class="new-client-input" maxlength="40" [ngModel]="handoverCustomMeterValue(meterIndex, 'label')" (ngModelChange)="setHandoverCustomMeterValue(meterIndex, 'label', $event)" placeholder="název měřiče" />
@@ -2533,6 +2501,7 @@
                         </div>
                         </div>
                       </div>
+                      }
                     }
                     <button *ngIf="handoverCustomMeterIndexes().length === 0" type="button" class="new-client-toggle-btn handover-meter-action" (click)="addHandoverCustomMeter()" aria-label="Přidat další měřič">+</button>
                     <fieldset class="handover-confirmation-section">
@@ -2549,15 +2518,17 @@
                </article>
               <ng-container *ngTemplateOutlet="handoverKeysCard"></ng-container>
               <ng-container *ngTemplateOutlet="handoverEquipmentCard"></ng-container>
+              <ng-container *ngTemplateOutlet="handoverCellarCard"></ng-container>
               <ng-container *ngTemplateOutlet="handoverPropertyStateCard"></ng-container>
               <ng-container *ngTemplateOutlet="handoverDoorbellCard"></ng-container>
               <ng-container *ngTemplateOutlet="handoverManagerCard"></ng-container>
               </section>
               <section class="handover-form-column">
-                <ng-template #handoverKeysCard><article class="new-client-field-card new-client-field-card-full handover-toggle-card" [class.handover-toggle-enabled]="handoverPrintSectionVisible('keysSectionVisible')">
+                <ng-template #handoverKeysCard><article class="new-client-field-card new-client-field-card-full handover-toggle-card handover-collapse-card handover-clickable-card" (click)="onHandoverKeysCardClick($event)" [class.handover-is-collapsed]="handoverSectionCollapsed('keys')" [class.handover-toggle-enabled]="handoverPrintSectionVisible('keysSectionVisible')">
+                  <button type="button" class="handover-collapse-arrow" [attr.aria-expanded]="!handoverSectionCollapsed('keys')" aria-label="Sbalit / rozbalit klíče" (click)="toggleHandoverSectionCollapsed('keys')">{{ handoverSectionCollapsed('keys') ? '⌄' : '⌃' }}</button>
                   <section class="handover-app-section">
-                    <label class="section-toggle handover-section-switch"><input type="checkbox" [checked]="handoverPrintSectionVisible('keysSectionVisible')" (change)="toggleHandoverPrintSectionVisibility('keysSectionVisible')" /> KLÍČE</label>
-                    <ng-container *ngIf="handoverPrintSectionVisible('keysSectionVisible')">
+                    <div class="section-toggle handover-section-switch"><input type="checkbox" aria-label="Zahrnout klíče do tisku" [checked]="handoverPrintSectionVisible('keysSectionVisible')" (change)="toggleHandoverPrintSectionVisibility('keysSectionVisible')" /><button type="button" class="handover-section-title-button" [attr.aria-expanded]="!handoverSectionCollapsed('keys')" (click)="toggleHandoverSectionCollapsed('keys')">KLÍČE</button></div>
+                    <ng-container *ngIf="!handoverSectionCollapsed('keys')">
                     <div class="handover-split handover-keys-split">
                     <div class="handover-form-row">
                       <label class="new-client-label handover-meter-label"><input type="checkbox" class="new-client-checklist-box" [checked]="handoverKeyItemVisible('keysCountVisible')" (change)="toggleHandoverKeyItemVisibility('keysCountVisible')" /> Klíče celkem</label>
@@ -2589,10 +2560,11 @@
                    </section>
                 </article></ng-template>
 
-              <ng-template #handoverEquipmentCard><article class="new-client-field-card new-client-field-card-full">
+              <ng-template #handoverEquipmentCard><article class="new-client-field-card new-client-field-card-full handover-collapse-card" [class.handover-is-collapsed]="handoverSectionCollapsed('equipment')">
+                <button type="button" class="handover-collapse-arrow" [attr.aria-expanded]="!handoverSectionCollapsed('equipment')" aria-label="Sbalit / rozbalit další vybavení a dokumentaci" (click)="toggleHandoverSectionCollapsed('equipment')">{{ handoverSectionCollapsed('equipment') ? '⌄' : '⌃' }}</button>
                 <div class="handover-toggle-card">
                   <label class="section-toggle handover-section-switch"><input type="checkbox" [checked]="handoverReturnEquipmentVisible()" (change)="toggleHandoverReturnEquipment()" /> DALŠÍ VYBAVENÍ A DOKUMENTACE</label>
-                  <fieldset class="handover-confirmation-section" *ngIf="handoverReturnEquipmentVisible()">
+                  <fieldset class="handover-confirmation-section" *ngIf="!handoverSectionCollapsed('equipment')">
                   <div class="handover-confirmation-check">Nájemce předal pronajímateli následující vybavení, dokumenty či další předměty:</div>
                   <textarea id="handover-return-equipment" class="new-client-input new-client-textarea auto-grow-textarea" rows="3" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'returnEquipment')" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'returnEquipment', $event)"></textarea>
                   <label class="handover-writing-rows">Počet řádků k dopsání:<input type="number" min="1" max="10" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'returnEquipmentWritingRows') || 3" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'returnEquipmentWritingRows', $event)" /></label>
@@ -2600,13 +2572,32 @@
                 </div>
               </article></ng-template>
 
-              <article class="new-client-field-card new-client-field-card-full handover-right-column-card handover-return-extended-card">
-                <app-handover-return-fields [values]="newPropertyDraft().tabValues['predavaci-protokol'] || {}" [excludeEquipment]="true" (fieldChanged)="setPropertyTabFieldValue('predavaci-protokol', $event.field, $event.value)" />
+              <ng-template #handoverCellarCard>
+                <article class="new-client-field-card new-client-field-card-full handover-collapse-card handover-standalone-cellar" [class.handover-is-collapsed]="handoverSectionCollapsed('cellar')">
+                  <label class="section-toggle handover-section-switch"><input type="checkbox" [checked]="handoverOptionalGroupVisible('cellarVisible')" (change)="toggleHandoverOptionalGroupVisibility('cellarVisible')" /> SKLEP</label>
+                  <button type="button" class="handover-collapse-arrow" [attr.aria-expanded]="!handoverSectionCollapsed('cellar')" aria-label="Sbalit / rozbalit sklep" (click)="toggleHandoverSectionCollapsed('cellar')">{{ handoverSectionCollapsed('cellar') ? '⌄' : '⌃' }}</button>
+                  <fieldset class="handover-condition-subsection" *ngIf="!handoverSectionCollapsed('cellar')">
+                    <legend><label class="handover-condition-cellar-switch"><input type="checkbox" [checked]="handoverOptionalGroupVisible('cellarVisible')" (change)="toggleHandoverOptionalGroupVisibility('cellarVisible')" /><span></span></label> Sklep je předáván</legend>
+                    <label class="field cellar-return-field"><span>Označení sklepu</span><input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'cellar')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'cellar', $event)" /></label>
+                    @for (condition of handoverReturnCellarConditions; track condition.key) {
+                      <label class="handover-confirmation-check"><input type="checkbox" [checked]="handoverCellarConditionChecked('cellar-section', condition.key)" (change)="toggleHandoverCellarCondition('cellar-section', condition.key)" /> {{ condition.label }}</label>
+                    }
+                    <div class="handover-writing-control">
+                      <label class="handover-condition-cellar-label">Ve sklepě zůstává<textarea class="new-client-input new-client-textarea auto-grow-textarea" rows="2" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'cellarRemains')" (input)="autosizeNewClientTextarea($event)" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'cellarRemains', $event)"></textarea></label>
+                      <label class="handover-writing-rows">Počet řádků k dopsání:<input type="number" min="1" max="10" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'cellarRemainsWritingRows') || 1" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'cellarRemainsWritingRows', $event)" /></label>
+                    </div>
+                  </fieldset>
+                </article>
+              </ng-template>
+
+              <article class="new-client-field-card new-client-field-card-full handover-right-column-card handover-return-extended-card" [class.handover-is-collapsed]="handoverSectionCollapsed('return')">
+                <app-handover-return-fields [values]="newPropertyDraft().tabValues['predavaci-protokol'] || {}" [excludeEquipment]="true" [collapsedSections]="handoverCollapsedSections()" (collapseChanged)="setHandoverSectionCollapsed($event.key, $event.collapsed)" (fieldChanged)="setPropertyTabFieldValue('predavaci-protokol', $event.field, $event.value)" />
               </article>
 
-              <ng-template #handoverPropertyStateCard><article class="new-client-field-card new-client-field-card-full handover-toggle-card" [class.handover-toggle-enabled]="handoverPrintSectionVisible('remainsSectionVisible')">
+              <ng-template #handoverPropertyStateCard><article class="new-client-field-card new-client-field-card-full handover-toggle-card handover-collapse-card" [class.handover-is-collapsed]="handoverSectionCollapsed('condition')" [class.handover-toggle-enabled]="handoverPrintSectionVisible('remainsSectionVisible')">
+                <button type="button" class="handover-collapse-arrow" [attr.aria-expanded]="!handoverSectionCollapsed('condition')" aria-label="Sbalit / rozbalit stav nemovitosti při předání" (click)="toggleHandoverSectionCollapsed('condition')">{{ handoverSectionCollapsed('condition') ? '⌄' : '⌃' }}</button>
                 <label class="section-toggle handover-section-switch"><input type="checkbox" [checked]="handoverPrintSectionVisible('remainsSectionVisible')" (change)="toggleHandoverPrintSectionVisibility('remainsSectionVisible')" /> STAV NEMOVITOSTI PŘI PŘEDÁNÍ</label>
-                <div class="handover-condition-body" *ngIf="handoverPrintSectionVisible('remainsSectionVisible')">
+                <div class="handover-condition-body" *ngIf="!handoverSectionCollapsed('condition')">
                   <fieldset class="handover-condition-subsection">
                     <legend>Nemovitost je předávána</legend>
                     <label class="handover-confirmation-check"><input type="checkbox" [checked]="propertyTabFieldValue('predavaci-protokol', 'handoverPropertyCondition') === 'cleared'" (change)="setPropertyTabFieldValue('predavaci-protokol', 'handoverPropertyCondition', $any($event.target).checked ? 'cleared' : '')" /> Vyklizená, bez osobních věcí pronajímatele</label>
@@ -2633,29 +2624,36 @@
                 </div>
               </article></ng-template>
 
-              <ng-template #handoverDoorbellCard><article class="new-client-field-card new-client-field-card-full">
+              <ng-template #handoverDoorbellCard><article class="new-client-field-card new-client-field-card-full handover-collapse-card" [class.handover-is-collapsed]="handoverSectionCollapsed('doorbell')">
+                <button type="button" class="handover-collapse-arrow" [attr.aria-expanded]="!handoverSectionCollapsed('doorbell')" aria-label="Sbalit / rozbalit schránku a zvonek" (click)="toggleHandoverSectionCollapsed('doorbell')">{{ handoverSectionCollapsed('doorbell') ? '⌄' : '⌃' }}</button>
                 <label class="section-toggle handover-section-switch"><input type="checkbox" [checked]="handoverOptionalGroupVisible('doorbellVisible')" (change)="toggleHandoverOptionalGroupVisibility('doorbellVisible')" /> SCHRÁNKA A ZVONEK</label>
-                <div class="section-body" *ngIf="handoverOptionalGroupVisible('doorbellVisible')">
+                <div class="section-body" *ngIf="!handoverSectionCollapsed('doorbell')">
                   <div class="handover-extra-grid">
-                    <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'mailbox')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'mailbox', $event)" placeholder="Schránka" />
-                    <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'doorbell')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'doorbell', $event)" placeholder="Zvonek" />
-                    <input type="text" class="new-client-input handover-extra-full" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'doorbellLabel')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'doorbellLabel', $event)" placeholder="Označení zvonku" />
+                    <label class="handover-labeled-input"><span class="new-client-label">Schránka</span><input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'mailbox')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'mailbox', $event)" placeholder="Schránka" /></label>
+                    <label class="handover-labeled-input"><span class="new-client-label">Zvonek</span><input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'doorbell')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'doorbell', $event)" placeholder="Zvonek" /></label>
+                    <label class="handover-labeled-input handover-extra-full"><span class="new-client-label">Označení zvonku</span><input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'doorbellLabel')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'doorbellLabel', $event)" placeholder="Označení zvonku" /></label>
                   </div>
                 </div>
               </article></ng-template>
 
-              <ng-template #handoverManagerCard><article class="new-client-field-card new-client-field-card-full">
+              <ng-template #handoverManagerCard><article class="new-client-field-card new-client-field-card-full handover-collapse-card" [class.handover-is-collapsed]="handoverSectionCollapsed('manager')">
+                <button type="button" class="handover-collapse-arrow" [attr.aria-expanded]="!handoverSectionCollapsed('manager')" aria-label="Sbalit / rozbalit správce" (click)="toggleHandoverSectionCollapsed('manager')">{{ handoverSectionCollapsed('manager') ? '⌄' : '⌃' }}</button>
                 <label class="section-toggle handover-section-switch"><input type="checkbox" [checked]="handoverOptionalGroupVisible('managerVisible')" (change)="toggleHandoverOptionalGroupVisibility('managerVisible')" /> SPRÁVCE</label>
-                <div class="section-body" *ngIf="handoverOptionalGroupVisible('managerVisible')">
+                <div class="section-body" *ngIf="!handoverSectionCollapsed('manager')">
                   <div class="handover-extra-grid">
-                    <input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'managerName')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'managerName', $event)" placeholder="Jméno správce" />
-                    <input type="email" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'managerEmail')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'managerEmail', $event)" placeholder="E-mail správce" />
-                    <input type="tel" class="new-client-input handover-extra-full" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'managerPhone')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'managerPhone', $event)" placeholder="Telefon správce" />
+                    <label class="handover-labeled-input"><span class="new-client-label">Jméno správce</span><input type="text" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'managerName')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'managerName', $event)" placeholder="Jméno správce" /></label>
+                    <label class="handover-labeled-input"><span class="new-client-label">E-mail správce</span><input type="email" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'managerEmail')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'managerEmail', $event)" placeholder="E-mail správce" /></label>
+                    <label class="handover-labeled-input handover-extra-full"><span class="new-client-label">Telefon správce</span><input type="tel" class="new-client-input" [ngModel]="propertyTabFieldValue('predavaci-protokol', 'managerPhone')" (ngModelChange)="setPropertyTabFieldValue('predavaci-protokol', 'managerPhone', $event)" placeholder="Telefon správce" /></label>
                   </div>
                 </div>
               </article></ng-template>
 
-              <article class="new-client-field-card new-client-field-card-full handover-right-column-card handover-final-sections-card">
+              <article class="new-client-field-card new-client-field-card-full handover-right-column-card handover-final-sections-card handover-collapse-card" [class.handover-is-collapsed]="handoverSectionCollapsed('final')">
+                <div class="handover-section-heading">
+                  <div class="new-client-label">Fotodokumentace, závěrečná prohlášení a předání</div>
+                  <button type="button" class="handover-collapse-arrow" [attr.aria-expanded]="!handoverSectionCollapsed('final')" aria-label="Sbalit / rozbalit fotodokumentaci, závěrečná prohlášení a předání" (click)="toggleHandoverSectionCollapsed('final')">{{ handoverSectionCollapsed('final') ? '⌄' : '⌃' }}</button>
+                </div>
+                <ng-container *ngIf="!handoverSectionCollapsed('final')">
                 <app-handover-return-fields [values]="newPropertyDraft().tabValues['predavaci-protokol'] || {}" [finalSectionsOnly]="true" (fieldChanged)="setPropertyTabFieldValue('predavaci-protokol', $event.field, $event.value)" />
                 <fieldset class="handover-confirmation-section">
                   <legend>Předání</legend>
@@ -2670,6 +2668,7 @@
                   </div>
                   </div>
                 </fieldset>
+                </ng-container>
               </article>
               </section>
               </div>

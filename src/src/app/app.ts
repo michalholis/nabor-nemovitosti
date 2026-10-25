@@ -1407,11 +1407,19 @@ interface RoomAreaTotal {
   selector: 'app-root',
   imports: [CommonModule, FormsModule, AddressAutocompleteDirective, SelectedFirstPipe, HandoverContactPicker, HandoverReturnFields, BlankHandoverEditor],
   templateUrl: './app.html',
-  styleUrls: ['./app.scss', './property-archive.scss']
+  styleUrls: ['./app.scss', './property-archive.scss', './handover-writing-rows.css', './handover-collapse.css']
 })
 export class App {
+  protected readonly handoverCollapsedSections = signal<Record<string, boolean>>({});
   protected readonly handoverCellarConditions = [
     { key: 'cleared', label: 'Vyklizený, bez osobních věcí pronajímatele' },
+    { key: 'defects', label: 'Se závadami nebo poškozením uvedenými níže' },
+    { key: 'items', label: 'S ponechaným vybavením nebo věcmi uvedenými níže' }
+  ];
+  protected readonly handoverReturnCellarConditions = [
+    { key: 'cleared', label: 'Vyklizený, bez osobních věcí nájemce' },
+    { key: 'clean', label: 'Uklizený a v čistém stavu' },
+    { key: 'no-defects', label: 'Bez zjevných závad nad rámec běžného opotřebení' },
     { key: 'defects', label: 'Se závadami nebo poškozením uvedenými níže' },
     { key: 'items', label: 'S ponechaným vybavením nebo věcmi uvedenými níže' }
   ];
@@ -3916,6 +3924,8 @@ export class App {
       return;
     }
 
+    this.handoverCollapsedSections.set({});
+
     this.activeSavedPropertyId.set(record.id);
     this.activeDispoziceUnit.set('A');
     this.newPropertyDraft.set({
@@ -3951,8 +3961,10 @@ export class App {
       || Boolean(services['Jméno správce'] || services['Telefon na správce'] || services['E-mail na správce']);
     this.newPropertyDraft.update(current => {
       const values = { ...(current.tabValues['predavaci-protokol'] || {}) };
-      values['cellarVisible'] = cellarNumbers.length ? 'ANO' : 'NE';
-      values['cellarReturnSectionVisible'] = cellarNumbers.length ? 'ANO' : 'NE';
+      if (values['cellarManualOverride'] !== 'ANO') {
+        values['cellarVisible'] = cellarNumbers.length ? 'ANO' : 'NE';
+        values['cellarReturnSectionVisible'] = cellarNumbers.length ? 'ANO' : 'NE';
+      }
       const designation = [...new Set(cellarNumbers.filter(Boolean))].join(', ');
       if (designation) values['cellar'] = designation;
       values['managerVisible'] = managerExists ? 'ANO' : 'NE';
@@ -3964,6 +3976,7 @@ export class App {
   }
 
   protected createNewProperty(): void {
+    this.handoverCollapsedSections.set({});
     this.activeSavedPropertyId.set('');
     this.activeDispoziceUnit.set('A');
     this.newPropertyDraft.set(this.createDefaultNewPropertyDraft());
@@ -4091,6 +4104,7 @@ export class App {
         const cellarState = value === 'ANO' ? 'ANO' : 'NE';
         currentTab['cellarVisible'] = cellarState;
         currentTab['cellarReturnSectionVisible'] = cellarState;
+        currentTab['cellarManualOverride'] = 'ANO';
       }
       tabValues[tab] = currentTab;
       if (tab === 'prostory') {
@@ -4104,8 +4118,10 @@ export class App {
           return [source[this.prostoryKey('Sklep číslo', unit)] || ''];
         });
         const handover = { ...(tabValues['predavaci-protokol'] || {}) };
-        handover['cellarVisible'] = selectedCellars.length ? 'ANO' : 'NE';
-        handover['cellarReturnSectionVisible'] = selectedCellars.length ? 'ANO' : 'NE';
+        if (handover['cellarManualOverride'] !== 'ANO') {
+          handover['cellarVisible'] = selectedCellars.length ? 'ANO' : 'NE';
+          handover['cellarReturnSectionVisible'] = selectedCellars.length ? 'ANO' : 'NE';
+        }
         const designations = selectedCellars.filter(Boolean);
         if (designations.length) handover['cellar'] = [...new Set(designations)].join(', ');
         else if (field === 'Sklep číslo' || field.startsWith('Příslušenství v jednotce') || field.startsWith('Seznam místností')) handover['cellar'] = '';
@@ -5731,7 +5747,11 @@ export class App {
   }
 
   protected handoverSectionCollapsed(key: string): boolean {
-    return this.propertyTabFieldValue('predavaci-protokol', `collapsed-${key}`) === 'ANO';
+    return this.handoverCollapsedSections()[key] ?? true;
+  }
+
+  protected setHandoverSectionCollapsed(key: string, collapsed: boolean): void {
+    this.handoverCollapsedSections.update(sections => ({ ...sections, [key]: collapsed }));
   }
 
   protected handoverCellarConditionChecked(group: string, key: string): boolean {
@@ -5743,7 +5763,13 @@ export class App {
   }
 
   protected toggleHandoverSectionCollapsed(key: string): void {
-    this.setPropertyTabFieldValue('predavaci-protokol', `collapsed-${key}`, this.handoverSectionCollapsed(key) ? 'NE' : 'ANO');
+    this.setHandoverSectionCollapsed(key, !this.handoverSectionCollapsed(key));
+  }
+
+  protected onHandoverKeysCardClick(event: MouseEvent): void {
+    const target = event.target as Element | null;
+    if (target?.closest('input, textarea, select, button, a, label')) return;
+    this.toggleHandoverSectionCollapsed('keys');
   }
 
   protected handoverBasicSummary(): { delivering: string; receiving: string; address: string } {
@@ -5787,6 +5813,26 @@ export class App {
     return Array.from({ length: count }, (_, index) => index);
   }
 
+  protected handoverMeterRows(): Array<{ key: string; label: string; numberKey: string; stateKey: string; unit: string; customIndex: number | null }> {
+    const rows: Array<{ key: string; label: string; numberKey: string; stateKey: string; unit: string; customIndex: number | null }> = [
+      { key: 'electricMeterVisible', label: 'Elektřina', numberKey: 'electricMeterNumber', stateKey: 'electricMeterState', unit: 'kWh', customIndex: null },
+      { key: 'electricT1MeterVisible', label: 'Elektřina T1', numberKey: 'electricT1MeterNumber', stateKey: 'electricT1MeterState', unit: 'kWh', customIndex: null },
+      { key: 'electricT2MeterVisible', label: 'Elektřina T2', numberKey: 'electricT2MeterNumber', stateKey: 'electricT2MeterState', unit: 'kWh', customIndex: null },
+      { key: 'hotWaterMeterVisible', label: 'Voda teplá', numberKey: 'hotWaterMeterNumber', stateKey: 'hotWaterMeterState', unit: 'm3', customIndex: null },
+      { key: 'coldWaterMeterVisible', label: 'Voda studená', numberKey: 'coldWaterMeterNumber', stateKey: 'coldWaterMeterState', unit: 'm3', customIndex: null },
+      { key: 'gasMeterVisible', label: 'Plyn', numberKey: 'gasMeterNumber', stateKey: 'gasMeterState', unit: 'm3', customIndex: null },
+      ...this.handoverCustomMeterIndexes().map(index => ({
+        key: index === 0 ? 'customMeterVisible' : `customMeter${index}Visible`,
+        label: this.handoverCustomMeterValue(index, 'label'),
+        numberKey: this.handoverCustomMeterField(index, 'number'), stateKey: this.handoverCustomMeterField(index, 'state'),
+        unit: this.handoverCustomMeterValue(index, 'unit'), customIndex: index
+      }))
+    ];
+    return rows.filter(row => row.customIndex === null)
+      .sort((a, b) => a.label.localeCompare(b.label, 'cs', { sensitivity: 'base', numeric: true }))
+      .concat(rows.filter(row => row.customIndex !== null));
+  }
+
   private handoverCustomMeterField(index: number, field: 'label' | 'number' | 'state' | 'unit'): string {
     const suffix = field[0].toUpperCase() + field.slice(1);
     return index === 0 ? `customMeter${suffix}` : `customMeter${index}${suffix}`;
@@ -5798,6 +5844,9 @@ export class App {
 
   protected setHandoverCustomMeterValue(index: number, field: 'label' | 'number' | 'state' | 'unit', value: string): void {
     this.setPropertyTabFieldValue('predavaci-protokol', this.handoverCustomMeterField(index, field), value);
+    if (String(value ?? '').trim()) {
+      this.setPropertyTabFieldValue('predavaci-protokol', index === 0 ? 'customMeterVisible' : `customMeter${index}Visible`, 'ANO');
+    }
   }
 
   protected handoverCustomMeterVisible(index: number): boolean {
@@ -6155,6 +6204,10 @@ export class App {
       values[key] = (selected ? next : [...next, value]).join('|');
       return { ...draft, tabValues: { ...draft.tabValues, prostory: values } };
     });
+    if (value === 'Sklep' || value === 'Nepodsklepený') {
+      const key = this.prostoryKey('Příslušenství v jednotce', unit);
+      this.setPropertyTabFieldValue('prostory', key, this.propertyTabFieldValue('prostory', key));
+    }
   }
 
   protected prostoryAccessoryCustomKey(unit: string): string {
@@ -7430,6 +7483,11 @@ export class App {
   }
 
   constructor() {
+    effect(() => {
+      if (this.activeWorkspace() !== 'properties' || this.propertyWorkspaceMode() !== 'new') {
+        this.handoverCollapsedSections.set({});
+      }
+    });
     effect(onCleanup => {
       const key = this.activeDrivingRouteKey();
       this.propertyDrivingState.set({ key, status: key ? 'loading' : 'idle', summary: '' });
@@ -12125,7 +12183,8 @@ ${sections.map((section) => `<section class="section"><div class="section-title"
           label: field(key('Label')), number: field(key('Number')), state: field(key('State')), unit: field(key('Unit'))
         };
       })
-    ].filter((meter) => meter.visible);
+    ].filter((meter) => meter.visible)
+      .sort((a, b) => !a.label.trim() ? (!b.label.trim() ? 0 : 1) : !b.label.trim() ? -1 : a.label.localeCompare(b.label, 'cs', { sensitivity: 'base', numeric: true }));
 
     const html = `<!doctype html>
 <html lang="cs"><head><meta charset="utf-8" /><title>${this.escapeHtml(documentTitle)}</title>

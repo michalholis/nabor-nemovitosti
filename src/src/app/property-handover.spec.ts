@@ -43,6 +43,11 @@ interface HandoverHarness {
   setHandoverCustomMeterValue(index: number, field: 'label' | 'number' | 'state' | 'unit', value: string): void;
   addHandoverCustomMeter(): void;
   removeHandoverCustomMeter(index: number): void;
+  handoverMeterRows(): Array<{ key: string; label: string }>;
+  toggleHandoverSectionCollapsed(key: string): void;
+  handoverSectionCollapsed(key: string): boolean;
+  setHandoverSectionCollapsed(key: string, collapsed: boolean): void;
+  setActivePropertyTab(tab: string): void;
   addHandoverExtraParty(role: 'predavajici' | 'prebirajici'): void;
   setHandoverExtraPartyField(role: 'predavajici' | 'prebirajici', index: number, field: 'name', value: string): void;
   generateHandoverProtocol(): void;
@@ -213,6 +218,55 @@ describe('Property handover participants', () => {
     expect(meterSection?.textContent).toContain('Kupující se podpisem kupní smlouvy zavázal');
   });
 
+  it('keeps custom meters below the fixed app list and sorts all meters in print', () => {
+    app.setHandoverCustomMeterValue(0, 'label', 'Elektřina vlastní');
+    app.setHandoverCustomMeterValue(0, 'number', 'CUSTOM-42');
+    const expected = ['Elektřina', 'Elektřina T1', 'Elektřina T2', 'Elektřina vlastní', 'Plyn', 'Voda studená', 'Voda teplá'];
+    expect(app.handoverMeterRows().map(row => row.label)).toEqual(['Elektřina', 'Elektřina T1', 'Elektřina T2', 'Plyn', 'Voda studená', 'Voda teplá', 'Elektřina vlastní']);
+    app.toggleHandoverSectionCollapsed('meters');
+    const report = printedProtocol();
+    expect([...report.querySelectorAll('.meter-table tbody tr')].map(row => row.querySelector('td')?.textContent)).toEqual(expected);
+    expect(report.querySelector('.meter-table')?.textContent).toContain('CUSTOM-42');
+    app.setHandoverCustomMeterValue(0, 'label', 'A měřič');
+    expect(app.handoverMeterRows().at(-1)?.label).toBe('A měřič');
+  });
+
+  it('collapses a disabled section on the first click without activating its inclusion switch', () => {
+    app.setHandoverSectionCollapsed('meters', false);
+    app.setPropertyTabFieldValue('predavaci-protokol', 'metersSectionVisible', 'NE');
+    app.toggleHandoverSectionCollapsed('meters');
+    expect(app.handoverSectionCollapsed('meters')).toBe(true);
+    expect(app.propertyTabFieldValue('predavaci-protokol', 'metersSectionVisible')).toBe('NE');
+    app.toggleHandoverSectionCollapsed('meters');
+    expect(app.handoverSectionCollapsed('meters')).toBe(false);
+    expect(app.propertyTabFieldValue('predavaci-protokol', 'metersSectionVisible')).toBe('NE');
+  });
+
+  it.each(['label', 'number', 'state', 'unit'] as const)('activates a custom meter after entering its %s', part => {
+    app.setPropertyTabFieldValue('predavaci-protokol', 'customMeterVisible', 'NE');
+    app.setHandoverCustomMeterValue(0, part, 'test');
+    expect(app.propertyTabFieldValue('predavaci-protokol', 'customMeterVisible')).toBe('ANO');
+  });
+
+  it('prints the return cellar block before the property remains fields', () => {
+    app.setPropertyTabFieldValue('predavaci-protokol', 'leaseReturnSectionVisible', 'ANO');
+    app.setPropertyTabFieldValue('predavaci-protokol', 'cellarVisible', 'ANO');
+    const text = printedProtocol().querySelector('[data-return-section=condition]')?.textContent || '';
+    expect(text.indexOf('Sklep je předáván')).toBeGreaterThan(-1);
+    expect(text.indexOf('Ve sklepě zůstává:')).toBeLessThan(text.indexOf('V nemovitosti zůstává'));
+  });
+
+  it('keeps collapse state during property tabs but resets it when reopening the property', () => {
+    expect(app.handoverSectionCollapsed('keys')).toBe(true);
+    app.toggleHandoverSectionCollapsed('keys');
+    app.setActivePropertyTab('pozemek');
+    app.setActivePropertyTab('predavaci-protokol');
+    expect(app.handoverSectionCollapsed('keys')).toBe(false);
+    expect(app.propertyTabFieldValue('predavaci-protokol', 'collapsed-keys')).toBe('');
+    app.openPropertyFormForRecord(0);
+    expect(app.handoverSectionCollapsed('keys')).toBe(true);
+  });
+
   it('copies cellar and manager details from the property description into the handover protocol', () => {
     app.setPropertyTabFieldValue('prostory', 'Příslušenství v jednotce', 'Sklep');
     app.setPropertyTabFieldValue('prostory', 'Sklep číslo', '45A');
@@ -221,6 +275,10 @@ describe('Property handover participants', () => {
     expect(app.propertyTabFieldValue('predavaci-protokol', 'cellar')).toBe('45A');
     app.setPropertyTabFieldValue('predavaci-protokol', 'cellarVisible', 'NE');
     expect(app.propertyTabFieldValue('predavaci-protokol', 'cellarReturnSectionVisible')).toBe('NE');
+    app.saveCurrentProperty();
+    app.openPropertyFormForRecord(0);
+    expect(app.propertyTabFieldValue('predavaci-protokol', 'cellarVisible')).toBe('NE');
+    expect(app.propertyTabFieldValue('predavaci-protokol', 'cellar')).toBe('45A');
 
     app.setPropertyTabFieldValue('sluzby', 'Služby', 'Předseda / správce');
     app.setPropertyTabFieldValue('sluzby', 'Jméno správce', 'Petr Správce');

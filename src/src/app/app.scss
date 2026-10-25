@@ -3589,10 +3589,22 @@
   border-radius: 8px;
   box-sizing: border-box;
   box-shadow: none;
-  padding: 0.8rem;
+  padding: .65rem .8rem;
 }
 
-.handover-form-body .new-client-field-card:has(.section-toggle):not(:has(.section-body)) { padding-bottom:.49rem; padding-top:.49rem; }
+.handover-form-body .new-client-field-card.handover-is-collapsed { box-sizing:border-box; min-height:42px; padding:.65rem .8rem; gap:0; }
+.handover-form-body .section-toggle { margin:0; min-height:19.2px; }
+.handover-form-body .handover-collapse-header { min-height:19.2px; }
+.handover-basic-card .handover-collapse-header { padding-right:1.8rem; }
+.handover-basic-card .handover-collapse-arrow { position:absolute; right:.65rem; top:21px; transform:translateY(-50%); }
+.handover-form-body .handover-app-section > .section-body { margin-top:.5rem; }
+.handover-is-collapsed .section-toggle { margin:0; }
+.handover-is-collapsed .handover-app-section { gap:0; }
+.handover-basic-card.handover-is-collapsed { align-items:center; column-gap:.8rem; grid-template-columns:max-content minmax(0,1fr); }
+.handover-basic-card.handover-is-collapsed .handover-collapse-header { display:contents; }
+.handover-labeled-input { display:grid; gap:.3rem; min-width:0; }
+.handover-meter-headings { display:grid; grid-template-columns:10rem minmax(0,1fr); gap:.3rem; }
+.handover-meter-value-headings { display:grid; grid-template-columns:minmax(0,1fr) 5px minmax(0,1fr); gap:5px; }
 
 .handover-obligation-card {
   border-top: 1px solid #d9e1ea;
@@ -3652,48 +3664,8 @@
   width: 1rem;
 }
 
-.handover-writing-rows,
-.writing-rows {
-  align-items: center;
-  color: #6b7b8c;
-  display: grid;
-  font-family: var(--font-main);
-  font-size: 0.7rem;
-  font-weight: 400;
-  line-height: 1.2;
-  gap: 0.4rem;
-  grid-template-columns: max-content 2rem;
-  justify-content: start;
-  margin-left: 7px;
-  margin-top: -0.65rem;
-}
-
-.handover-writing-control { display:grid; gap:.65rem; }
-.handover-writing-control > .handover-writing-rows,
-.handover-writing-control > .writing-rows { margin-top:-.65rem; }
-
-.field label.writing-rows {
-  color: #6b7b8c;
-  font-family: var(--font-main);
-  font-size: 0.7rem;
-  font-weight: 400;
-  line-height: 1.2;
-}
-
 .handover-condition-cellar-details { margin-top: 0.65rem; }
 .handover-condition-cellar-label { color:#6b7b8c; display:grid; font-size:.76rem; gap:.3rem; }
-
-.handover-writing-rows input {
-  appearance: textfield;
-  background: transparent;
-  border: 0;
-  color: #6b7b8c;
-  font: inherit;
-  height: 1rem;
-  line-height: 1;
-  min-height: 0;
-  padding: 0;
-}
 
 .handover-split + .handover-form-row {
   margin-top: 0.45rem;

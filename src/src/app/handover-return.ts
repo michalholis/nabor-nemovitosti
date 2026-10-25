@@ -111,7 +111,6 @@ export function renderHandoverReturnSections(values: HandoverReturnValues, escap
     const body = (definition.key === 'condition' ? `<div class="section-title">STAV NEMOVITOSTI PŘI VRÁCENÍ NÁJMU</div>` : '')
     + (definition.intro ? definition.key === 'condition' ? `<div class="handover-write-label">${escape(definition.intro)}</div>` : `<p>${escape(definition.intro)}</p>` : '')
     + (definition.checks || []).map(check => `<div class="handover-return-check"><span>${values[check.key] === 'ANO' ? '☑' : '☐'}</span> ${escape(check.label)}</div>`).join('')
-    + (definition.key === 'condition' ? `<div class="handover-write-label">V nemovitosti zůstává</div><div class="handover-write-boxes">${Array.from({ length: Math.min(10, Math.max(1, Number.parseInt(values['remainsInPropertyWritingRows'] || '', 10) || 1)) }, (_, index) => `<div class="handover-write-box">${index === 0 && values['remainsInProperty'] ? escape(values['remainsInProperty']) : '&nbsp;'}</div>`).join('')}</div>` : '')
     + (definition.key === 'condition' && handoverReturnCellarEnabled(values) ? `<div class="handover-write-label">Sklep je předáván</div>
       <div class="handover-detail cellar-main-label"><div class="handover-detail-label">Označení sklepu:</div><div class="handover-detail-value">${escape(values['cellar'] || '')}</div></div>${[
       ['cleared', 'Vyklizený, bez osobních věcí nájemce'],
@@ -122,6 +121,7 @@ export function renderHandoverReturnSections(values: HandoverReturnValues, escap
     ].map(([key, label]) => `<div class="handover-return-check"><span>${values[`cellar-section-${key}`] === 'ANO' ? '☑' : '☐'}</span> ${escape(label)}</div>`).join('')}
       <div class="handover-write-label cellar-remains-print-label">Ve sklepě zůstává:</div>
       <div class="handover-write-boxes cellar-remains-print-boxes">${Array.from({ length: Math.min(10, Math.max(1, Number.parseInt(values['cellarRemainsWritingRows'] || '', 10) || 1)) }, (_, index) => `<div class="handover-write-box">${index === 0 && values['cellarRemains'] ? escape(values['cellarRemains']) : '&nbsp;'}</div>`).join('')}</div>` : '')
+    + (definition.key === 'condition' ? `<div class="handover-write-label">V nemovitosti zůstává</div><div class="handover-write-boxes">${Array.from({ length: Math.min(10, Math.max(1, Number.parseInt(values['remainsInPropertyWritingRows'] || '', 10) || 1)) }, (_, index) => `<div class="handover-write-box">${index === 0 && values['remainsInProperty'] ? escape(values['remainsInProperty']) : '&nbsp;'}</div>`).join('')}</div>` : '')
     + (definition.fields || []).map(field).join('')
     + (definition.note ? `<p class="handover-finance-note">${escape(definition.note)}</p>` : '');
     return definition.key === 'condition'
