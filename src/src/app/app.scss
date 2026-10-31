@@ -1705,13 +1705,6 @@
   padding: 0.7rem;
 }
 
-.dispozice-shared-accessories {
-  column-span: all;
-  padding: 0.7rem;
-  border: 1px solid #d6e2ef;
-  border-radius: 10px;
-}
-
 .dispozice-shared-accessories h3 {
   margin: 0 0 0.6rem;
 }
@@ -1853,7 +1846,7 @@
 
 .stavba-parcel-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 1.7fr) minmax(0, 0.7fr) 4.5rem auto;
+  grid-template-columns: repeat(3, minmax(0, 1.2fr)) minmax(0, 0.7fr) 4.5rem auto;
   gap: 0.3rem;
   margin-bottom: 0.3rem;
 }
@@ -3913,7 +3906,7 @@
   text-align:left;
 }
 .client-directory-name-btn:hover { color:var(--client-accent-ink); text-decoration:underline; }
-.client-interest-missing-btn { min-width:2rem; }
+.client-interest-missing-btn.active { min-width:2rem; background:#dc2626; border-color:#dc2626; color:#fff; }
 
 .client-directory-notes {
   position: relative;

@@ -1,0 +1,23 @@
+textarea.handover-text-field {
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  box-sizing: border-box;
+  color: #26384a;
+  display: block;
+  font: 400 .78rem/1.4 var(--font-main, 'Source Sans 3', 'Segoe UI', sans-serif);
+  margin: 0;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: hidden;
+  padding: .6rem;
+  resize: vertical;
+  text-align: left;
+  width: 100%;
+}
+
+.handover-field-caption {
+  color: #6b7b8c;
+  font: 400 .76rem/normal var(--font-main, 'Source Sans 3', 'Segoe UI', sans-serif);
+  text-transform: none;
+}

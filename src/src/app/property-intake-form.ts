@@ -1,4 +1,7 @@
 // Auto-generated from app.html by tools/gen-intake.mjs. Do not edit by hand.
+import { BROKER_INTERVIEW_QUESTIONS, BROKER_LISTING_URL_FIELD, BROKER_LISTING_DATE_FIELD, BROKER_LISTING_PRICE_FIELD } from './broker-interview';
+import { waterSupplyIntakeControls } from './water-supply-fields';
+import { electricityIntakeControls } from './electricity-fields';
 export interface IntakeControl {
   kind: 'multi' | 'select' | 'text';
   label: string;
@@ -23,6 +26,7 @@ export const PROPERTY_INTAKE_FORM: IntakeSection[] = [
       { kind: 'select', label: 'Smlouva', field: 'Smlouva', sources: ['contractFormOptions'] },
       { kind: 'text', label: 'Adresa nemovitosti', field: '@address' },
       { kind: 'text', label: 'Nejblížší adresa (orientační bod pro zájemce o prohlídku)', field: 'Nejblížší adresa' },
+      { kind: 'text', label: 'Poznámka k základním informacím', field: 'Poznámka k základním informacím' },
     ],
   },
   {
@@ -47,6 +51,8 @@ export const PROPERTY_INTAKE_FORM: IntakeSection[] = [
       { kind: 'select', label: 'Stavba na pozemku', field: 'Stavba na pozemku', sources: ['stavbaOnPlotOptions'] },
       { kind: 'select', label: 'Vlastnictví stavby', field: 'Vlastnictví stavby', sources: ['stavbaOwnershipOptions'] },
       { kind: 'select', label: 'Zapsaná v katastru', field: 'Zapsaná v katastru', sources: ['stavbaCadastreOptions'] },
+      { kind: 'text', label: 'Zastavěná plocha dle RÚIAN', field: 'Zastavěná plocha RÚIAN' },
+      { kind: 'text', label: 'Podlahová plocha dle RÚIAN', field: 'Podlahová plocha dle RÚIAN' },
       { kind: 'select', label: 'Rok výstavby', field: 'Rok výstavby', sources: ['stavbaYearOptions'] },
       { kind: 'text', label: 'Podlaží celkem', field: 'Podlaží celkem' },
       { kind: 'select', label: 'Výtah v budově', field: 'Výtah v budově', sources: ['stavbaElevatorOptions'] },
@@ -206,33 +212,25 @@ export const PROPERTY_INTAKE_FORM: IntakeSection[] = [
   {
     key: 'elektina',
     fields: [
-      { kind: 'select', label: 'Elektřina', field: 'Elektřina', options: ['Zavedena', 'Nezavedena'] },
-      { kind: 'select', label: 'Stav elektrického vedení', field: 'Stav elektrického vedení', options: ['Původní', 'Rekonstruováno', 'Částečně rekonstruováno'] },
+      ...electricityIntakeControls(),
       { kind: 'select', label: 'Rekonstruováno', field: 'Rekonstruováno rok', sources: ['stavbaYearOptions'] },
       { kind: 'select', label: 'Revize elektřiny po rekonstrukci', field: 'Revize elektřiny po rekonstrukci', options: ['ANO', 'NE'] },
       { kind: 'multi', label: 'Technologie', field: 'Technologie', sources: ['elektroTechOptions'] },
-      { kind: 'select', label: 'Jističe', field: 'Jističe', sources: ['elektroJisticeOptions'] },
-      { kind: 'select', label: 'Vedení v', field: 'Vedení v', sources: ['elektroVeniOptions'] },
       { kind: 'multi', label: 'Elektřina rozvedena', field: 'Elektřina rozvedena', options: ['V chatce', 'V budově', 'Na pozemku', 'V pergole', 'Na okraji pozemku', 'V garáži', 'Před garáží'] },
       { kind: 'select', label: 'Venkovní zásuvka', field: 'Zásuvka venku', options: ['ANO', 'NE'] },
       { kind: 'text', label: 'Počet světel', field: 'Počet světel' },
       { kind: 'text', label: 'Počet zásuvek', field: 'Počet zásuvek' },
-      { kind: 'multi', label: 'Elektroměr', field: 'Elektroměr', sources: ['elektroMeterOptions'] },
-      { kind: 'multi', label: 'Umístění elektroměru', field: 'Umístění elektroměru', sources: ['elektroMeterLocationOptions'] },
-      { kind: 'select', label: 'Dodavatel elektrické energie', field: 'Dodavatel elektrické energie', sources: ['elektroSupplierOptions'] },
       { kind: 'text', label: 'Poznámka k elektřině', field: 'Poznámka k elektřině' },
     ],
   },
   {
     key: 'voda',
     fields: [
-      { kind: 'select', label: 'Obecní vodovod', field: 'Vodovod', options: ['Napojen', 'Nezaveden'] },
-      { kind: 'multi', label: 'Vodoměr', field: 'Vodoměr', sources: ['vodaMerakOptions'] },
+      ...waterSupplyIntakeControls(),
       { kind: 'multi', label: 'Provozovatel vodovodu', field: 'Provozovatel vodovodu', sources: ['vodaProvozovatelOptions'] },
       { kind: 'multi', label: 'Stoupačky', field: 'Stoupačky', sources: ['vodaStoupackyOptions'] },
       { kind: 'multi', label: 'Další zdroj vody', field: 'Další zdroj vody', options: ['Sezonní (na zimu se vypouští)', 'Celoroční', 'Studna vlastní', 'Studna společná', 'Retenční nádrž na dešťovou vodu'] },
       { kind: 'select', label: 'Druh studny', field: 'Druh studny', sources: ['vodaDruhStudnyOptions'] },
-      { kind: 'multi', label: 'Kvalita dalšího zdroje vody', field: 'Kvalita vody', sources: ['vodaKvalitaOptions'] },
       { kind: 'select', label: 'Venkovní ventil na vodu', field: 'Venkovní ventil na vodu', options: ['ANO', 'NE'] },
       { kind: 'text', label: 'Poznámka k vodě', field: 'Poznámka k vodě' },
     ],
@@ -240,10 +238,23 @@ export const PROPERTY_INTAKE_FORM: IntakeSection[] = [
   {
     key: 'plyn',
     fields: [
-      { kind: 'select', label: 'Plyn', field: 'Plyn', options: ['Zaveden', 'Individuální', 'Nezaveden'] },
+      { kind: 'select', label: 'Plyn', field: 'Plyn', sources: ['plynOptions'] },
+      { kind: 'multi', label: 'Zdroj plynu', field: 'Zdroj plynu', sources: ['plynZdrojOptions'] },
+      { kind: 'text', label: 'Zdroj plynu vlastní', field: 'Zdroj plynu vlastní' },
+      { kind: 'multi', label: 'Umístění plynoměru', field: 'Umístění plynoměru', sources: ['plynPlynomerOptions'] },
+      { kind: 'text', label: 'Umístění plynoměru vlastní', field: 'Umístění plynoměru vlastní' },
+      { kind: 'multi', label: 'Využití plynu', field: 'Využití plynu', sources: ['plynVyuzitiOptions'] },
+      { kind: 'text', label: 'Využití plynu vlastní', field: 'Využití plynu vlastní' },
       { kind: 'multi', label: 'Typ', field: 'Typ', sources: ['plynTypOptions'] },
       { kind: 'multi', label: 'Umístění', field: 'Umístění', sources: ['plynUmisteniOptions'] },
       { kind: 'select', label: 'Poskytovatel', field: 'Poskytovatel', sources: ['plynPoskytovatelOptions'] },
+      { kind: 'select', label: 'Plynová přípojka', field: 'Plynová přípojka', sources: ['plynPripojkaOptions'] },
+      { kind: 'select', label: 'Revize a kontroly', field: 'Revize a kontroly', sources: ['plynRevizeOptions'] },
+      { kind: 'text', label: 'Poslední servis kotle', field: 'Poslední servis kotle' },
+      { kind: 'text', label: 'Poslední revize plynového zařízení', field: 'Poslední revize plynového zařízení' },
+      { kind: 'text', label: 'Poslední kontrola spalinové cesty', field: 'Poslední kontrola spalinové cesty' },
+      { kind: 'select', label: 'Dokumentace k plynové přípojce', field: 'Dokumentace k plynové přípojce', sources: ['plynDokumentaceOptions'] },
+      { kind: 'text', label: 'Měsíční zálohy', field: 'Měsíční zálohy' },
       { kind: 'text', label: 'Poznámka k plynu', field: 'Poznámka k plynu' },
     ],
   },
@@ -251,7 +262,10 @@ export const PROPERTY_INTAKE_FORM: IntakeSection[] = [
     key: 'kanalizace',
     fields: [
       { kind: 'multi', label: 'Kanalizace', field: 'Kanalizace', sources: ['kanalizaceOptions'] },
+      { kind: 'text', label: 'Kanalizace vlastní', field: 'Kanalizace vlastní' },
       { kind: 'text', label: 'Objem odpadní nádoby', field: 'Objem odpadní nádoby' },
+      { kind: 'multi', label: 'Odvádění dešťových vod', field: 'Odvádění dešťových vod', sources: ['kanalizaceDestoveVodyOptions'] },
+      { kind: 'text', label: 'Odvádění dešťových vod vlastní', field: 'Odvádění dešťových vod vlastní' },
       { kind: 'text', label: 'Poznámka ke kanalizaci', field: 'Poznámka ke kanalizaci' },
     ],
   },
@@ -260,8 +274,11 @@ export const PROPERTY_INTAKE_FORM: IntakeSection[] = [
     fields: [
       { kind: 'multi', label: 'Stav topení', field: 'Stav topení', sources: ['topeniStavOptions'] },
       { kind: 'select', label: 'Rekonstrukce topení', field: 'Rekonstrukce topení', sources: ['stavbaYearOptions'] },
-      { kind: 'multi', label: 'Způsob vytápění objektu', field: 'Způsob vytápění objektu', sources: ['topeniVytapeniOptions'] },
-      { kind: 'multi', label: 'Topné těleso', field: 'Topné těleso', sources: ['topeniTelesoOptions'] },
+      { kind: 'multi', label: 'Zdroje energie', field: 'Zdroje energie', sources: ['topeniVytapeniOptions'] },
+      { kind: 'multi', label: 'Způsob vytápění', field: 'Způsob vytápění', sources: ['topeniMethodOptions'] },
+      { kind: 'multi', label: 'Topné zařízení', field: 'Topné zařízení', sources: ['topeniDeviceOptions'] },
+      { kind: 'multi', label: 'Otopná soustava', field: 'Otopná soustava', sources: ['topeniTelesoOptions'] },
+      { kind: 'select', label: 'S regulací topení', field: 'S regulací topení', options: ['Ano', 'Ne'] },
       { kind: 'text', label: 'Výkon Infrapanelu', field: 'Výkon Infrapanelu' },
       { kind: 'select', label: 'Umístění zdroje topení', field: 'Umístění topení', sources: ['topeniUmisteniOptions'] },
       { kind: 'multi', label: 'Komín', field: 'Komín', sources: ['topeniKominOptions'] },
@@ -273,7 +290,7 @@ export const PROPERTY_INTAKE_FORM: IntakeSection[] = [
     key: 'ohrev-vody',
     fields: [
       { kind: 'multi', label: 'Zdroj teplé vody', field: 'Zdroj teplé vody', sources: ['ohrevVodyZdrojOptions'] },
-      { kind: 'multi', label: 'Způsob ohřevu vody', field: 'Způsob ohřevu vody', sources: ['ohrevVodyZpusobOptions'] },
+      { kind: 'multi', label: 'Zařízení pro ohřev vody', field: 'Způsob ohřevu vody', sources: ['ohrevVodyZpusobOptions'] },
       { kind: 'text', label: 'Objem nádoby', field: 'Objem nádoby' },
       { kind: 'multi', label: 'Umístění topného prvku', field: 'Umístění topného prvku', sources: ['ohrevVodyUmisteniOptions'] },
       { kind: 'text', label: 'Poznámka k ohřevu vody', field: 'Poznámka k ohřevu vody' },
@@ -339,7 +356,7 @@ export const PROPERTY_INTAKE_FORM: IntakeSection[] = [
       { kind: 'select', label: 'Nejbližší vlaková zastávka – Nejbližší vlaková zastávka jednotka', field: 'Nejbližší vlaková zastávka jednotka', sources: ['dostupnostCasOptions'] },
       { kind: 'select', label: 'Nejbližší vlaková zastávka – Nejbližší vlaková zastávka doprava', field: 'Nejbližší vlaková zastávka doprava', sources: ['dostupnostDopravaTypOptions'] },
       { kind: 'text', label: 'Nejbližší vlaková zastávka – Nejbližší vlaková zastávka', field: 'Nejbližší vlaková zastávka' },
-      { kind: 'text', label: 'Poznámka', field: 'Poznámka' },
+      { kind: 'text', label: 'Poznámka k okolí', field: 'Poznámka' },
     ],
   },
   {
@@ -371,6 +388,16 @@ export const PROPERTY_INTAKE_FORM: IntakeSection[] = [
       { kind: 'select', label: 'Poplatek družstvu za podnájem – Poplatek družstvu za podnájem období', field: 'Poplatek družstvu za podnájem období', sources: ['prodejPodnajemPeriodOptions'] },
       { kind: 'text', label: 'Poplatek družstvu za podnájem – Poplatek družstvu za podnájem', field: 'Poplatek družstvu za podnájem' },
       { kind: 'text', label: 'Průměrná výše nájmu v lokalitě', field: 'Průměrná výše nájmu v lokalitě' },
+    ],
+  },
+  {
+    key: 'makler',
+    fields: [
+      ...BROKER_INTERVIEW_QUESTIONS.map(question => ({ kind: 'text' as const, label: question, field: question })),
+      { kind: 'text', label: 'Poznámka k nabídce', field: 'Poznámka k nabídce' },
+      { kind: 'text', label: BROKER_LISTING_URL_FIELD, field: BROKER_LISTING_URL_FIELD },
+      { kind: 'text', label: BROKER_LISTING_DATE_FIELD, field: BROKER_LISTING_DATE_FIELD },
+      { kind: 'text', label: BROKER_LISTING_PRICE_FIELD, field: BROKER_LISTING_PRICE_FIELD }
     ],
   },
   {
@@ -476,11 +503,14 @@ export const PROPERTY_INTAKE_FORM: IntakeSection[] = [
   {
     key: 'cena-nemovitosti',
     fields: [
+      { kind: 'text', label: 'Kdy byla nemovitost zakoupena', field: 'Kdy byla nemovitost zakoupena' },
+      { kind: 'text', label: 'Původní kupní cena', field: 'Původní kupní cena' },
       { kind: 'text', label: 'Doporučená nabídková cena vč. DPH', field: 'Doporučená nabídková cena vč. DPH' },
       { kind: 'text', label: 'Odhadovaná prodejní cena nemovitosti', field: 'Odhadovaná prodejní cena nemovitosti' },
       { kind: 'text', label: 'Smluvené % z prodeje bez DPH', field: 'Pevná provize z prodeje v Kč' },
       { kind: 'text', label: 'Počet prodávajících', field: 'Počet prodávajících' },
       { kind: 'text', label: 'Požadovaná částka vč. DPH', field: 'Požadovaná částka vč. DPH' },
+      { kind: 'text', label: 'Poznámka k ceně', field: 'Poznámka k ceně' },
       { kind: 'text', label: 'Smluvené % z prodeje bez DPH', field: 'Pevná provize z prodeje v Kč' },
     ],
   },

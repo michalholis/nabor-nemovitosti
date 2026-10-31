@@ -6,6 +6,7 @@ import { App } from './app';
 import { PROPERTY_INTAKE_FORM } from './property-intake-form';
 import { Subject, throwError } from 'rxjs';
 import { DrivingRoute, DrivingRouteService } from './driving-route.service';
+import { BROKER_INTERVIEW_QUESTIONS, BROKER_STARTING_PRICE_FIELD, BROKER_CURRENT_PRICE_FIELD, BROKER_LISTING_URL_FIELD, BROKER_LISTING_DATE_FIELD, BROKER_LISTING_PRICE_FIELD, BROKER_LISTING_PRICE_DATE_FIELD } from './broker-interview';
 
 interface PrintHarness {
   activeWorkspace: WritableSignal<string>;
@@ -27,12 +28,20 @@ interface PrintHarness {
     draft: { fullName: string; companyName: string; phonePrefix: string; phone: string; email: string; linkedPropertyId?: string };
   }>>;
   activeSavedPropertyId: WritableSignal<string>;
+  activeDispoziceUnit: WritableSignal<string>;
+  savedPropertyRecords: WritableSignal<Array<{
+    id: string; createdAt: string; title: string; propertyType: string; address: string; price: string; seller: string;
+    status: 'active' | 'inactive' | 'archived'; phase: string; tabValues: Record<string, Record<string, string>>;
+  }>>;
+  generatePropertyDirectoryBrokerInfo(entry: { index: number }): void;
   propertyTypeFormOptions(): string[];
   propertyTypeSelectValue(): string;
   isPropertyTypeCustom(value: string): boolean;
   cloneSavedPropertyRecord(record: { propertyType: string; tabValues?: Record<string, Record<string, string>> }): { propertyType: string; tabValues: Record<string, Record<string, string>> };
   stavbaParcelValue(index: number, field: 'parcel' | 'type' | 'area' | 'buildingNumber' | 'buildingNumberType'): string;
   setStavbaParcelValue(index: number, field: 'parcel' | 'type' | 'area' | 'buildingNumber' | 'buildingNumberType', value: string): void;
+  setLandParcelValue(index: number, field: 'parcel' | 'type' | 'area', value: string): void;
+  addLandParcelRow(): void;
   addStavbaParcelRow(): void;
   removeStavbaParcelRow(index: number): void;
   stavbaBuildUpArea(): string;
@@ -52,14 +61,65 @@ interface PrintHarness {
   mortgageSettlementOptions(): string[];
   podlahyOptions(): string[];
   propertyTabFieldValue(tab: string, field: string): string;
+  setPropertyTabFieldValue(tab: string, field: string, value: string): void;
+  supplementaryInfoIndexes(): number[];
+  addSupplementaryInfo(): void;
+  removeSupplementaryInfo(index: number): void;
   hasPropertyTabMultiValue(tab: string, field: string, value: string): boolean;
   togglePropertyTabMultiValue(tab: string, field: string, value: string): void;
   vodaDruhStudnyOptions(): string[];
+  vodaZdrojOptions(): string[];
+  vodaMerakOptions(): string[];
+  vodaKvalitaOptions(): string[];
+  isVodaHasStudna(): boolean;
+  vodaCheckDateValue(field: string): string;
+  setVodaCheckDateValue(field: string, value: string): void;
+  setVodaCheckMode(field: string, mode: 'Datum' | 'Nedoloženo'): void;
+  formatVodaMonthlyAdvance(): void;
+  formatVodaWellDepth(): void;
   toggleVodaMultiValue(field: string, value: string): void;
+  toggleTopeniMultiValue(field: string, value: string): void;
+  topeniIsInfrapanel(): boolean;
+  isTopeniCentralniDalkove(): boolean;
+  topeniDeviceOptions(): string[];
+  ohrevVodyZpusobOptions(): string[];
+  toggleOhrevVodyMultiValue(field: string, value: string): void;
+  kanalizaceOptions(): string[];
+  kanalizaceDestoveVodyOptions(): string[];
+  kanalizaceOptionHint(option: string): string;
+  toggleKanalizaceMultiValue(field: string, value: string): void;
+  isKanalizaceObjemHidden(): boolean;
+  plynOptions(): string[];
+  plynCheckDateValue(field: string): string;
+  setPlynCheckDateValue(field: string, value: string): void;
+  setPlynCheckMode(field: string, mode: 'Datum' | 'Nedoloženo'): void;
+  formatPlynMonthlyAdvance(): void;
+  togglePlynMultiValue(field: string, value: string): void;
+  toggleElektroMultiValue(field: string, value: string): void;
+  elektroHasPhotovoltaics(): boolean;
+  elektroCheckDateValue(field: string): string;
+  setElektroCheckDateValue(field: string, value: string): void;
+  setElektroCheckMode(field: string, mode: string): void;
+  formatElektroMonthlyAdvance(): void;
+  formatElektroNumber(field: string, unit: string): void;
+  rozpisSluzebTotal(group: string): string;
+  isPropertyBuyerInfoFieldVisible(tab: string, field: string): boolean;
+  formatBrokerPriceField(field: string): void;
+  brokerListingDateValue(): string;
+  setBrokerListingDateValue(value: string): void;
+  pasteBrokerListingDate(event: ClipboardEvent): void;
+  setBrokerListingPriceValue(value: string): void;
+  brokerListingPriceStamp(): string;
   formatMortgageBalance(): void;
   setMortgageSettlementCustomValue(value: string): void;
   togglePravniVadyMultiValue(field: string, value: string): void;
-  selectedProstoryRoomEntries(unit?: string): Array<{ room: string }>;
+  selectedProstoryRoomEntries(unit?: string): Array<{ room: string; index: number; key: string; floor: string; floorStart: boolean }>;
+  setProstoryRoomFloorValue(room: string, index: number, value: string, unit?: string): void;
+  prostoryRoomFloorValue(room: string, index: number, unit?: string): string;
+  addProstoryRoomInstance(room: string, unit?: string): void;
+  removeProstoryRoomInstance(room: string, index: number, unit?: string): void;
+  setProstoryRoomDimensionValue(room: string, index: number, dimension: 'width' | 'length', value: string, unit?: string): void;
+  prostoryRoomDimensionValue(room: string, index: number, dimension: 'width' | 'length', unit?: string): string;
   shouldShowProstoryGeneralFields(): boolean;
   visiblePropertySectionTabs(): Array<{ key: string }>;
   propertySectionTabs(): Array<{ key: string; label: string }>;
@@ -96,6 +156,908 @@ describe('Property print fields', () => {
   });
 
   afterEach(() => { vi.restoreAllMocks(); TestBed.resetTestingModule(); vi.useRealTimers(); });
+
+  it('adds broker interview, notes, woodshed, and repeatable supplementary fields with XML persistence and print coverage', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    const tabs = app.propertySectionTabs().map(tab => tab.key);
+    expect(tabs.indexOf('makler')).toBe(tabs.indexOf('prodej') + 1);
+    expect(app.propertySectionTabs().find(tab => tab.key === 'makler')?.label).toBe('NABÍZENO');
+    expect(tabs.at(-1)).toBe('predavaci-protokol');
+    expect(tabs.at(-2)).toBe('cena-nemovitosti');
+    expect(BROKER_INTERVIEW_QUESTIONS).toHaveLength(15);
+    expect(PROPERTY_INTAKE_FORM.find(section => section.key === 'makler')?.fields.map(field => field.label)).toEqual([...BROKER_INTERVIEW_QUESTIONS, 'Poznámka k nabídce', BROKER_LISTING_URL_FIELD, BROKER_LISTING_DATE_FIELD, BROKER_LISTING_PRICE_FIELD]);
+    expect(app.prostorySharedAccessoryOptions()).toContain('Dřevník');
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Dům' }));
+    app.setPropertyTabFieldValue('prostory', 'Příslušenství nemovitosti', 'Dřevník');
+    app.setPropertyTabFieldValue('zakladni', 'Poznámka k základním informacím', 'Základní poznámka.');
+    app.setPropertyTabFieldValue('cena-nemovitosti', 'Poznámka k ceně', 'Dohoda o ceně.');
+    app.setPropertyTabFieldValue('makler', BROKER_INTERVIEW_QUESTIONS[0], 'Šest měsíců.');
+    app.setPropertyTabFieldValue('makler', BROKER_INTERVIEW_QUESTIONS[14], 'Pravidelná komunikace.');
+    app.setPropertyTabFieldValue('makler', 'Poznámka k nabídce', 'Doplnění nabídky.');
+    app.setPropertyTabFieldValue('dostupnost-v-okoli', 'Poznámka', 'Klidné okolí.');
+    app.setPropertyTabFieldValue('doplnkove-informace', 'Doplnění', 'První informace.');
+    app.addSupplementaryInfo();
+    app.setPropertyTabFieldValue('doplnkove-informace', 'Doplnění 2', 'Odstranit.');
+    app.addSupplementaryInfo();
+    app.setPropertyTabFieldValue('doplnkove-informace', 'Doplnění 3', 'Poslední informace.');
+    app.removeSupplementaryInfo(1);
+    expect(app.supplementaryInfoIndexes()).toHaveLength(2);
+    expect(app.propertyTabFieldValue('doplnkove-informace', 'Doplnění 2')).toBe('Poslední informace.');
+    expect(app.propertyTabFieldValue('doplnkove-informace', 'Doplnění 3')).toBe('');
+    app.applyXmlPayload(app.buildXmlString());
+    expect(app.propertyTabFieldValue('cena-nemovitosti', 'Poznámka k ceně')).toBe('Dohoda o ceně.');
+    expect(app.propertyTabFieldValue('makler', BROKER_INTERVIEW_QUESTIONS[0])).toBe('Šest měsíců.');
+    expect(app.propertyTabFieldValue('makler', 'Poznámka k nabídce')).toBe('Doplnění nabídky.');
+    expect(app.supplementaryInfoIndexes()).toHaveLength(2);
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBrokerInfo();
+    const broker = write.mock.calls[0][0] as string;
+    for (const value of ['Dřevník', 'Základní poznámka.', 'Šest měsíců.', 'Pravidelná komunikace.', 'První informace.', 'Poslední informace.']) expect(broker).toContain(value);
+    expect(broker).not.toContain('Doplnění počet');
+    expect(broker).toContain('Poznámka k okolí');
+    expect(broker).toContain('Klidné okolí.');
+    expect(broker).toContain('Doplnění nabídky.');
+    app.generateCurrentPropertyBuyerInfo();
+    expect(write.mock.calls[1][0]).not.toContain('Šest měsíců.');
+    expect(write.mock.calls[1][0]).not.toContain('Doplnění nabídky.');
+    app.setPropertyTabFieldValue('makler', '@section__buyer-info-visible', 'ANO');
+    app.generateCurrentPropertyBuyerInfo();
+    expect(write.mock.calls[2][0]).toContain('NABÍZENO');
+    expect(write.mock.calls[2][0]).toContain('Šest měsíců.');
+    expect(write.mock.calls[2][0]).toContain('Pravidelná komunikace.');
+    expect(write.mock.calls[2][0]).toContain('Doplnění nabídky.');
+    app.applyXmlPayload(app.buildXmlString());
+    app.generateCurrentPropertyBuyerInfo();
+    expect(write.mock.calls[3][0]).toContain('Doplnění nabídky.');
+    app.setPropertyTabFieldValue('makler', '@section__buyer-info-visible', 'NE');
+    app.generateCurrentPropertyBuyerInfo();
+    expect(write.mock.calls[4][0]).not.toContain('Doplnění nabídky.');
+    expect(write.mock.calls[4][0]).not.toContain('Šest měsíců.');
+  });
+
+  it.each(['Rodinný dům', 'Dům', 'Byt'])('prints unmeasured rooms inline, matches the accessory caption, and combines custom legal restrictions for %s', type => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: type, tabValues: {
+      prostory: { 'Seznam místností': 'Obývací pokoj|Koupelna', 'Příslušenství v jednotce': 'Sklep' },
+      'pravni-vady': { 'Právní vady a jiná omezení': 'Chráněná krajinná oblast|Zatíženo hypotékou', 'Právní vady a jiná omezení vlastní': 'společné jmění manželů' }
+    } }));
+    const before = JSON.stringify(app.newPropertyDraft().tabValues);
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    const generate = () => { app.generateCurrentPropertyBuyerInfo(); app.generateCurrentPropertyBrokerInfo(); app.generateCurrentPropertyBlankForm(); };
+    generate();
+    expect(JSON.stringify(app.newPropertyDraft().tabValues)).toBe(before);
+    for (const [html] of write.mock.calls) {
+      const doc = new DOMParser().parseFromString(html as string, 'text/html');
+      const rows = [...doc.querySelectorAll('.info-row')];
+      const rooms = rows.find(row => row.querySelector('.info-label')?.textContent === 'Seznam místností')!;
+      expect(rooms.classList.contains('info-row-full')).toBe(false);
+      expect(rooms.classList.contains('info-row-rooms-inline')).toBe(true);
+      expect(rooms.querySelector('.info-value')?.textContent).toBe('Obývací pokoj, Koupelna');
+      const accessoryLabel = type === 'Byt' ? 'Sklep a další vybavení v jednotce' : 'Sklep a další vybavení v domě';
+      expect(rows.some(row => row.querySelector('.info-label')?.textContent === accessoryLabel)).toBe(true);
+      const legal = rows.filter(row => row.querySelector('.info-label')?.textContent?.startsWith('Právní vady a jiná omezení'));
+      expect(legal).toHaveLength(1);
+      expect(legal[0].querySelector('.info-value')?.textContent).toBe('Chráněná krajinná oblast, Zatíženo hypotékou, společné jmění manželů');
+    }
+    app.setPropertyTabFieldValue('pravni-vady', 'Právní vady a jiná omezení', '');
+    write.mockClear();
+    generate();
+    for (const [html] of write.mock.calls) {
+      const doc = new DOMParser().parseFromString(html as string, 'text/html');
+      const legal = [...doc.querySelectorAll('.info-row')].filter(row => row.querySelector('.info-label')?.textContent?.startsWith('Právní vady a jiná omezení'));
+      expect(legal).toHaveLength(1);
+      expect(legal[0].querySelector('.info-value')?.textContent).toBe('společné jmění manželů');
+    }
+  });
+
+  it.each([false, true])('switches room-list layout only for entered dimensions of selected rooms (measured: %s)', measured => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Byt', tabValues: { prostory: {
+      'Seznam místností': 'Obývací pokoj|Koupelna', 'Obývací pokoj__0__width': measured ? '3 m' : '',
+      'Ložnice__0__width': '5 m', 'Příslušenství v jednotce': 'Sklep', 'Sklep__0__width': '4 m'
+    } } }));
+    const before = JSON.stringify(app.newPropertyDraft());
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo(); app.generateCurrentPropertyBrokerInfo(); app.generateCurrentPropertyBlankForm();
+    for (const [html] of write.mock.calls) {
+      const doc = new DOMParser().parseFromString(html as string, 'text/html');
+      const row = [...doc.querySelectorAll('.info-row')].find(row => row.querySelector('.info-label')?.textContent === 'Seznam místností')!;
+      expect(row.classList.contains('info-row-full')).toBe(measured);
+      expect(row.classList.contains('info-row-rooms-inline')).toBe(!measured);
+      expect(row.querySelector('.info-value')?.textContent).toBe(measured ? 'Obývací pokoj (3 m)\nKoupelna' : 'Obývací pokoj, Koupelna');
+    }
+    expect(JSON.stringify(app.newPropertyDraft())).toBe(before);
+  });
+
+  it('prints unmeasured room instances separated by commas and honors buyer switches without losing answers', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Byt', tabValues: {
+      prostory: { 'Seznam místností': 'Obývací pokoj|Koupelna' },
+      oblast: { 'Záplavová oblast': 'ANO', 'Kategorie ochrany území': 'Chráněná krajinná oblast' },
+      'pravni-vady': { 'Právní vady a jiná omezení': 'Zatíženo hypotékou', 'Právní vady a jiná omezení vlastní': 'Vlastní právní omezení', 'Zbývající částka úvěru': '123 000 Kč' }
+    } }));
+    app.addProstoryRoomInstance('Obývací pokoj');
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    const generate = () => { app.generateCurrentPropertyBuyerInfo(); app.generateCurrentPropertyBrokerInfo(); app.generateCurrentPropertyBlankForm(); };
+    const documentAt = (index: number) => new DOMParser().parseFromString(write.mock.calls[index][0] as string, 'text/html');
+    const valueOf = (doc: Document, label: string) => [...doc.querySelectorAll('.info-row')].find(row => row.querySelector('.info-label')?.textContent === label)?.querySelector('.info-value')?.textContent;
+    generate();
+    for (let index = 0; index < 3; index++) expect(valueOf(documentAt(index), 'Seznam místností')).toBe('Obývací pokoj, Obývací pokoj, Koupelna');
+    const switches = [['oblast', 'Záplavová oblast'], ['oblast', 'Kategorie ochrany území'], ['pravni-vady', 'Právní vady a jiná omezení']];
+    for (const [tab, field] of switches) app.setPropertyTabFieldValue(tab, field + '__buyer-info-visible', 'NE');
+    app.applyXmlPayload(app.buildXmlString());
+    write.mockClear(); generate();
+    const buyer = documentAt(0);
+    for (const [, field] of switches) expect(valueOf(buyer, field)).toBeUndefined();
+    expect(buyer.body.textContent).not.toContain('Vlastní právní omezení');
+    expect(buyer.body.textContent).not.toContain('123 000 Kč');
+    for (const index of [1, 2]) {
+      const doc = documentAt(index);
+      for (const [, field] of switches) expect(valueOf(doc, field)).toBeTruthy();
+      expect(doc.body.textContent).toContain('Vlastní právní omezení');
+    }
+    for (const [tab, field] of switches) app.setPropertyTabFieldValue(tab, field + '__buyer-info-visible', 'ANO');
+    write.mockClear(); app.generateCurrentPropertyBuyerInfo();
+    expect(valueOf(documentAt(0), 'Právní vady a jiná omezení')).toBe('Zatíženo hypotékou, Vlastní právní omezení');
+    expect(valueOf(documentAt(0), 'Záplavová oblast')).toBe('ANO');
+    expect(valueOf(documentAt(0), 'Kategorie ochrany území')).toBe('Chráněná krajinná oblast');
+  });
+
+  it('includes property prices, commission calculations and price notes in the broker report', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Byt', tabValues: { 'cena-nemovitosti': {
+      'Doporučená nabídková cena vč. DPH': '5 000 000 Kč', 'Odhadovaná prodejní cena nemovitosti': '4 900 000 Kč',
+      'Požadovaná částka vč. DPH': '4 000 000 Kč', 'Smluvené % z prodeje bez DPH': '5%', 'Počet prodávajících': '2',
+      'Kdy byla nemovitost zakoupena': '15. 6. 2020', 'Původní kupní cena': '2 500 000 Kč',
+      'Poznámka k ceně': 'Cenu řešit individuálně.'
+    } } }));
+    app.applyXmlPayload(app.buildXmlString());
+    expect(app.propertyTabFieldValue('cena-nemovitosti', 'Kdy byla nemovitost zakoupena')).toBe('15. 6. 2020');
+    expect(app.propertyTabFieldValue('cena-nemovitosti', 'Původní kupní cena')).toBe('2 500 000 Kč');
+    const before = JSON.stringify(app.newPropertyDraft().tabValues);
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBrokerInfo();
+    app.generateCurrentPropertyBuyerInfo();
+    const broker = new DOMParser().parseFromString(write.mock.calls[0][0] as string, 'text/html');
+    const card = [...broker.querySelectorAll('.info-card')].find(card => card.querySelector('h2')?.textContent === 'CENA NEMOVITOSTI')!;
+    expect(card).toBeTruthy();
+    const rows = [...card.querySelectorAll('.info-row')];
+    const value = (label: string) => rows.find(row => row.querySelector('.info-label')?.textContent === label)?.querySelector('.info-value')?.textContent;
+    expect(value('Doporučená nabídková cena vč. DPH')).toBe('5 000 000 Kč');
+    expect(value('Odhadovaná prodejní cena nemovitosti')).toBe('4 900 000 Kč');
+    expect(value('Požadovaná částka vč. DPH')).toBe('4 000 000 Kč');
+    expect(value('Provize vč. DPH v Kč')?.replace(/\s/g, '')).toBe('302500Kč');
+    expect(value('Klienti získají z prodeje')?.replace(/\s/g, '')).toBe('4697500Kč');
+    expect(value('V případě dělení klienti získají')?.replace(/\s/g, '')).toBe('2348750Kč');
+    expect(value('Výsledná prodejní cena s DPH')).toBeTruthy();
+    expect(value('Výsledná prodejní cena bez DPH')).toBeTruthy();
+    expect(value('Poznámka k ceně')).toBe('Cenu řešit individuálně.');
+    expect(value('Kdy byla nemovitost zakoupena')).toBe('15. 6. 2020');
+    expect(value('Původní kupní cena')).toBe('2 500 000 Kč');
+    expect(write.mock.calls[1][0]).not.toContain('CENA NEMOVITOSTI');
+    expect(write.mock.calls[1][0]).not.toContain('Cenu řešit individuálně.');
+    expect(JSON.stringify(app.newPropertyDraft().tabValues)).toBe(before);
+    for (const percent of ['', ' ', '0%']) {
+      app.setPropertyTabFieldValue('cena-nemovitosti', 'Smluvené % z prodeje bez DPH', percent);
+      write.mockClear();
+      app.generateCurrentPropertyBrokerInfo();
+      const doc = new DOMParser().parseFromString(write.mock.calls[0][0] as string, 'text/html');
+      const labels = [...doc.querySelectorAll('.info-label')].map(el => el.textContent);
+      expect(labels).not.toContain('Výsledná prodejní cena bez DPH');
+      expect(labels).not.toContain('Výsledná prodejní cena s DPH');
+      expect(labels).toContain('Požadovaná částka vč. DPH');
+    }
+  });
+
+  it('saves the subtenant end date and prints it inline only while its legal restriction is selected', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Byt' }));
+    app.setPropertyTabFieldValue('pravni-vady', 'Právní vady a jiná omezení', 'Bankovní zástavy|Podnájemník do:');
+    app.setPropertyTabFieldValue('pravni-vady', 'Podnájemník do', '31. 12. 2027');
+    app.applyXmlPayload(app.buildXmlString());
+    expect(app.propertyTabFieldValue('pravni-vady', 'Podnájemník do')).toBe('31. 12. 2027');
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo(); app.generateCurrentPropertyBrokerInfo(); app.generateCurrentPropertyBlankForm();
+    for (const [html] of write.mock.calls) {
+      const doc = new DOMParser().parseFromString(html as string, 'text/html');
+      const legal = [...doc.querySelectorAll('.info-row')].find(row => row.querySelector('.info-label')?.textContent === 'Právní vady a jiná omezení')!;
+      expect(legal.querySelector('.info-value')?.textContent).toBe('Bankovní zástavy, Podnájemník do: 31. 12. 2027');
+      expect([...doc.querySelectorAll('.info-label')].some(el => el.textContent === 'Podnájemník do')).toBe(false);
+    }
+    app.togglePravniVadyMultiValue('Právní vady a jiná omezení', 'Podnájemník do:');
+    write.mockClear(); app.generateCurrentPropertyBrokerInfo();
+    expect(write.mock.calls[0][0]).not.toContain('31. 12. 2027');
+    expect(app.propertyTabFieldValue('pravni-vady', 'Podnájemník do')).toBe('31. 12. 2027');
+  });
+
+  it('prints service names on the left and their corresponding amounts on the right, combining custom names and amounts once', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Byt', tabValues: { 'rozpis-sluzeb': {
+      'Do nájmu lze započítat - Záloha na teplo': '2000', 'Do nájmu lze započítat vlastní počet': '4',
+      'Do nájmu lze započítat vlastní název 1': 'Příspěvek na správu', 'Do nájmu lze započítat vlastní částka 1': '1350',
+      'Do nájmu lze započítat vlastní název 2': 'Ústřední vytápění', 'Do nájmu lze započítat vlastní částka 2': '1500',
+      'Do nájmu lze započítat vlastní název 3': 'Pouze název', 'Do nájmu lze započítat vlastní částka 4': '50',
+      'Do nájmu nelze započítat vlastní 1': 'Fond oprav - vlastní', 'Datum vyúčtování': '2026'
+    } } }));
+    app.applyXmlPayload(app.buildXmlString());
+    const before = JSON.stringify(app.newPropertyDraft().tabValues);
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo(); app.generateCurrentPropertyBrokerInfo(); app.generateCurrentPropertyBlankForm();
+    for (const [html] of write.mock.calls) {
+      const doc = new DOMParser().parseFromString(html as string, 'text/html');
+      const card = [...doc.querySelectorAll('.info-card')].find(card => card.querySelector('h2')?.textContent === 'ROZPIS SLUŽEB')!;
+      const rows = [...card.querySelectorAll('.info-row')];
+      expect(rows).toHaveLength(11);
+      const totalRows = rows.filter(row => row.querySelector('.info-label')?.textContent === 'CELKEM');
+      expect(totalRows.map(row => row.querySelector('.info-value')?.textContent)).toEqual(['4 900 Kč', '0 Kč']);
+      expect(totalRows.every(row => row.classList.contains('info-row-total'))).toBe(true);
+      for (const [label, value] of [['Příspěvek na správu', '1350 Kč'], ['Ústřední vytápění', '1500 Kč'], ['Záloha na teplo', '2000 Kč'], ['Pouze název', '—'], ['Vlastní položka 4', '50 Kč'], ['Fond oprav - vlastní', '—'], ['Datum vyúčtování', '2026']]) {
+        const matching = rows.filter(row => row.querySelector('.info-label')?.textContent === label);
+        expect(matching).toHaveLength(1);
+        expect(matching[0].querySelector('.info-value')?.textContent).toBe(value);
+        expect(matching[0].classList.contains('info-row-full')).toBe(false);
+      }
+      expect(card.textContent).not.toContain('Do nájmu lze započítat vlastní');
+    }
+    expect(JSON.stringify(app.newPropertyDraft().tabValues)).toBe(before);
+  });
+
+  it.each([
+    { included: true, excluded: true }, { included: false, excluded: true },
+    { included: true, excluded: false }, { included: false, excluded: false }
+  ])('calculates independent service totals and honors buyer switches (included: $included, excluded: $excluded)', ({ included, excluded }) => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    const first = 'Do nájmu lze započítat', second = 'Do nájmu nelze započítat';
+    expect(app.rozpisSluzebTotal(first)).toBe('0 Kč');
+    expect(app.rozpisSluzebTotal(second)).toBe('0 Kč');
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Byt', tabValues: { 'rozpis-sluzeb': {
+      [`${first} - Záloha na teplo`]: '1 200,50', [`${first} - Záloha na vodu`]: '0.10',
+      [`${first} vlastní počet`]: '9', [`${first} vlastní název 1`]: 'Služba 9999', [`${first} vlastní částka 1`]: '0,20',
+      [`${first} vlastní název 3`]: 'Pouze popis',
+      [`${second} - Fond oprav`]: '2.500,25', [`${second} vlastní počet`]: '1',
+      [`${second} vlastní 1`]: 'Původní vlastní pojištění', [`${second} vlastní částka 1`]: '49.75',
+      [`${first}__buyer-info-visible`]: included ? 'ANO' : 'NE', [`${second}__buyer-info-visible`]: excluded ? 'ANO' : 'NE'
+    } } }));
+    app.applyXmlPayload(app.buildXmlString());
+    const before = JSON.stringify(app.newPropertyDraft());
+    expect(app.rozpisSluzebTotal(first)).toBe('1 200,80 Kč');
+    expect(app.rozpisSluzebTotal(second)).toBe('2 550 Kč');
+    expect(app.isPropertyBuyerInfoFieldVisible('rozpis-sluzeb', first)).toBe(included);
+    expect(app.isPropertyBuyerInfoFieldVisible('rozpis-sluzeb', second)).toBe(excluded);
+    expect(app.propertyTabFieldValue('rozpis-sluzeb', `${second} vlastní 1`)).toBe('Původní vlastní pojištění');
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo(); app.generateCurrentPropertyBrokerInfo(); app.generateCurrentPropertyBlankForm();
+    for (const [index, [html]] of write.mock.calls.entries()) {
+      const doc = new DOMParser().parseFromString(html as string, 'text/html');
+      const section = [...doc.querySelectorAll('.info-card')].find(section => section.querySelector('h2')?.textContent === 'ROZPIS SLUŽEB');
+      if (index === 0 && !included && !excluded) { expect(section).toBeUndefined(); continue; }
+      const labels = [...section!.querySelectorAll('.info-label')].map(label => label.textContent);
+      const serviceRows = [...section!.querySelectorAll('.info-row')];
+      const totalRows = serviceRows.filter(row => row.querySelector('.info-label')?.textContent === 'CELKEM');
+      const totals = totalRows.map(row => row.querySelector('.info-value')?.textContent);
+      const showFirst = index !== 0 || included, showSecond = index !== 0 || excluded;
+      expect(labels.includes(first.toLocaleUpperCase('cs-CZ'))).toBe(showFirst);
+      expect(labels.includes(second.toLocaleUpperCase('cs-CZ'))).toBe(showSecond);
+      expect(labels.some(label => /^DO NÁJMU .*\(/.test(label || ''))).toBe(false);
+      expect(totalRows.every(row => row.classList.contains('info-row-total'))).toBe(true);
+      for (const group of [first, second]) {
+        const start = labels.indexOf(group.toLocaleUpperCase('cs-CZ'));
+        if (start < 0) continue;
+        const next = labels.findIndex((label, position) => position > start && /^DO NÁJMU /.test(label || ''));
+        expect(labels[(next < 0 ? labels.length : next) - 1]).toBe('CELKEM');
+      }
+      expect(labels.includes('Služba 9999')).toBe(showFirst); expect(labels.includes('Původní vlastní pojištění')).toBe(showSecond);
+      expect(totals).toEqual([...(showFirst ? ['1 200,80 Kč'] : []), ...(showSecond ? ['2 550 Kč'] : [])]);
+      if (showSecond) {
+        const custom = [...section!.querySelectorAll('.info-row')].find(row => row.querySelector('.info-label')?.textContent === 'Původní vlastní pojištění')!;
+        expect(custom.querySelector('.info-value')?.textContent).toBe('49.75 Kč');
+      }
+      expect(section!.textContent).not.toContain('vlastní částka');
+      expect(section!.textContent).not.toContain('vlastní počet');
+    }
+    expect(JSON.stringify(app.newPropertyDraft())).toBe(before);
+  });
+
+  it('migrates heating energy, methods and devices into separate saved and printed groups without losing terminal selections or custom values', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Byt', tabValues: { topeni: {
+      'Způsob vytápění objektu': 'Plyn|Elektřina|Ústřední vytápění',
+      'Způsob vytápění objektu vlastní': 'Další zdroj',
+      'Topné těleso': 'Radiátory|Krb|Infrapanel|Podlahové vytápění|S regulací topení',
+      'Topné těleso vlastní': 'Další zařízení', 'Výkon Infrapanelu': '1000 W'
+    } } }));
+    expect(app.propertyTabFieldValue('topeni', 'Zdroje energie')).toBe('Plyn|Elektřina');
+    expect(app.propertyTabFieldValue('topeni', 'Způsob vytápění')).toBe('Vlastní zdroj tepla');
+    expect(app.propertyTabFieldValue('topeni', 'Topné zařízení')).toBe('Krb na dřevo|Infrapanel');
+    expect(app.propertyTabFieldValue('topeni', 'Otopná soustava')).toBe('Radiátory|Podlahové vytápění');
+    expect(app.propertyTabFieldValue('topeni', 'Topné těleso')).toBe('');
+    expect(app.propertyTabFieldValue('topeni', 'S regulací topení')).toBe('Ano');
+    expect(app.propertyTabFieldValue('topeni', 'Zdroje energie vlastní')).toBe('Další zdroj');
+    expect(app.propertyTabFieldValue('topeni', 'Topné zařízení vlastní')).toBe('Další zařízení');
+    expect(app.topeniIsInfrapanel()).toBe(true);
+    app.toggleTopeniMultiValue('Způsob vytápění', 'Dálkové vytápění');
+    expect(app.isTopeniCentralniDalkove()).toBe(true);
+    app.toggleTopeniMultiValue('Způsob vytápění', 'Dálkové vytápění');
+    app.toggleTopeniMultiValue('Zdroje energie', 'Plyn');
+    expect(app.propertyTabFieldValue('topeni', 'Zdroje energie')).toBe('Elektřina');
+    app.applyXmlPayload(app.buildXmlString());
+    expect(app.propertyTabFieldValue('topeni', 'Zdroje energie')).toBe('Elektřina');
+    expect(app.propertyTabFieldValue('topeni', 'Topné zařízení')).toBe('Krb na dřevo|Infrapanel');
+    expect(app.propertyTabFieldValue('topeni', 'Otopná soustava')).toBe('Radiátory|Podlahové vytápění');
+    expect(app.propertyTabFieldValue('topeni', 'S regulací topení')).toBe('Ano');
+    const renamedMethods = app.cloneSavedPropertyRecord({ propertyType: 'Byt', tabValues: { topeni: {
+      'Způsob vytápění': 'Ústřední vytápění|Centrální dálkové|Dálkové vytápění'
+    } } }).tabValues['topeni'];
+    expect(renamedMethods['Způsob vytápění']).toBe('Vlastní zdroj tepla|Dálkové vytápění');
+    const before = JSON.stringify(app.newPropertyDraft().tabValues);
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo(); app.generateCurrentPropertyBrokerInfo(); app.generateCurrentPropertyBlankForm();
+    for (const [html] of write.mock.calls) {
+      const doc = new DOMParser().parseFromString(html as string, 'text/html');
+      const card = [...doc.querySelectorAll('.info-card')].find(card => card.querySelector('h2')?.textContent === 'VYTÁPĚNÍ')!;
+      const labels = [...card.querySelectorAll('.info-label')].map(el => el.textContent);
+      for (const label of ['Zdroje energie', 'Způsob vytápění', 'Topné zařízení', 'Otopná soustava', 'Výkon Infrapanelu', 'S regulací topení']) expect(labels).toContain(label);
+      expect(labels).not.toContain('Topné těleso');
+      expect(labels).not.toContain('Způsob vytápění objektu');
+      expect(card.textContent).toContain('Krb na dřevo');
+      expect(card.textContent).toContain('Radiátory');
+    }
+    expect(JSON.stringify(app.newPropertyDraft().tabValues)).toBe(before);
+    app.setPropertyTabFieldValue('topeni', 'S regulací topení', 'Ne');
+    app.applyXmlPayload(app.buildXmlString());
+    expect(app.propertyTabFieldValue('topeni', 'S regulací topení')).toBe('Ne');
+  });
+
+  it('filters heating devices for electricity and combines compatible devices when multiple energy sources are selected', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    expect(app.topeniDeviceOptions()).toHaveLength(17);
+    app.setPropertyTabFieldValue('topeni', 'Zdroje energie', 'Elektřina');
+    expect(app.topeniDeviceOptions()).toEqual(['Akumulační kamna', 'Elektrický přímotop', 'Elektrokotel', 'Infrapanel', 'Klimatizace', 'Kotel se zásobníkem teplé vody']);
+    app.setPropertyTabFieldValue('topeni', 'Topné zařízení', 'Kondenzační plynový kotel');
+    expect(app.topeniDeviceOptions()).not.toContain('Kondenzační plynový kotel');
+    expect(app.propertyTabFieldValue('topeni', 'Topné zařízení')).toBe('Kondenzační plynový kotel');
+    app.toggleTopeniMultiValue('Zdroje energie', 'Plyn');
+    expect(app.topeniDeviceOptions()).toContain('Kondenzační plynový kotel');
+    expect(app.topeniDeviceOptions()).toContain('Elektrokotel');
+    expect(app.topeniDeviceOptions()).not.toContain('Kotel na tuhá paliva');
+    app.toggleTopeniMultiValue('Zdroje energie', 'Tuhá paliva');
+    expect(app.topeniDeviceOptions()).toHaveLength(17);
+    app.setPropertyTabFieldValue('topeni', 'Zdroje energie', '');
+    expect(app.topeniDeviceOptions()).toHaveLength(17);
+  });
+
+  it.each(['Ne', 'NE', ''])('omits off switches and their dependent values from all reports (%s), while retaining negative dropdown answers', off => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Bytový dům', tabValues: {
+      stavba: { 'Výtah v budově': off, 'Rozděleno na jednotky': off, 'Číslo ve výtahu': '8', 'Počet jednotek v domě': '12', 'Počet vchodů': '3' },
+      topeni: { 'S regulací topení': 'Ne' }, oblast: { 'Záplavová oblast': 'NE' },
+      'ohrev-vody': { 'Způsob ohřevu vody': 'Bojler - elektro' }
+    } }));
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    const generate = () => { app.generateCurrentPropertyBuyerInfo(); app.generateCurrentPropertyBrokerInfo(); app.generateCurrentPropertyBlankForm(); };
+    const labelsOf = (html: string) => [...new DOMParser().parseFromString(html, 'text/html').querySelectorAll('.info-label')].map(el => el.textContent);
+    generate();
+    for (const [html] of write.mock.calls) {
+      const labels = labelsOf(html);
+      for (const field of ['Výtah v budově', 'Rozděleno na jednotky', 'Číslo ve výtahu', 'Počet jednotek v domě', 'Počet vchodů']) expect(labels).not.toContain(field);
+      expect(labels).not.toContain('S regulací topení');
+      expect(labels).toContain('Záplavová oblast');
+      expect(labels).toContain('Zařízení pro ohřev vody');
+      expect(labels).not.toContain('Způsob ohřevu vody');
+      expect(html).toContain('Elektrický bojler (zásobníkový ohřívač)');
+    }
+    app.setPropertyTabFieldValue('stavba', 'Výtah v budově', 'Ano');
+    app.setPropertyTabFieldValue('stavba', 'Rozděleno na jednotky', 'Ano');
+    app.setPropertyTabFieldValue('topeni', 'S regulací topení', 'Ano');
+    write.mockClear(); generate();
+    for (const [html] of write.mock.calls) {
+      const labels = labelsOf(html);
+      for (const field of ['Výtah v budově', 'Rozděleno na jednotky', 'Číslo ve výtahu', 'Počet jednotek v domě', 'Počet vchodů']) expect(labels).toContain(field);
+      expect(labels).toContain('S regulací topení');
+    }
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Byt' }));
+    app.setPropertyTabFieldValue('stavba', 'Rozděleno na jednotky', 'Ne');
+    write.mockClear(); app.generateCurrentPropertyBrokerInfo();
+    expect(labelsOf(write.mock.calls[0][0])).toContain('Počet jednotek v domě');
+  });
+
+  it.each([
+    { source: 'Elektřina', included: ['Elektrický bojler (zásobníkový ohřívač)', 'Elektrický průtokový ohřívač', 'Elektrická topná patrona v zásobníku', 'Malý elektrický ohřívač pod umyvadlem'], excluded: ['Plynový bojler (zásobníkový ohřívač)', 'Kombinovaný plynový kotel', 'Automatický kotel na pelety'] },
+    { source: 'Plyn', included: ['Plynový bojler (zásobníkový ohřívač)', 'Plynový průtokový ohřívač (karma)', 'Plynový kondenzační kotel', 'Plynový nekondenzační kotel', 'Kombinovaný plynový kotel'], excluded: ['Elektrický bojler (zásobníkový ohřívač)', 'Automatický kotel na pelety', 'Solární termické kolektory se zásobníkem'] },
+    { source: 'Tuhá paliva', included: ['Kotel na tuhá paliva', 'Automatický kotel na pelety', 'Krbová kamna s teplovodním výměníkem', 'Kamna nebo sporák s teplovodním výměníkem'], excluded: ['Elektrokotel', 'Plynový kondenzační kotel', 'Solární termické kolektory se zásobníkem'] },
+    { source: 'Solární', included: ['Solární termické kolektory se zásobníkem', 'Nepřímotopný zásobník vody'], excluded: ['Elektrický průtokový ohřívač', 'Plynový kondenzační kotel', 'Automatický kotel na pelety'] },
+    { source: 'Tepelné čerpadlo', included: ['Tepelné čerpadlo', 'Bojler s integrovaným tepelným čerpadlem', 'Akumulační nádrž s přípravou TUV'], excluded: ['Elektrický bojler (zásobníkový ohřívač)', 'Plynový průtokový ohřívač (karma)'] },
+    { source: 'Centrální dálkový ohřev', included: ['Centrální dálkový ohřev', 'Předávací stanice tepla s ohřevem TUV', 'Nepřímotopný zásobník vody'], excluded: ['Elektrokotel', 'Kombinovaný plynový kotel', 'Kotel na tuhá paliva'] }
+  ])('offers only compatible hot-water devices for $source', ({ source, included, excluded }) => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    expect(app.ohrevVodyZpusobOptions()).toHaveLength(22);
+    app.setPropertyTabFieldValue('ohrev-vody', 'Zdroj teplé vody', source);
+    for (const option of included) expect(app.ohrevVodyZpusobOptions()).toContain(option);
+    for (const option of excluded) expect(app.ohrevVodyZpusobOptions()).not.toContain(option);
+  });
+
+  it('migrates saved hot-water devices, combines energy compatibility, and retains renamed choices in XML and all reports', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Byt', tabValues: { 'ohrev-vody': {
+      'Zdroj teplé vody': 'Elektřina|Plyn',
+      'Způsob ohřevu vody': 'Bojler - elektro|Bojler - plyn|Průtokový ohřívač|Plynový průtokový (karma)|Plynový kotel',
+      'Způsob ohřevu vody vlastní': 'Vlastní ohřívač', 'Objem nádoby': '120'
+    } } }));
+    const devices = ['Elektrický bojler (zásobníkový ohřívač)', 'Plynový bojler (zásobníkový ohřívač)', 'Elektrický průtokový ohřívač', 'Plynový průtokový ohřívač (karma)', 'Plynový nekondenzační kotel'];
+    expect(app.propertyTabFieldValue('ohrev-vody', 'Způsob ohřevu vody')).toBe(devices.join('|'));
+    for (const device of devices) expect(app.ohrevVodyZpusobOptions()).toContain(device);
+    app.toggleOhrevVodyMultiValue('Zdroj teplé vody', 'Plyn');
+    expect(app.ohrevVodyZpusobOptions()).not.toContain('Plynový bojler (zásobníkový ohřívač)');
+    expect(app.propertyTabFieldValue('ohrev-vody', 'Způsob ohřevu vody')).toContain('Plynový bojler (zásobníkový ohřívač)');
+    app.toggleOhrevVodyMultiValue('Zdroj teplé vody', 'Plyn');
+    app.applyXmlPayload(app.buildXmlString());
+    expect(app.propertyTabFieldValue('ohrev-vody', 'Způsob ohřevu vody')).toBe(devices.join('|'));
+    expect(app.propertyTabFieldValue('ohrev-vody', 'Způsob ohřevu vody vlastní')).toBe('Vlastní ohřívač');
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo(); app.generateCurrentPropertyBrokerInfo(); app.generateCurrentPropertyBlankForm();
+    for (const [html] of write.mock.calls) {
+      const doc = new DOMParser().parseFromString(html as string, 'text/html');
+      const row = [...doc.querySelectorAll('.info-row')].find(row => row.querySelector('.info-label')?.textContent === 'Zařízení pro ohřev vody')!;
+      for (const device of devices) expect(row.querySelector('.info-value')?.textContent).toContain(device);
+    }
+  });
+
+  it('migrates renamed sewage options, preserves removed details, and handles public sewage and septic help in saved data and print', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Byt', tabValues: { kanalizace: {
+      'Kanalizace': 'Splašková městská|Čov|Septik tříkomorový|Žumpa obecní|Dešťová městská|Trativod|Žumpa s přepadem',
+      'Kanalizace vlastní': 'Původní doplnění', 'Objem odpadní nádoby': '8 m³'
+    } } }));
+    expect(app.kanalizaceOptions()).toEqual(['Není řešena', 'Veřejná kanalizace', 'Žumpa (bezodtoká jímka)', 'Septik', 'ČOV domovní', 'ČOV společná', 'Jímka společná', 'Jímka obecní']);
+    expect(app.kanalizaceOptionHint('Septik')).toBe('Nádrž, ve které dochází k částečnému předčištění odpadních vod. Vyžaduje další dočištění nebo zákonný způsob nakládání s odpadní vodou.');
+    expect(app.propertyTabFieldValue('kanalizace', 'Kanalizace')).toBe('Veřejná kanalizace|ČOV domovní|Septik|Jímka obecní');
+    expect(app.propertyTabFieldValue('kanalizace', 'Kanalizace vlastní')).toBe('Původní doplnění, Dešťová městská, Trativod, Žumpa s přepadem');
+    expect(app.isKanalizaceObjemHidden()).toBe(true);
+    app.toggleKanalizaceMultiValue('Kanalizace', 'Veřejná kanalizace');
+    expect(app.isKanalizaceObjemHidden()).toBe(false);
+    app.toggleKanalizaceMultiValue('Kanalizace', 'Veřejná kanalizace');
+    app.applyXmlPayload(app.buildXmlString());
+    expect(app.propertyTabFieldValue('kanalizace', 'Kanalizace')).toContain('Veřejná kanalizace');
+    expect(app.propertyTabFieldValue('kanalizace', 'Kanalizace vlastní')).toBe('Původní doplnění, Dešťová městská, Trativod, Žumpa s přepadem');
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo(); app.generateCurrentPropertyBrokerInfo(); app.generateCurrentPropertyBlankForm();
+    for (const [html] of write.mock.calls) {
+      const doc = new DOMParser().parseFromString(html as string, 'text/html');
+      const row = [...doc.querySelectorAll('.info-row')].find(row => row.querySelector('.info-label')?.textContent === 'Kanalizace')!;
+      for (const value of ['Veřejná kanalizace', 'ČOV domovní', 'Septik', 'Jímka obecní']) expect(row.querySelector('.info-value')?.textContent).toContain(value);
+      expect(doc.body.textContent).toContain('Původní doplnění');
+      expect([...doc.querySelectorAll('.info-label')].map(el => el.textContent)).not.toContain('Objem odpadní nádoby');
+    }
+    app.toggleKanalizaceMultiValue('Kanalizace', 'Veřejná kanalizace');
+    write.mockClear(); app.generateCurrentPropertyBrokerInfo();
+    expect(write.mock.calls[0][0]).toContain('8 m³');
+  });
+
+  it('saves and prints multiple rainwater drainage choices and a custom description independently of sewage', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Byt' }));
+    expect(app.kanalizaceDestoveVodyOptions()).toEqual(['Dešťová kanalizace', 'Jednotná kanalizace', 'Vsakování na pozemku', 'Retenční nádrž', 'Akumulační nádrž na dešťovou vodu', 'Odvod do vodního toku']);
+    app.toggleKanalizaceMultiValue('Kanalizace', 'Veřejná kanalizace');
+    app.toggleKanalizaceMultiValue('Odvádění dešťových vod', 'Retenční nádrž');
+    app.toggleKanalizaceMultiValue('Odvádění dešťových vod', 'Vsakování na pozemku');
+    app.setPropertyTabFieldValue('kanalizace', 'Odvádění dešťových vod vlastní', 'Zálivka zahrady');
+    app.applyXmlPayload(app.buildXmlString());
+    expect(app.propertyTabFieldValue('kanalizace', 'Odvádění dešťových vod')).toBe('Retenční nádrž|Vsakování na pozemku');
+    expect(app.propertyTabFieldValue('kanalizace', 'Odvádění dešťových vod vlastní')).toBe('Zálivka zahrady');
+    expect(app.propertyTabFieldValue('kanalizace', 'Kanalizace')).toBe('Veřejná kanalizace');
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo(); app.generateCurrentPropertyBrokerInfo(); app.generateCurrentPropertyBlankForm();
+    for (const [html] of write.mock.calls) {
+      const doc = new DOMParser().parseFromString(html as string, 'text/html');
+      const row = [...doc.querySelectorAll('.info-row')].find(row => row.querySelector('.info-label')?.textContent === 'Odvádění dešťových vod')!;
+      expect(row.querySelector('.info-value')?.textContent).toContain('Retenční nádrž');
+      expect(row.querySelector('.info-value')?.textContent).toContain('Vsakování na pozemku');
+      expect(doc.body.textContent).toContain('Zálivka zahrady');
+    }
+  });
+
+  it.each([
+    { field: 'parcel', value: '123/4' }, { field: 'type', value: 'Zahrada' }, { field: 'area', value: '250' }
+  ] as const)('automatically selects land presence when a parcel $field is filled', ({ field, value }) => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.setPropertyTabFieldValue('pozemek', 'Pozemek ano/ne', 'Ne');
+    app.setPropertyTabFieldValue('pozemek', 'Vlastnictví pozemku', 'Osobní');
+    app.addLandParcelRow();
+    app.setLandParcelValue(1, field, '   ');
+    expect(app.propertyTabFieldValue('pozemek', 'Pozemek ano/ne')).toBe('Ne');
+    app.setLandParcelValue(1, field, value);
+    expect(app.propertyTabFieldValue('pozemek', 'Pozemek ano/ne')).toBe('Ano');
+    app.applyXmlPayload(app.buildXmlString());
+    expect(app.propertyTabFieldValue('pozemek', 'Pozemek ano/ne')).toBe('Ano');
+    expect(app.propertyTabFieldValue('pozemek', `parcel-1-${field}`)).toBe(value);
+    expect(app.propertyTabFieldValue('pozemek', 'Vlastnictví pozemku')).toBe('Osobní');
+    app.setLandParcelValue(1, field, '');
+    expect(app.propertyTabFieldValue('pozemek', 'Pozemek ano/ne')).toBe('Ano');
+    app.setPropertyTabFieldValue('pozemek', 'Pozemek ano/ne', 'Ne');
+    expect(app.propertyTabFieldValue('pozemek', 'Pozemek ano/ne')).toBe('Ne');
+  });
+
+  it('migrates gas connection status and saves/prints gas sources, usage, inspections, documentation, and monthly advances', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Byt', tabValues: { plyn: {
+      'Plyn': 'Nezaveden', 'Typ': 'Propan-butan', 'Umístění': 'Na hranici pozemku', 'Poskytovatel': 'Původní dodavatel'
+    } } }));
+    expect(app.propertyTabFieldValue('plyn', 'Plyn')).toBe('Bez přípojky');
+    expect(app.plynOptions()).toEqual(['Zaveden', 'Individuální', 'Bez přípojky', 'Přípojka zřízena', 'Bez odběru', 'Možnost připojení']);
+    app.togglePlynMultiValue('Zdroj plynu', 'Vlastní zásobník LPG');
+    app.togglePlynMultiValue('Zdroj plynu', 'Plynové lahve');
+    app.togglePlynMultiValue('Využití plynu', 'Vytápění');
+    app.togglePlynMultiValue('Využití plynu', 'Vaření');
+    const values = {
+      'Zdroj plynu vlastní': 'Záložní zdroj', 'Umístění plynoměru': 'Na fasádě',
+      'Umístění plynoměru vlastní': 'U technické místnosti', 'Využití plynu vlastní': 'Venkovní kuchyně',
+      'Plynová přípojka': 'Společná', 'Revize a kontroly': 'Dokumentace staršího data',
+      'Dokumentace k plynové přípojce': 'Ne', 'Měsíční zálohy': '2500'
+    };
+    for (const [field, value] of Object.entries(values)) app.setPropertyTabFieldValue('plyn', field, value);
+    app.formatPlynMonthlyAdvance();
+    app.setPlynCheckDateValue('Poslední servis kotle', '2026-10-15');
+    app.setPlynCheckDateValue('Poslední revize plynového zařízení', '2024-05-09');
+    app.setPlynCheckMode('Poslední revize plynového zařízení', 'Nedoloženo');
+    app.setPlynCheckDateValue('Poslední kontrola spalinové cesty', '2026-09-10');
+    app.applyXmlPayload(app.buildXmlString());
+    expect(app.propertyTabFieldValue('plyn', 'Plyn')).toBe('Bez přípojky');
+    expect(app.propertyTabFieldValue('plyn', 'Typ')).toBe('Propan-butan');
+    expect(app.propertyTabFieldValue('plyn', 'Poskytovatel')).toBe('Původní dodavatel');
+    expect(app.propertyTabFieldValue('plyn', 'Zdroj plynu')).toBe('Vlastní zásobník LPG|Plynové lahve');
+    expect(app.plynCheckDateValue('Poslední servis kotle')).toBe('2026-10-15');
+    expect(app.propertyTabFieldValue('plyn', 'Poslední revize plynového zařízení')).toBe('Nedoloženo');
+    expect(app.propertyTabFieldValue('plyn', 'Měsíční zálohy')).toBe('2 500 Kč/měsíc');
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo(); app.generateCurrentPropertyBrokerInfo(); app.generateCurrentPropertyBlankForm();
+    for (const [html] of write.mock.calls) {
+      const doc = new DOMParser().parseFromString(html as string, 'text/html');
+      const section = [...doc.querySelectorAll('.info-card')].find(section => section.querySelector('h2')?.textContent === 'PLYN')!;
+      const value = (field: string) => [...section.querySelectorAll('.info-row')].find(row => row.querySelector('.info-label')?.textContent === field)?.querySelector('.info-value')?.textContent;
+      expect(value('Plyn')).toContain('Bez přípojky');
+      expect(value('Plyn')).not.toContain('Nezaveden');
+      for (const source of ['Vlastní zásobník LPG', 'Plynové lahve']) expect(value('Zdroj plynu')).toContain(source);
+      for (const [field, answer] of Object.entries(values).filter(([field]) => field !== 'Měsíční zálohy')) expect(value(field)).toContain(answer);
+      expect(value('Poslední servis kotle')).toContain('15. 10. 2026');
+      expect(value('Poslední revize plynového zařízení')).toBe('Nedoloženo');
+      expect(value('Poslední kontrola spalinové cesty')).toContain('10. 9. 2026');
+      expect(value('Měsíční zálohy')).toContain('2 500 Kč/měsíc');
+      expect(section.textContent).not.toContain('9. 5. 2024');
+      expect(section.textContent).not.toContain('__date');
+    }
+  });
+
+  it.each(['Poslední servis kotle', 'Poslední revize plynového zařízení', 'Poslední kontrola spalinové cesty'])('retains the entered gas date when %s is temporarily marked undocumented', field => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.setPlynCheckDateValue(field, '2026-10-20');
+    app.setPlynCheckMode(field, 'Nedoloženo');
+    expect(app.plynCheckDateValue(field)).toBe('');
+    expect(app.propertyTabFieldValue('plyn', field)).toBe('Nedoloženo');
+    app.applyXmlPayload(app.buildXmlString());
+    app.setPlynCheckMode(field, 'Datum');
+    expect(app.plynCheckDateValue(field)).toBe('2026-10-20');
+    expect(app.propertyTabFieldValue('plyn', field)).toBe('20. 10. 2026');
+    app.setPlynCheckDateValue(field, '');
+    expect(app.propertyTabFieldValue('plyn', field)).toBe('');
+    app.setPlynCheckMode(field, 'Nedoloženo');
+    app.setPlynCheckMode(field, 'Datum');
+    expect(app.plynCheckDateValue(field)).toBe('');
+  });
+
+  it.each([
+    { legacy: 'Napojen', connection: 'Aktivní', sources: 'Veřejný vodovod|Vlastní studna – vrtaná|Společná studna' },
+    { legacy: 'Nezaveden', connection: 'Bez přípojky', sources: 'Vlastní studna – vrtaná|Společná studna' }
+  ])('migrates legacy water connection $legacy while retaining well details and explicit source changes', ({ legacy, connection, sources }) => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, tabValues: { voda: {
+      'Vodovod': legacy, 'Další zdroj vody': 'Studna vlastní|Studna společná', 'Druh studny': 'Studna vrtaná',
+      'Další zdroj vody vlastní': 'Záložní zdroj', 'Vodoměr': 'Podružný', 'Poznámka k vodě': 'Původní poznámka'
+    } } }));
+    expect(app.propertyTabFieldValue('voda', 'Zdroj vody')).toBe(sources);
+    expect(app.propertyTabFieldValue('voda', 'Stav napojení')).toBe(connection);
+    expect(app.isVodaHasStudna()).toBe(true);
+    app.setPropertyTabFieldValue('voda', 'Druh studny', 'Studna kopaná');
+    expect(app.propertyTabFieldValue('voda', 'Zdroj vody')).toContain('Vlastní studna – kopaná');
+    expect(app.propertyTabFieldValue('voda', 'Zdroj vody')).not.toContain('Vlastní studna – vrtaná');
+    app.setPropertyTabFieldValue('voda', 'Zdroj vody', '');
+    app.applyXmlPayload(app.buildXmlString());
+    expect(app.propertyTabFieldValue('voda', 'Zdroj vody')).toBe('');
+    expect(app.propertyTabFieldValue('voda', 'Stav napojení')).toBe(connection);
+    expect(app.propertyTabFieldValue('voda', 'Druh studny')).toBe('Studna kopaná');
+    expect(app.propertyTabFieldValue('voda', 'Další zdroj vody vlastní')).toBe('Záložní zdroj');
+    expect(app.propertyTabFieldValue('voda', 'Poznámka k vodě')).toBe('Původní poznámka');
+    expect(app.propertyTabFieldValue('voda', 'Vodoměr')).toBe('Podružný');
+  });
+
+  it('saves and prints the extended water sources, connection, equipment, well rights, documentation, dates and units in all reports', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Rodinný dům', tabValues: { voda: { 'Vodovod': 'Napojen' } } }));
+    expect(app.vodaZdrojOptions()).toEqual(['Veřejný vodovod', 'Vlastní studna – kopaná', 'Vlastní studna – vrtaná', 'Společná studna', 'Soukromý vodovod', 'Pramen / prameniště', 'Dovoz vody', 'Bez zdroje vody']);
+    expect(app.vodaMerakOptions()).toEqual(['Vlastní', 'Společný', 'Podružný']);
+    expect(app.vodaKvalitaOptions()).toContain('Neověřená kvalita');
+    app.toggleVodaMultiValue('Zdroj vody', 'Vlastní studna – vrtaná');
+    app.toggleVodaMultiValue('Zdroj vody', 'Společná studna');
+    const values = {
+      'Zdroj vody vlastní': 'Záložní cisterna', 'Stav napojení': 'Přípojka zřízena, bez odběru',
+      'Umístění přípojky': 'Na hranici pozemku', 'Vodoměr': 'Společný',
+      'Umístění vodoměru': 'Vodoměrná šachta', 'Umístění vodoměru vlastní': 'U vjezdu',
+      'Způsob zásobování': 'Domácí vodárna|Čerpadlo', 'Kvalita vody': 'Neověřená kvalita',
+      'Využití studny': 'Domácnost|Zahrada', 'Využití studny vlastní': 'Zálivka skleníku',
+      'Rozbor vody': 'Ano', 'Úprava vody': 'Filtrace|UV dezinfekce', 'Hloubka studny': '14,5',
+      'Celoroční dostupnost vody': 'Ne', 'Čerpadlo': 'Ponorné', 'Čerpadlo vlastní': 'Záložní čerpadlo',
+      'Povolení a dokumentace': 'Doloženo', 'Oprávnění k odběru vody': 'Nedoloženo',
+      'Právo využívat společnou studnu': 'Služebnost', 'Měsíční zálohy': '1450',
+      'Dokumentace k přípojce': 'Ne', 'Smlouva s dodavatelem vody': 'Ano'
+    };
+    for (const [field, value] of Object.entries(values)) app.setPropertyTabFieldValue('voda', field, value);
+    app.formatVodaWellDepth(); app.formatVodaMonthlyAdvance();
+    app.setVodaCheckDateValue('Poslední rozbor studniční vody', '2026-09-20');
+    app.applyXmlPayload(app.buildXmlString());
+    expect(app.propertyTabFieldValue('voda', 'Zdroj vody')).toBe('Veřejný vodovod|Vlastní studna – vrtaná|Společná studna');
+    expect(app.propertyTabFieldValue('voda', 'Hloubka studny')).toBe('14,5 m');
+    expect(app.propertyTabFieldValue('voda', 'Měsíční zálohy')).toBe('1 450 Kč/měsíc');
+    expect(app.vodaCheckDateValue('Poslední rozbor studniční vody')).toBe('2026-09-20');
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo(); app.generateCurrentPropertyBrokerInfo(); app.generateCurrentPropertyBlankForm();
+    for (const [html] of write.mock.calls) {
+      const doc = new DOMParser().parseFromString(html as string, 'text/html');
+      const section = [...doc.querySelectorAll('.info-card')].find(section => section.querySelector('h2')?.textContent === 'VODA')!;
+      const rows = [...section.querySelectorAll('.info-row')];
+      const answer = (field: string) => rows.find(row => row.querySelector('.info-label')?.textContent === field)?.querySelector('.info-value')?.textContent;
+      expect(rows.filter(row => row.querySelector('.info-label')?.textContent === 'Stav napojení')).toHaveLength(1);
+      expect(section.textContent).not.toContain('Obecní vodovod');
+      for (const source of ['Veřejný vodovod', 'Vlastní studna – vrtaná', 'Společná studna']) expect(answer('Zdroj vody')).toContain(source);
+      for (const [field, value] of Object.entries(values)) {
+        const label = field === 'Kvalita vody' ? 'Kvalita dalšího zdroje vody' : field;
+        const expected = field === 'Hloubka studny' ? '14,5 m' : field === 'Měsíční zálohy' ? '1 450 Kč/měsíc' : value;
+        for (const part of expected.split('|')) expect(answer(label)).toContain(part);
+      }
+      expect(answer('Poslední rozbor studniční vody')).toBe('20. 9. 2026');
+    }
+  });
+
+  it('retains the last well-water analysis date across undocumented status and never prints its hidden cache', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    const field = 'Poslední rozbor studniční vody';
+    app.setVodaCheckDateValue(field, '2026-10-20'); app.setVodaCheckMode(field, 'Nedoloženo');
+    app.applyXmlPayload(app.buildXmlString());
+    expect(app.propertyTabFieldValue('voda', field)).toBe('Nedoloženo');
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBrokerInfo();
+    expect(write.mock.calls[0][0]).toContain('Nedoloženo');
+    expect(write.mock.calls[0][0]).not.toContain('20. 10. 2026');
+    expect(write.mock.calls[0][0]).not.toContain('__date');
+    app.setVodaCheckMode(field, 'Datum');
+    expect(app.vodaCheckDateValue(field)).toBe('2026-10-20');
+    app.setVodaCheckDateValue(field, ''); app.setVodaCheckMode(field, 'Nedoloženo'); app.setVodaCheckMode(field, 'Datum');
+    expect(app.vodaCheckDateValue(field)).toBe('');
+  });
+
+  it('keeps empty water amounts empty and allows zero monthly advances and decimal well depth', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.formatVodaMonthlyAdvance(); app.formatVodaWellDepth();
+    expect(app.propertyTabFieldValue('voda', 'Měsíční zálohy')).toBe('');
+    expect(app.propertyTabFieldValue('voda', 'Hloubka studny')).toBe('');
+    app.setPropertyTabFieldValue('voda', 'Měsíční zálohy', '0'); app.formatVodaMonthlyAdvance();
+    app.setPropertyTabFieldValue('voda', 'Hloubka studny', '12.75'); app.formatVodaWellDepth();
+    expect(app.propertyTabFieldValue('voda', 'Měsíční zálohy')).toBe('0 Kč/měsíc');
+    expect(app.propertyTabFieldValue('voda', 'Hloubka studny')).toBe('12,75 m');
+  });
+
+  it.each([{ old: 'Zavedena', current: 'Aktivní' }, { old: 'Nezavedena', current: 'Bez přípojky' }])('migrates legacy electricity status $old and preserves wiring, supplier, meter locations and photovoltaic data', ({ old, current }) => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, tabValues: { elektina: {
+      'Elektřina': old, 'Stav elektrického vedení': 'Částečně rekonstruováno', 'Jističe': '3 fázový', 'Vedení v': 'Hliník i měď',
+      'Technologie': '400 V|Fotovoltaika', 'Dodavatel elektrické energie': 'Původní dodavatel',
+      'Umístění elektroměru': 'V garáži|Venku', 'Umístění elektroměru vlastní': 'Vedle vstupu', 'Poznámka k elektřině': 'Původní poznámka'
+    } } }));
+    expect(app.propertyTabFieldValue('elektina', 'Stav připojení')).toBe(current);
+    expect(app.propertyTabFieldValue('elektina', 'Stav elektroinstalace')).toBe('Částečně rekonstruovaná');
+    expect(app.propertyTabFieldValue('elektina', 'Typ připojení')).toBe('Třífázové (400 V)');
+    expect(app.propertyTabFieldValue('elektina', 'Materiál rozvodů')).toBe('Kombinované');
+    expect(app.propertyTabFieldValue('elektina', 'Dodavatel elektřiny')).toBe('Jiný');
+    expect(app.propertyTabFieldValue('elektina', 'Dodavatel elektřiny vlastní')).toBe('Původní dodavatel');
+    expect(app.propertyTabFieldValue('elektina', 'Umístění elektroměru vlastní')).toBe('Vedle vstupu, V garáži, Venku');
+    expect(app.propertyTabFieldValue('elektina', 'Technologie')).toBe('400 V');
+    expect(app.elektroHasPhotovoltaics()).toBe(true);
+    app.setPropertyTabFieldValue('elektina', 'Stav připojení', 'Odpojeno');
+    app.toggleElektroMultiValue('Zdroj elektřiny', 'Fotovoltaika');
+    app.applyXmlPayload(app.buildXmlString());
+    expect(app.propertyTabFieldValue('elektina', 'Stav připojení')).toBe('Odpojeno');
+    expect(app.elektroHasPhotovoltaics()).toBe(false);
+    expect(app.propertyTabFieldValue('elektina', 'Umístění elektroměru vlastní')).toBe('Vedle vstupu, V garáži, Venku');
+    expect(app.propertyTabFieldValue('elektina', 'Poznámka k elektřině')).toBe('Původní poznámka');
+  });
+
+  it('saves and prints extended electricity and photovoltaic controls with dates, custom details, and dependent field visibility', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Byt' }));
+    const values = {
+      'Stav připojení': 'Aktivní', 'Zdroj elektřiny': 'Distribuční síť|Fotovoltaika', 'Typ připojení': 'Třífázové (400 V)',
+      'Elektroměr': 'Společný', 'Umístění elektroměru': 'Fasáda', 'Umístění elektroměru vlastní': 'U vjezdu',
+      'Materiál rozvodů': 'Měď', 'Stav elektroinstalace': 'Po rekonstrukci', 'Rozsah rekonstrukce': 'Pouze vybrané místnosti',
+      'Rekonstruované místnosti': 'Kuchyň a koupelna', 'Elektrický rozvaděč': 'Modernizovaný',
+      'Využití elektřiny': 'Vytápění|Ohřev vody|Nabíjení elektromobilu', 'Využití elektřiny vlastní': 'Dílna',
+      'Výchozí revize elektroinstalace': 'Doložena', 'Revizní zpráva': 'K dispozici', 'Projektová dokumentace elektroinstalace': 'Ne',
+      'Známé závady elektroinstalace': 'Nezjištěno', 'Měsíční zálohy': '2750', 'Dodavatel elektřiny': 'Jiný',
+      'Dodavatel elektřiny vlastní': 'Místní dodavatel', 'Distributor': 'Jiný', 'Distributor vlastní': 'Lokální distributor',
+      'Fotovoltaika – Instalovaný výkon': '10.5', 'Fotovoltaika – Bateriové úložiště': 'Ano', 'Fotovoltaika – Kapacita baterie': '12,75',
+      'Fotovoltaika – Přetoky do sítě': 'Povoleny', 'Fotovoltaika – Rok instalace': '2024', 'Fotovoltaika – Dokumentace a revize': 'Doloženo'
+    };
+    for (const [field, value] of Object.entries(values)) app.setPropertyTabFieldValue('elektina', field, value);
+    app.formatElektroMonthlyAdvance();
+    app.formatElektroNumber('Fotovoltaika – Instalovaný výkon', 'kWp'); app.formatElektroNumber('Fotovoltaika – Kapacita baterie', 'kWh');
+    app.setElektroCheckDateValue('Poslední revize', '2026-10-15'); app.setElektroCheckMode('Revize hromosvodu', 'Není instalován');
+    app.applyXmlPayload(app.buildXmlString());
+    expect(app.propertyTabFieldValue('elektina', 'Fotovoltaika – Instalovaný výkon')).toBe('10,5 kWp');
+    expect(app.propertyTabFieldValue('elektina', 'Fotovoltaika – Kapacita baterie')).toBe('12,75 kWh');
+    expect(app.propertyTabFieldValue('elektina', 'Měsíční zálohy')).toBe('2 750 Kč/měsíc');
+    expect(app.elektroCheckDateValue('Poslední revize')).toBe('2026-10-15');
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    const reports = () => { write.mockClear(); app.generateCurrentPropertyBuyerInfo(); app.generateCurrentPropertyBrokerInfo(); app.generateCurrentPropertyBlankForm(); return write.mock.calls.map(([html]) => new DOMParser().parseFromString(html as string, 'text/html')); };
+    for (const doc of reports()) {
+      const section = [...doc.querySelectorAll('.info-card')].find(section => section.querySelector('h2')?.textContent === 'ELEKTŘINA')!;
+      const answer = (field: string) => [...section.querySelectorAll('.info-row')].find(row => row.querySelector('.info-label')?.textContent === field)?.querySelector('.info-value')?.textContent;
+      for (const [field, value] of Object.entries(values)) {
+        const formatted = field === 'Měsíční zálohy' ? '2 750 Kč/měsíc' : field === 'Fotovoltaika – Instalovaný výkon' ? '10,5 kWp' : field === 'Fotovoltaika – Kapacita baterie' ? '12,75 kWh' : value;
+        for (const part of formatted.split('|')) expect(answer(field)).toContain(part);
+      }
+      expect(answer('Poslední revize')).toBe('15. 10. 2026');
+      expect(answer('Revize hromosvodu')).toBe('Není instalován');
+    }
+    app.setPropertyTabFieldValue('elektina', 'Fotovoltaika – Bateriové úložiště', 'Ne');
+    app.setPropertyTabFieldValue('elektina', 'Rozsah rekonstrukce', 'Kompletní');
+    app.setPropertyTabFieldValue('elektina', 'Dodavatel elektřiny', 'PRE');
+    app.setPropertyTabFieldValue('elektina', 'Distributor', 'EG.D');
+    for (const doc of reports()) {
+      const labels = [...doc.querySelectorAll('.info-label')].map(label => label.textContent);
+      for (const field of ['Fotovoltaika – Kapacita baterie', 'Rekonstruované místnosti', 'Dodavatel elektřiny vlastní', 'Distributor vlastní']) expect(labels).not.toContain(field);
+      expect(doc.body.textContent).not.toContain('12,75 kWh');
+    }
+    app.toggleElektroMultiValue('Zdroj elektřiny', 'Fotovoltaika');
+    for (const doc of reports()) expect([...doc.querySelectorAll('.info-label')].some(label => label.textContent?.startsWith('Fotovoltaika –'))).toBe(false);
+    expect(app.propertyTabFieldValue('elektina', 'Fotovoltaika – Kapacita baterie')).toBe('12,75 kWh');
+    expect(app.propertyTabFieldValue('elektina', 'Rekonstruované místnosti')).toBe('Kuchyň a koupelna');
+  });
+
+  it.each([
+    { field: 'Poslední revize', statuses: ['Nezjištěno'] },
+    { field: 'Revize hromosvodu', statuses: ['Nedoloženo', 'Není instalován'] }
+  ])('retains the electricity date for $field across its non-date statuses and XML', ({ field, statuses }) => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.setElektroCheckDateValue(field, '2026-10-20');
+    for (const status of statuses) { app.setElektroCheckMode(field, status); expect(app.propertyTabFieldValue('elektina', field)).toBe(status); }
+    app.applyXmlPayload(app.buildXmlString());
+    app.setElektroCheckMode(field, 'Datum');
+    expect(app.elektroCheckDateValue(field)).toBe('2026-10-20');
+    app.setElektroCheckDateValue(field, '');
+    for (const status of statuses) app.setElektroCheckMode(field, status);
+    app.setElektroCheckMode(field, 'Datum');
+    expect(app.elektroCheckDateValue(field)).toBe('');
+  });
+
+  it('preserves saved answers when the Nabízeno questions are renamed', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, tabValues: { ...draft.tabValues, makler: {
+      'Říkali všichni zájemci, že je dům příliš velký, nebo zazněly i jiné důvody?': 'Nevyhovovalo umístění.',
+      'Jakým způsobem makléř nemovitost propaguje?': 'Inzerce na portálech.'
+    } } }));
+    expect(app.propertyTabFieldValue('makler', 'jaký zamítavý důvod měli zájemci?')).toBe('Nevyhovovalo umístění.');
+    expect(app.propertyTabFieldValue('makler', 'Jakým způsobem aktuální makléř nemovitost propaguje?')).toBe('Inzerce na portálech.');
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBrokerInfo();
+    expect(write.mock.calls[0][0]).toContain('jaký zamítavý důvod měli zájemci?');
+    expect(write.mock.calls[0][0]).toContain('Nevyhovovalo umístění.');
+    expect(write.mock.calls[0][0]).not.toContain('Říkali všichni zájemci');
+  });
+
+  it('combines both price answers under one question in print and puts supplementary text on a full-width new line', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Dům', tabValues: { ...draft.tabValues, makler: {
+      [BROKER_INTERVIEW_QUESTIONS[1]]: 'Původně 5 milionů.', '@section__buyer-info-visible': 'ANO'
+    } } }));
+    expect(app.propertyTabFieldValue('makler', BROKER_STARTING_PRICE_FIELD)).toBe('Původně 5 milionů.');
+    app.setPropertyTabFieldValue('makler', BROKER_STARTING_PRICE_FIELD, '5 000 000 Kč');
+    app.setPropertyTabFieldValue('makler', BROKER_CURRENT_PRICE_FIELD, '4 500 000 Kč');
+    app.setPropertyTabFieldValue('makler', BROKER_LISTING_URL_FIELD, 'https://example.cz/inzerat');
+    app.setPropertyTabFieldValue('makler', BROKER_LISTING_DATE_FIELD, '20. 10. 2026');
+    app.setPropertyTabFieldValue('makler', BROKER_LISTING_PRICE_FIELD, '4500000');
+    app.formatBrokerPriceField(BROKER_LISTING_PRICE_FIELD);
+    app.setPropertyTabFieldValue('doplnkove-informace', 'Doplnění', 'Krátké doplnění.');
+    app.setPropertyTabFieldValue('doplnkove-informace', 'Doplnění 2', 'Druhé doplnění.');
+    app.setPropertyTabFieldValue('doplnkove-informace', 'Doplnění 10', 'Desáté doplnění.');
+    app.setPropertyTabFieldValue('doplnkove-informace', 'Doplnění 3', 'Třetí doplnění.');
+    app.applyXmlPayload(app.buildXmlString());
+    expect(app.propertyTabFieldValue('makler', BROKER_CURRENT_PRICE_FIELD)).toBe('4 500 000 Kč');
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo();
+    app.generateCurrentPropertyBrokerInfo();
+    app.generateCurrentPropertyBlankForm();
+    for (const [html] of write.mock.calls) {
+      const doc = new DOMParser().parseFromString(html as string, 'text/html');
+      const rows = [...doc.querySelectorAll('.info-row')];
+      const prices = rows.filter(row => row.querySelector('.info-label')?.textContent === BROKER_INTERVIEW_QUESTIONS[1]);
+      expect(prices).toHaveLength(1);
+      expect(prices[0].classList.contains('info-row-broker-prices')).toBe(true);
+      expect(prices[0].querySelector('.info-value')?.textContent).toBe('5 000 000 Kč\n4 500 000 Kč');
+      expect(doc.body.textContent).toContain('https://example.cz/inzerat');
+      const listingDate = rows.find(row => row.querySelector('.info-label')?.textContent === BROKER_LISTING_DATE_FIELD)!;
+      expect(listingDate.querySelector('.info-value')?.textContent).toBe('20. 10. 2026');
+      const listingPrice = rows.find(row => row.querySelector('.info-label')?.textContent === BROKER_LISTING_PRICE_FIELD)!;
+      expect(listingPrice.querySelector('.info-value')?.textContent).toBe('4 500 000 Kč');
+      const supplementary = rows.find(row => row.querySelector('.info-label')?.textContent === 'Doplnění')!;
+      expect(supplementary.classList.contains('info-row-full')).toBe(true);
+      expect(supplementary.querySelector('.info-value')?.textContent).toBe('• Krátké doplnění.\n• Druhé doplnění.\n• Třetí doplnění.\n• Desáté doplnění.');
+      expect(rows.filter(row => /^Doplnění(?: \d+)?$/.test(row.querySelector('.info-label')?.textContent || ''))).toHaveLength(1);
+    }
+  });
+
+  it.each(['30. 10. 2026', '30.10.2026', '2026-10-30', '30/10/2026'])('accepts a pasted listing date (%s)', value => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    const preventDefault = vi.fn();
+    app.pasteBrokerListingDate({ clipboardData: { getData: () => value }, preventDefault } as unknown as ClipboardEvent);
+    expect(app.brokerListingDateValue()).toBe('2026-10-30');
+    expect(app.propertyTabFieldValue('makler', BROKER_LISTING_DATE_FIELD)).toBe('30. 10. 2026');
+    expect(preventDefault).toHaveBeenCalledOnce();
+  });
+
+  it('does not replace an existing listing date when an invalid date is pasted', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.setBrokerListingDateValue('2026-10-30');
+    app.pasteBrokerListingDate({ clipboardData: { getData: () => '31. 2. 2026' }, preventDefault: vi.fn() } as unknown as ClipboardEvent);
+    expect(app.brokerListingDateValue()).toBe('2026-10-30');
+  });
+
+  it('dates listing-price edits, preserves the original date when only formatting changes, and prints the saved price/date together', () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date(2026, 9, 30, 12));
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Byt' }));
+    app.setPropertyTabFieldValue('makler', '@section__buyer-info-visible', 'ANO');
+    app.setPropertyTabFieldValue('makler', BROKER_LISTING_PRICE_FIELD, '5 000 Kč');
+    app.formatBrokerPriceField(BROKER_LISTING_PRICE_FIELD);
+    expect(app.brokerListingPriceStamp()).toBe('');
+    app.setBrokerListingPriceValue('6250000'); app.formatBrokerPriceField(BROKER_LISTING_PRICE_FIELD);
+    expect(app.brokerListingPriceStamp()).toBe('30. 10. 2026');
+    vi.setSystemTime(new Date(2026, 9, 31, 12));
+    app.formatBrokerPriceField(BROKER_LISTING_PRICE_FIELD);
+    app.setBrokerListingPriceValue('6 250 000 Kč');
+    expect(app.brokerListingPriceStamp()).toBe('30. 10. 2026');
+    app.setBrokerListingPriceValue('6200000'); app.formatBrokerPriceField(BROKER_LISTING_PRICE_FIELD);
+    app.applyXmlPayload(app.buildXmlString());
+    expect(app.propertyTabFieldValue('makler', BROKER_LISTING_PRICE_FIELD)).toBe('6 200 000 Kč');
+    expect(app.brokerListingPriceStamp()).toBe('31. 10. 2026');
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo(); app.generateCurrentPropertyBrokerInfo(); app.generateCurrentPropertyBlankForm();
+    for (const [html] of write.mock.calls) {
+      const doc = new DOMParser().parseFromString(html as string, 'text/html');
+      const rows = [...doc.querySelectorAll('.info-row')].filter(row => row.querySelector('.info-label')?.textContent === BROKER_LISTING_PRICE_FIELD);
+      expect(rows).toHaveLength(1);
+      expect(rows[0].querySelector('.info-value')?.textContent).toBe('6 200 000 Kč / 31. 10. 2026');
+      expect(doc.body.textContent).not.toContain(BROKER_LISTING_PRICE_DATE_FIELD);
+    }
+    app.setBrokerListingPriceValue('');
+    expect(app.brokerListingPriceStamp()).toBe('');
+  });
 
   it.each(['Dům', 'Rodinný dům', 'Bytový dům', 'Garáž'])('prints the selected outdoor socket for %s in all reports', type => {
     const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
@@ -139,6 +1101,39 @@ describe('Property print fields', () => {
       expect(html).not.toContain('Venkovní zásuvka');
       expect(html).not.toContain('Zásuvka venku');
       expect(html).not.toContain('Venkovní ventil na vodu');
+    }
+  });
+
+  it.each([
+    { value: 'https://example.cz/inzerat?typ=byt&cena=100', href: 'https://example.cz/inzerat?typ=byt&cena=100' },
+    { value: 'http://example.cz/inzerat', href: 'http://example.cz/inzerat' },
+    { value: 'example.cz/inzerat', href: 'https://example.cz/inzerat' }
+  ])('prints a clickable listing URL in every report ($value)', ({ value, href }) => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Byt', tabValues: { makler: { [BROKER_LISTING_URL_FIELD]: value, '@section__buyer-info-visible': 'ANO' } } }));
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo(); app.generateCurrentPropertyBrokerInfo(); app.generateCurrentPropertyBlankForm();
+    for (const [html] of write.mock.calls) {
+      const doc = new DOMParser().parseFromString(html as string, 'text/html');
+      const row = [...doc.querySelectorAll('.info-row')].find(row => row.querySelector('.info-label')?.textContent === BROKER_LISTING_URL_FIELD)!;
+      expect(row.querySelector('a')?.getAttribute('href')).toBe(href);
+      expect(row.querySelector('a')?.textContent).toBe(value);
+      expect(row.querySelector('a')?.getAttribute('rel')).toContain('noopener');
+    }
+  });
+
+  it.each(['javascript:alert(1)', 'data:text/html,<script>alert(1)</script>'])('keeps unsupported listing URLs as escaped text (%s)', value => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Byt', tabValues: { makler: { [BROKER_LISTING_URL_FIELD]: value, '@section__buyer-info-visible': 'ANO' } } }));
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo(); app.generateCurrentPropertyBrokerInfo(); app.generateCurrentPropertyBlankForm();
+    for (const [html] of write.mock.calls) {
+      const doc = new DOMParser().parseFromString(html as string, 'text/html');
+      const row = [...doc.querySelectorAll('.info-row')].find(row => row.querySelector('.info-label')?.textContent === BROKER_LISTING_URL_FIELD)!;
+      expect(row.querySelector('.info-value')?.textContent).toBe(value);
+      expect(row.querySelector('a, script')).toBeNull();
     }
   });
 
@@ -590,7 +1585,9 @@ describe('Property print fields', () => {
       const document = new DOMParser().parseFromString(html as string, 'text/html');
       const basic = [...document.querySelectorAll('main > section')].find(section => section.querySelector('h2')?.textContent === 'ZÁKLADNÍ INFORMACE')!;
       const labels = [...basic.querySelectorAll('.info-label')].map(label => label.textContent!.startsWith('Nejblížší adresa') ? 'Nejblížší adresa' : label.textContent);
-      expect(labels).toEqual(['Číslo případu', 'Nemovitost', 'Vlastnictví', 'Služba', 'Smlouva', 'Adresa nemovitosti', 'Nejblížší adresa']);
+      const expected = ['Číslo případu', 'Nemovitost', 'Vlastnictví', 'Služba', 'Smlouva', 'Adresa nemovitosti', 'Nejblížší adresa'];
+      if (html === write.mock.calls[2][0]) expected.push('Poznámka k základním informacím');
+      expect(labels).toEqual(expected);
     }
   });
 
@@ -698,6 +1695,8 @@ describe('Property print fields', () => {
       expect([...card('DISPOZICE B').querySelectorAll('.info-label')].map(label => label.textContent)).toEqual(['Dispozice', 'Seznam místností v jednotce', 'Poznámka']);
       expect(cards.some(section => section.querySelector('h2')?.textContent === 'DISPOZICE')).toBe(false);
       expect(card('DISPOZICE B').textContent).toContain('Pokoj (3 m)');
+      expect([...card('DISPOZICE A').querySelectorAll('.info-row')].find(row => row.querySelector('.info-label')?.textContent === 'Seznam místností v jednotce')?.classList.contains('info-row-full')).toBe(false);
+      expect([...card('DISPOZICE B').querySelectorAll('.info-row')].find(row => row.querySelector('.info-label')?.textContent === 'Seznam místností v jednotce')?.classList.contains('info-row-full')).toBe(true);
       expect(card('POZNÁMKA K DISPOZICI').textContent).toContain('Společná poznámka');
     }
   });
@@ -706,6 +1705,7 @@ describe('Property print fields', () => {
     const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
     app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Rodinný dům', tabValues: { stavba: {
       '__stavba-parcel-count': '3',
+      'Zapsaná v katastru': 'Ano', 'Zastavěná plocha RÚIAN': '957 m²',
       'stavba-parcel-0-parcel': '224', 'stavba-parcel-0-type': 'rodinný dům', 'stavba-parcel-0-area': '690 m²',
       'stavba-parcel-0-buildingNumber': '9', 'stavba-parcel-0-buildingNumberType': 'Číslo popisné',
       'stavba-parcel-1-parcel': '225/2', 'stavba-parcel-1-type': 'zemědělská usedlost', 'stavba-parcel-1-area': '231 m²',
@@ -722,17 +1722,22 @@ describe('Property print fields', () => {
       expect(html).not.toContain('parcela 224');
       expect(html).not.toContain('Označení budovy</div>');
       const document = new DOMParser().parseFromString(html as string, 'text/html');
-      const stavbaRows = [...document.querySelectorAll('.info-row')].filter(row => /^Stavba \d+$/.test(row.querySelector('.info-label')?.textContent || ''));
+      const section = [...document.querySelectorAll('.info-card')].find(section => section.querySelector('h2')?.textContent === 'STAVBA')!;
+      const stavbaRows = [...section.querySelectorAll('.info-row')].filter(row => !row.querySelector('.info-label'));
       expect(stavbaRows.length).toBe(3);
-      expect(stavbaRows[0].classList.contains('info-row-full')).toBe(false);
-      expect(stavbaRows[0].classList.contains('info-row-stavba')).toBe(true);
-      expect(stavbaRows[0].querySelector('.info-value')!.textContent).toContain('224 - rodinný dům č. p. 9 - 690 m²');
-      expect(stavbaRows[1].querySelector('.info-value')!.textContent).toContain('225/2 - zemědělská usedlost č. e. 17 - 231 m²');
-      expect(stavbaRows[2].querySelector('.info-value')!.textContent).toContain('228 - garáž bez č. p. / č. ev. - 36 m²');
+      const allRows = [...section.querySelectorAll('.info-row')];
+      const cadastralRow = allRows.find(row => row.querySelector('.info-label')?.textContent === 'Zapsaná v katastru')!;
+      expect(allRows[allRows.indexOf(cadastralRow) + 1]).toBe(stavbaRows[0]);
+      expect(allRows[allRows.indexOf(stavbaRows[2]) + 1].querySelector('.info-label')?.textContent).toBe('Zastavěná plocha dle RÚIAN');
+      for (const row of stavbaRows) {
+        expect(row.classList.contains('info-row-property-item')).toBe(true);
+        expect(row.classList.contains('info-row-full')).toBe(true);
+        expect(row.classList.contains('info-row-stavba')).toBe(false);
+      }
+      expect(stavbaRows[0].querySelector('.info-value')!.textContent).toBe('• 224 - rodinný dům č. p. 9 - 690 m²');
+      expect(stavbaRows[1].querySelector('.info-value')!.textContent).toBe('• 225/2 - zemědělská usedlost č. e. 17 - 231 m²');
+      expect(stavbaRows[2].querySelector('.info-value')!.textContent).toBe('• 228 - garáž bez č. p. / č. ev. - 36 m²');
       expect(stavbaRows[1].querySelector('.info-value')!.textContent).not.toContain(', 225/2');
-      expect(stavbaRows[0].querySelector('.info-value')!.innerHTML).toContain('224 - <wbr>rodinný dům č. p. 9 - <wbr>690 m²');
-      expect(stavbaRows[1].querySelector('.info-value')!.innerHTML).toContain('<wbr>zemědělská usedlost');
-      expect(stavbaRows[1].querySelector('.info-value')!.innerHTML).toContain('<wbr>231 m²');
     }
     expect(write.mock.calls[0][0]).toContain('.info-row-stavba{grid-template-columns:max-content minmax(0,1fr)}');
     expect(write.mock.calls[0][0]).toContain('.info-row-stavba .info-value{text-align:right}');
@@ -741,6 +1746,37 @@ describe('Property print fields', () => {
     expect(app.stavbaBuildUpArea()).toBe('957 m²');
     expect(app.defaultHandoverPropertyDescription()).toContain('č. p. 9');
     expect(app.defaultHandoverPropertyDescription()).toContain('č. e. 17');
+  });
+
+  it.each([1, 2])('prints %i filled parcel(s) with bullets and full-width rows only for multiple parcels', count => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    const values: Record<string, string> = {
+      '__parcel-count': '3', 'Pozemek ano/ne': 'Ano',
+      'parcel-0-parcel': '123/4', 'parcel-0-type': 'Zahrada & sad', 'parcel-0-area': '250 m²'
+    };
+    if (count === 2) Object.assign(values, { 'parcel-1-parcel': '456/7', 'parcel-1-type': 'Orná půda', 'parcel-1-area': '125 m²' });
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Byt', tabValues: { pozemek: values } }));
+    const original = app.newPropertyDraft();
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo(); app.generateCurrentPropertyBrokerInfo(); app.generateCurrentPropertyBlankForm();
+    for (const [html] of write.mock.calls) {
+      const doc = new DOMParser().parseFromString(html as string, 'text/html');
+      const section = [...doc.querySelectorAll('.info-card')].find(section => section.querySelector('h2')?.textContent === 'POZEMEK')!;
+      const rows = [...section.querySelectorAll('.info-row')].filter(row => /^(?:• )?(?:123\/4|456\/7) - /.test(row.querySelector('.info-value')?.textContent || ''));
+      expect(section.textContent).not.toContain('Pozemek ano/ne');
+      expect(rows).toHaveLength(count);
+      expect(rows[0].querySelector('.info-value')?.textContent).toBe(`${count === 1 ? '' : '• '}123/4 - Zahrada & sad - 250 m²`);
+      for (const row of rows) {
+        expect(row.classList.contains('info-row-property-item')).toBe(count > 1);
+        expect(row.classList.contains('info-row-full')).toBe(count > 1);
+        expect(row.querySelector('.info-label')?.textContent).toBe(count === 1 ? 'Pozemek' : undefined);
+      }
+      if (count === 2) expect(rows[1].querySelector('.info-value')?.textContent).toBe('• 456/7 - Orná půda - 125 m²');
+      expect([...section.querySelectorAll('.info-label')].some(label => /^Pozemek \d+$/.test(label.textContent || ''))).toBe(false);
+    }
+    expect(app.newPropertyDraft()).toBe(original);
+    expect(values['parcel-0-parcel']).toBe('123/4');
   });
 
   it('keeps a very long building summary on its own Stavba row aligned right instead of the long value rule', () => {
@@ -754,8 +1790,9 @@ describe('Property print fields', () => {
     vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
     app.generateCurrentPropertyBuyerInfo();
     const document = new DOMParser().parseFromString(write.mock.calls[0][0] as string, 'text/html');
-    const row = [...document.querySelectorAll('.info-row')].find(element => element.querySelector('.info-label')?.textContent === 'Stavba 1')!;
+    const row = [...document.querySelectorAll('.info-row')].find(element => element.querySelector('.info-label')?.textContent === 'Stavba')!;
     const value = row.querySelector('.info-value')!.textContent!;
+    expect(value.startsWith('• ')).toBe(false);
     expect(value).toContain(longType);
     expect(value.length).toBeGreaterThan(55);
     expect(row.classList.contains('info-row-stavba')).toBe(true);
@@ -843,6 +1880,22 @@ describe('Property print fields', () => {
     expect(cleared['stavba-parcel-0-buildingNumber']).toBe('');
   });
 
+  it.each([
+    ['parcel', '224/2'], ['type', 'rodinný dům'], ['buildingNumberType', 'Číslo popisné'], ['buildingNumber', '17'], ['area', '125']
+  ] as const)('automatically marks a building as present when the %s field is filled', (field, value) => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.setPropertyTabFieldValue('stavba', 'Stavba na pozemku', 'Ne');
+    app.setStavbaParcelValue(0, field, '');
+    expect(app.propertyTabFieldValue('stavba', 'Stavba na pozemku')).toBe('Ne');
+    app.setStavbaParcelValue(0, field, value);
+    expect(app.propertyTabFieldValue('stavba', 'Stavba na pozemku')).toBe('Ano');
+    app.applyXmlPayload(app.buildXmlString());
+    expect(app.propertyTabFieldValue('stavba', 'Stavba na pozemku')).toBe('Ano');
+    expect(app.stavbaParcelValue(0, field)).toBe(value);
+    app.setStavbaParcelValue(0, field, '');
+    expect(app.propertyTabFieldValue('stavba', 'Stavba na pozemku')).toBe('Ano');
+  });
+
   it('keeps building numbers with their rows when adding, removing and clearing buildings', () => {
     const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
     app.newPropertyDraft.update(draft => ({ ...draft, tabValues: { stavba: {
@@ -914,7 +1967,7 @@ describe('Property print fields', () => {
     expect(app.prostoryRoomListOptions()).not.toContain('Sklep');
     expect(app.prostoryUnitAccessoryOptions()).toEqual(['Nepodsklepený', 'Sklep', 'Garáž', 'Sauna']);
     expect(app.prostoryUnitAccessoryChips('A')).toEqual(['Nepodsklepený', 'Sklep', 'Garáž', 'Sauna']);
-    expect(app.prostorySharedAccessoryOptions()).toEqual(['Krytý bazén', 'Pergola', 'Stodola', 'Garáž', 'Bazén', 'Vyhřívaný bazén', 'Sauna', 'Sklípek']);
+    expect(app.prostorySharedAccessoryOptions()).toEqual(['Bazén', 'Bazén krytý', 'Dřevník', 'Garáž', 'Letní kuchyně', 'Pergola', 'Sauna', 'Skleník', 'Sklípek', 'Stodola', 'Udírna', 'Vyhřívaný bazén']);
     app.toggleProstoryMultiValue('Příslušenství v jednotce', 'Sklep', 'A');
     app.toggleProstoryMultiValue('Příslušenství v jednotce', 'Nepodsklepený', 'B');
     app.toggleProstoryMultiValue('Příslušenství nemovitosti', 'Pergola');
@@ -935,7 +1988,7 @@ describe('Property print fields', () => {
     expect(values['Seznam místností B']).toBe('Ložnice');
     expect(values['Příslušenství v jednotce B']).toBe('Bazén');
     expect(values['Sklep__A__0__width']).toBe('3 m');
-    expect(values['Příslušenství nemovitosti']).toBe('Stodola|Krytý bazén');
+    expect(values['Příslušenství nemovitosti']).toBe('Stodola|Bazén krytý');
     expect(values['Poznámka k příslušenství mimo jednotku']).toBe('Stará poznámka');
     expect(values['Poznámka k příslušenství']).toBeUndefined();
     const renamed = app.cloneSavedPropertyRecord({ propertyType: 'Bytový dům', tabValues: { prostory: {
@@ -944,10 +1997,14 @@ describe('Property print fields', () => {
     expect(renamed['Příslušenství v jednotce A']).toBe('Sklep');
     expect(renamed['Příslušenství v jednotce']).toBe('Bazén');
     expect(renamed['Příslušenství v jednotce B']).toBe('Garáž');
-    expect(renamed['Příslušenství nemovitosti']).toBe('Krytý bazén');
+    expect(renamed['Příslušenství nemovitosti']).toBe('Bazén krytý');
     expect(renamed['Příslušenství jednotky A']).toBeUndefined();
     expect(renamed['Příslušenství jednotky']).toBeUndefined();
     expect(renamed['Příslušenství mimo jednotku B']).toBeUndefined();
+    const shared = app.cloneSavedPropertyRecord({ propertyType: 'Byt', tabValues: { prostory: {
+      'Příslušenství nemovitosti': 'Krytý bazén|Bazén krytý|Skleník'
+    } } }).tabValues['prostory'];
+    expect(shared['Příslušenství nemovitosti']).toBe('Bazén krytý|Skleník');
   });
 
   it('supports typed custom unit accessories and keeps legacy Bazén as a removable accessory', () => {
@@ -974,6 +2031,46 @@ describe('Property print fields', () => {
     app.newPropertyDraft.update(draft => ({ ...draft, tabValues: { ...draft.tabValues, prostory: { ...draft.tabValues['prostory'], 'Příslušenství v jednotce': 'Bazén' } } }));
     expect(app.hasProstoryMultiValue('Příslušenství v jednotce', 'Bazén')).toBe(true);
     expect(app.prostoryUnitAccessoryChips()).toEqual(['Nepodsklepený', 'Sklep', 'Garáž', 'Sauna', 'Bazén']);
+  });
+
+  it.each(['', 'A'])('sorts room instances by floor, preserves dimensions and floor assignments when removing an instance, and saves/prints floors for unit %s', unit => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: unit ? 'Bytový dům' : 'Dům', tabValues: {
+      stavba: { 'Rozděleno na jednotky': unit ? 'Ano' : '', 'Počet jednotek v domě': unit ? '2' : '' },
+      prostory: { [`Seznam místností${unit ? ' ' + unit : ''}`]: 'Obývací pokoj|Koupelna|Samostatná toaleta' }
+    } }));
+    expect(app.selectedProstoryRoomEntries(unit).every(entry => !entry.floorStart && !entry.floor)).toBe(true);
+    app.addProstoryRoomInstance('Obývací pokoj', unit);
+    app.addProstoryRoomInstance('Obývací pokoj', unit);
+    app.setProstoryRoomFloorValue('Obývací pokoj', 0, '10. patro', unit);
+    app.setProstoryRoomFloorValue('Obývací pokoj', 1, 'Přízemí', unit);
+    app.setProstoryRoomFloorValue('Obývací pokoj', 2, '2. patro', unit);
+    app.setProstoryRoomFloorValue('Koupelna', 0, 'Suterén', unit);
+    app.setProstoryRoomDimensionValue('Obývací pokoj', 2, 'width', '4', unit);
+    app.setProstoryRoomDimensionValue('Obývací pokoj', 2, 'length', '5', unit);
+    expect(app.selectedProstoryRoomEntries(unit).map(entry => entry.floor)).toEqual(['Suterén', 'Přízemí', '2. patro', '10. patro', '']);
+    app.removeProstoryRoomInstance('Obývací pokoj', 1, unit);
+    expect(app.prostoryRoomFloorValue('Obývací pokoj', 1, unit)).toBe('2. patro');
+    expect(app.prostoryRoomFloorValue('Obývací pokoj', 2, unit)).toBe('');
+    expect(app.prostoryRoomDimensionValue('Obývací pokoj', 1, 'width', unit)).toBe('4');
+    expect(app.prostoryRoomDimensionValue('Obývací pokoj', 1, 'length', unit)).toBe('5');
+    app.applyXmlPayload(app.buildXmlString());
+    expect(app.selectedProstoryRoomEntries(unit).map(entry => [entry.floor, entry.floorStart])).toEqual([
+      ['Suterén', false], ['2. patro', true], ['10. patro', true], ['', true]
+    ]);
+    if (unit) expect(app.prostoryRoomFloorValue('Obývací pokoj', 1, 'B')).toBe('');
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo();
+    app.generateCurrentPropertyBrokerInfo();
+    app.generateCurrentPropertyBlankForm();
+    for (const [html] of write.mock.calls) {
+      expect(html).toContain('Koupelna (Suterén)');
+      expect(html).toContain('Obývací pokoj (2. patro; 4 x 5)');
+      expect(html).not.toContain('__floor');
+    }
+    app.setProstoryRoomFloorValue('Obývací pokoj', 0, 'Suterén', unit);
+    expect(app.selectedProstoryRoomEntries(unit).filter(entry => entry.floor === 'Suterén').map(entry => entry.floorStart)).toEqual([false, false]);
   });
 
   it('ignores stale unit-less prostory keys in unit sections when the property is split into units', () => {
@@ -1183,7 +2280,55 @@ describe('Property print fields', () => {
     expect(open.mock.calls[1]).toEqual(['https://mapy.com/fnc/v1/search?query=%C5%98%C3%ADkovice%20116', '_blank']);
   });
 
-  it.each([false, true])('prints compact driving directions once in the client section (linked client: %s)', linkedClient => {
+  it.each([false, true])('opens the selected directory property broker report without replacing editor state (route lookup: %s)', withRoute => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.agentProfile.update(profile => ({ ...profile, departureAddress: withRoute ? 'Výjezd 1' : '' }));
+    app.activeSavedPropertyId.set('editing-property');
+    app.activeDispoziceUnit.set('B');
+    app.propertyWorkspaceMode.set('directory');
+    app.newPropertyDraft.update(draft => ({ ...draft, title: 'Rozpracovaná zakázka', address: 'Neuložená adresa', tabValues: { plyn: { 'Poznámka k plynu': 'Neuložená poznámka' } } }));
+    const saved: ReturnType<PrintHarness['savedPropertyRecords']> = [
+      { id: 'other-property', createdAt: '', title: 'Jiná zakázka', propertyType: 'Byt', address: 'Jiná adresa', price: '', seller: '', status: 'active' as const, phase: '', tabValues: {} },
+      { id: 'selected-property', createdAt: '', title: 'Vybraná zakázka', propertyType: 'Byt', address: 'Vybraná adresa', price: '', seller: '', status: 'active' as const, phase: '', tabValues: { plyn: { 'Poznámka k plynu': 'Uložené údaje vybrané nemovitosti' } } }
+    ];
+    app.savedPropertyRecords.set(saved);
+    app.savedClientRecords.set([
+      { id: 'selected-client', draft: { fullName: 'Klient vybrané nemovitosti', companyName: '', phonePrefix: '+420', phone: '777111222', email: 'selected@example.cz', linkedPropertyId: 'selected-property' } },
+      { id: 'editing-client', draft: { fullName: 'Klient rozpracované nemovitosti', companyName: '', phonePrefix: '+420', phone: '777333444', email: 'editing@example.cz', linkedPropertyId: 'editing-property' } }
+    ]);
+    const route = new Subject<DrivingRoute>();
+    const calculate = vi.spyOn(TestBed.inject(DrivingRouteService), 'calculate').mockReturnValue(route);
+    const write = vi.fn();
+    const open = vi.spyOn(window, 'open').mockReturnValue({ closed: false, document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    const originalDraft = app.newPropertyDraft();
+    app.generatePropertyDirectoryBrokerInfo({ index: 1 });
+    expect(app.newPropertyDraft()).toBe(originalDraft);
+    if (withRoute) {
+      expect(calculate).toHaveBeenCalledWith('Výjezd 1', 'Vybraná adresa');
+      app.newPropertyDraft.update(draft => ({ ...draft, address: 'Další rozpracovaná adresa' }));
+      route.next({ distanceMeters: 205000, durationSeconds: 10500, originCity: '', destinationCity: '' });
+      route.complete();
+    } else expect(calculate).not.toHaveBeenCalled();
+    const html = write.mock.calls[withRoute ? 1 : 0][0];
+    const doc = new DOMParser().parseFromString(html as string, 'text/html');
+    expect(doc.title).toBe('Informace pro makléře');
+    expect(doc.body.textContent).toContain('Vybraná adresa');
+    expect(doc.body.textContent).toContain('Uložené údaje vybrané nemovitosti');
+    expect(doc.body.textContent).toContain('Klient vybrané nemovitosti');
+    expect(doc.body.textContent).not.toContain('Neuložená poznámka');
+    expect(doc.body.textContent).not.toContain('Klient rozpracované nemovitosti');
+    if (withRoute) expect(doc.body.textContent).toContain('205 km, 2:55 hod');
+    expect(app.newPropertyDraft().address).toBe(withRoute ? 'Další rozpracovaná adresa' : 'Neuložená adresa');
+    expect(app.activeSavedPropertyId()).toBe('editing-property');
+    expect(app.activeDispoziceUnit()).toBe('B');
+    expect(app.propertyWorkspaceMode()).toBe('directory');
+    expect(app.savedPropertyRecords()).toBe(saved);
+    expect(open).toHaveBeenCalledTimes(1);
+    app.generatePropertyDirectoryBrokerInfo({ index: 99 });
+    expect(open).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([false, true])('prints compact driving directions once at the end of basic information (linked client: %s)', linkedClient => {
     const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
     app.agentProfile.update(profile => ({ ...profile, departureAddress: 'Výjezd 1' }));
     app.newPropertyDraft.update(draft => ({ ...draft, address: 'Cíl 2', linkedClientIds: linkedClient ? ['client-1'] : [] }));
@@ -1203,15 +2348,18 @@ describe('Property print fields', () => {
     route.complete();
     expect(open).toHaveBeenCalledTimes(1);
     const report = new DOMParser().parseFromString(write.mock.calls[1][0], 'text/html');
-    const client = [...report.querySelectorAll('.info-card')].find(card => card.querySelector('h2')?.textContent === 'KLIENT')!;
-    const drivingRows = [...client.querySelectorAll('.info-row')].filter(row => row.querySelector('.info-label')?.textContent === 'Dojezd');
+    const client = [...report.querySelectorAll('.info-card')].find(card => card.querySelector('h2')?.textContent === 'KLIENT');
+    const basic = [...report.querySelectorAll('.info-card')].find(card => card.querySelector('h2')?.textContent === 'ZÁKLADNÍ INFORMACE')!;
+    const drivingRows = [...report.querySelectorAll('.info-row')].filter(row => row.querySelector('.info-label')?.textContent === 'Dojezd');
     expect(drivingRows).toHaveLength(1);
     expect(drivingRows[0].querySelector('.info-value')?.textContent).toBe('205 km, 2:55 hod');
     expect(drivingRows[0].classList.contains('info-row-full')).toBe(false);
-    expect(client.textContent).not.toContain('Havířov');
-    expect(client.textContent).not.toContain('Skorošice');
+    expect(basic.querySelector('.info-card-body')?.lastElementChild).toBe(drivingRows[0]);
+    expect(basic.textContent).not.toContain('Havířov');
+    expect(basic.textContent).not.toContain('Skorošice');
     expect(report.body.textContent).not.toContain('DOJEZD MAKLÉŘE');
-    if (linkedClient) expect(client.textContent).toContain('Jan Novák');
+    if (linkedClient) { expect(client?.textContent).toContain('Jan Novák'); expect(client?.textContent).not.toContain('Dojezd'); }
+    else expect(client).toBeUndefined();
     app.generateCurrentPropertyBuyerInfo();
     expect(write.mock.calls[2][0]).not.toContain('DOJEZD MAKLÉŘE');
     expect(write.mock.calls[2][0]).not.toContain('Výjezd 1');

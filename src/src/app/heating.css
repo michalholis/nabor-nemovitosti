@@ -1,0 +1,26 @@
+.heating-method-option, .choice-help-option { position:relative; }
+.heating-method-option::after, .choice-help-option::after {
+  background:#183751;
+  border-radius:6px;
+  box-shadow:0 3px 10px rgb(15 23 42 / 18%);
+  box-sizing:border-box;
+  color:#fff;
+  content:attr(data-help);
+  font-size:.72rem;
+  font-weight:400;
+  left:0;
+  line-height:1.4;
+  padding:.55rem .7rem;
+  pointer-events:none;
+  position:absolute;
+  text-align:left;
+  top:calc(100% + .35rem);
+  visibility:hidden;
+  white-space:normal;
+  width:min(18rem,80vw);
+  z-index:40;
+}
+.heating-method-option:hover::after,
+.heating-method-option:focus-visible::after,
+.choice-help-option:hover::after,
+.choice-help-option:focus-visible::after { visibility:visible; }

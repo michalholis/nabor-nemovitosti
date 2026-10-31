@@ -1,5 +1,6 @@
 .handover-collapse-card, .handover-section-heading { position:relative; }
 .handover-section-heading { min-height:19.2px; display:flex; align-items:center; padding-right:1.8rem; }
+.handover-section-heading > .section-toggle { flex:1; min-width:0; }
 .handover-collapse-card > .handover-collapse-arrow, .handover-section-heading > .handover-collapse-arrow { position:absolute; right:0; top:50%; transform:translateY(-50%); }
 .handover-collapse-card > .handover-collapse-arrow { right:.65rem; top:21px; }
 .handover-collapse-arrow { align-items:center; background:color-mix(in srgb,var(--client-accent,#1976d2) 5%,white); border:1px solid color-mix(in srgb,var(--client-accent,#1976d2) 18%,white); border-radius:50%; color:var(--client-accent-ink,#31566d); cursor:pointer; display:inline-flex; font-size:0; height:1.6rem; justify-content:center; padding:0; transition:background .15s,box-shadow .15s; width:1.6rem; }
@@ -10,5 +11,39 @@
 @media(prefers-reduced-motion:reduce) { .handover-collapse-arrow,.handover-collapse-arrow::before { transition:none; } }
 .handover-collapse-card .section-toggle, .handover-section-heading .section-toggle { padding-right:1.8rem; }
 .handover-collapse-summary { padding-right:1.8rem; }
-.handover-section-title-button { background:transparent; border:0; color:inherit; cursor:pointer; font:inherit; padding:0; text-align:left; }
+.handover-section-title-button { align-self:stretch; background:transparent; border:0; color:inherit; cursor:pointer; flex:1; font:inherit; min-width:0; padding:0; text-align:left; }
 .handover-clickable-card { cursor:pointer; }
+.handover-category-title { color:inherit; font:800 .8rem/1.45 var(--font-main,'Source Sans 3','Segoe UI',sans-serif); text-transform:uppercase; }
+
+/* Emphasize the opened section without changing header dimensions or hit areas. */
+.handover-collapse-card:not(.handover-is-collapsed) > .section-toggle,
+.handover-collapse-card:not(.handover-is-collapsed) > .handover-app-section > .section-toggle,
+.handover-collapse-card:not(.handover-is-collapsed) > .handover-toggle-card > .section-toggle,
+.handover-section-heading:has(> .handover-collapse-arrow[aria-expanded='true']),
+.handover-collapse-header:has(> .handover-collapse-arrow[aria-expanded='true']) {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--client-accent,#1976d2) 17%, white), color-mix(in srgb, var(--client-accent,#1976d2) 7%, white));
+  border-radius: 5px;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--client-accent,#1976d2) 9%, white);
+  color: var(--client-accent-ink,#31566d);
+  position: relative;
+}
+
+.handover-collapse-arrow { z-index:1; }
+
+.handover-confirmation-check.handover-mini-switch > input[type='checkbox'] {
+  appearance:none;
+  background:#c5ced7;
+  border:0;
+  border-radius:999px;
+  cursor:pointer;
+  height:.85rem;
+  margin:.15rem 0 0;
+  min-height:.85rem;
+  padding:0;
+  position:relative;
+  width:1.55rem;
+}
+.handover-mini-switch > input::before { background:#fff; border-radius:50%; content:''; height:.61rem; left:.12rem; position:absolute; top:.12rem; transition:transform .15s; width:.61rem; }
+.handover-confirmation-check.handover-mini-switch > input[type='checkbox']:checked { background:color-mix(in srgb,var(--client-accent,#1976d2) 70%,white); }
+.handover-mini-switch > input:checked::before { transform:translateX(.7rem); }
+.handover-mini-switch > input:focus-visible { outline:2px solid var(--client-accent,#1976d2); outline-offset:2px; }

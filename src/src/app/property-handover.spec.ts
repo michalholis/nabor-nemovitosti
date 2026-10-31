@@ -83,7 +83,16 @@ describe('Property handover participants', () => {
     ]);
     app.savedPropertyRecords.set(['property-1', 'property-2'].map(id => ({
       ...app.createDefaultNewPropertyDraft(), id, createdAt: '', status: 'active', title: id,
-      propertyType: 'Byt', linkedClientIds: ['owner', 'tenant']
+      propertyType: 'Byt', linkedClientIds: ['owner', 'tenant'],
+      tabValues: { 'predavaci-protokol': {
+        metersSectionVisible: 'ANO', keysSectionVisible: 'ANO', remainsSectionVisible: 'ANO',
+        returnEquipmentVisible: 'ANO', returnFinanceVisible: 'ANO', returnDepositAgreementVisible: 'ANO',
+        electricMeterVisible: 'ANO', electricT1MeterVisible: 'ANO', electricT2MeterVisible: 'ANO',
+        hotWaterMeterVisible: 'ANO', coldWaterMeterVisible: 'ANO', gasMeterVisible: 'ANO', customMeterVisible: 'ANO',
+        keysCountVisible: 'ANO', chipsCountVisible: 'ANO', keyCardsCountVisible: 'ANO', keysConfirmationVisible: 'ANO',
+        buyerObligationVisible: 'ANO', buyerObligationsaleVisible: 'ANO',
+        conclusionIntroduced: 'ANO', conclusionSignature: 'ANO', conclusionCopies: 'ANO'
+      } }
     })));
     app.openPropertyFormForRecord(0);
   });
@@ -102,6 +111,23 @@ describe('Property handover participants', () => {
     else app.generateHandoverProtocol();
     return new DOMParser().parseFromString(write.mock.calls[0][0], 'text/html');
   }
+
+  it('starts a fresh protocol with no selected options except cellar and manager derived from property data', () => {
+    const draft = app.createDefaultNewPropertyDraft();
+    expect(Object.values(draft.tabValues['predavaci-protokol'])).not.toContain('ANO');
+    app.savedPropertyRecords.update(records => records.map((record, index) => index === 0 ? { ...record,
+      tabValues: { prostory: { 'Příslušenství v jednotce': 'Sklep', 'Sklep číslo': '45A' },
+        sluzby: { 'Služby': 'Předseda / správce', 'Jméno správce': 'Správce domu' } }
+    } : record));
+    app.openPropertyFormForRecord(0);
+    const values = app.newPropertyDraft().tabValues['predavaci-protokol'];
+    expect(values['cellarVisible']).toBe('ANO');
+    expect(values['cellarReturnSectionVisible']).toBe('ANO');
+    expect(values['managerVisible']).toBe('ANO');
+    expect(values['cellar']).toBe('45A');
+    expect(Object.entries(values).filter(([key, value]) => value === 'ANO').map(([key]) => key).sort())
+      .toEqual(['cellarReturnSectionVisible', 'cellarVisible', 'managerVisible']);
+  });
 
   it.each(['prodavajici', 'pronajimatel', 'zajemce', 'jiny'])('automatically fills the linked owner even when her contact role is %s', clientInterest => {
     app.savedClientRecords.update(clients => clients.map(client => client.id === 'owner'
@@ -251,9 +277,30 @@ describe('Property handover participants', () => {
   it('prints the return cellar block before the property remains fields', () => {
     app.setPropertyTabFieldValue('predavaci-protokol', 'leaseReturnSectionVisible', 'ANO');
     app.setPropertyTabFieldValue('predavaci-protokol', 'cellarVisible', 'ANO');
-    const text = printedProtocol().querySelector('[data-return-section=condition]')?.textContent || '';
+    const report = printedProtocol();
+    const section = report.querySelector('[data-return-section=condition]')!;
+    const text = section.textContent || '';
     expect(text.indexOf('Sklep je předáván')).toBeGreaterThan(-1);
-    expect(text.indexOf('Ve sklepě zůstává:')).toBeLessThan(text.indexOf('V nemovitosti zůstává'));
+    expect(text.indexOf('Ve sklepě zůstává')).toBeLessThan(text.indexOf('V nemovitosti zůstává'));
+    expect(section.querySelectorAll('.cellar-remains-print-boxes > .handover-write-box')).toHaveLength(4);
+    const propertyLabel = [...section.querySelectorAll('.handover-write-label')].find(label => label.textContent === 'V nemovitosti zůstává')!;
+    expect(propertyLabel.nextElementSibling?.children).toHaveLength(4);
+    expect([...report.querySelectorAll('.handover-write-label')].some(label => /^(Ve sklepě zůstává|V nemovitosti zůstává|Zjištěné závady, poškození a nedostatky):$/.test(label.textContent || ''))).toBe(false);
+    app.setPropertyTabFieldValue('predavaci-protokol', 'cellarRemainsWritingRows', '2');
+    expect(printedProtocol().querySelectorAll('[data-return-section=condition] .cellar-remains-print-boxes > .handover-write-box')).toHaveLength(2);
+  });
+
+  it('prints the added landlord cellar option in both applicable print sections', () => {
+    app.setPropertyTabFieldValue('predavaci-protokol', 'leaseReturnSectionVisible', 'ANO');
+    app.setPropertyTabFieldValue('predavaci-protokol', 'cellarVisible', 'ANO');
+    app.setPropertyTabFieldValue('predavaci-protokol', 'cellar-section-cleared-landlord', 'ANO');
+    const report = printedProtocol();
+    const checks = [...report.querySelectorAll('[data-return-section=condition] .handover-return-check')];
+    const tenantIndex = checks.findIndex(check => check.textContent?.includes('Vyklizený, bez osobních věcí nájemce'));
+    expect(checks[tenantIndex + 1]?.textContent).toContain('☑ Vyklizená, bez osobních věcí pronajímatele');
+    const handover = [...report.querySelectorAll('.section')].find(section => section.querySelector('.section-title')?.textContent === 'STAV NEMOVITOSTI PŘI PŘEDÁNÍ');
+    expect(handover?.textContent).toContain('Sklep je předáván');
+    expect(handover?.querySelector('[data-cellar-condition=cleared-landlord]')?.textContent).toContain('☑');
   });
 
   it('keeps collapse state during property tabs but resets it when reopening the property', () => {
@@ -288,6 +335,52 @@ describe('Property handover participants', () => {
     expect(app.propertyTabFieldValue('predavaci-protokol', 'managerName')).toBe('Petr Správce');
     expect(app.propertyTabFieldValue('predavaci-protokol', 'managerPhone')).toBe('777 111 222');
     expect(app.propertyTabFieldValue('predavaci-protokol', 'managerEmail')).toBe('spravce@example.cz');
+    const headings = [...printedProtocol().querySelectorAll('.section-title')].map(heading => heading.textContent);
+    expect(headings.indexOf('SPRÁVCE')).toBe(headings.indexOf('NEMOVITOST') + 1);
+    expect(headings.indexOf('STAVY MĚŘIČŮ')).toBe(headings.indexOf('SPRÁVCE') + 1);
+  });
+
+  it.each(['Předseda / správce', 'Správce jmenovaný svazem zahrádkářů', 'Správce elektroměru', 'Správce oblasti', 'Nejmenovaný správce', 'Recepce'])('activates the handover manager for the service %s', service => {
+    app.setPropertyTabFieldValue('sluzby', 'Služby', service);
+    expect(app.propertyTabFieldValue('predavaci-protokol', 'managerVisible')).toBe('ANO');
+    app.saveCurrentProperty();
+    app.openPropertyFormForRecord(0);
+    expect(app.propertyTabFieldValue('predavaci-protokol', 'managerVisible')).toBe('ANO');
+    app.setPropertyTabFieldValue('sluzby', 'Služby', 'Voda');
+    expect(app.propertyTabFieldValue('predavaci-protokol', 'managerVisible')).toBe('NE');
+  });
+
+  it('prefills contacts from the selected specialist manager', () => {
+    app.setPropertyTabFieldValue('sluzby', 'Služby', 'Správce elektroměru');
+    app.setPropertyTabFieldValue('sluzby', 'Jméno správce elektroměru', 'Správce měřidel');
+    app.setPropertyTabFieldValue('sluzby', 'Telefon na správce elektroměru', '777 555 444');
+    app.setPropertyTabFieldValue('sluzby', 'E-mail na správce elektroměru', 'meridla@example.cz');
+    expect(app.propertyTabFieldValue('predavaci-protokol', 'managerName')).toBe('Správce měřidel');
+    expect(app.propertyTabFieldValue('predavaci-protokol', 'managerPhone')).toBe('777 555 444');
+    expect(app.propertyTabFieldValue('predavaci-protokol', 'managerEmail')).toBe('meridla@example.cz');
+  });
+
+  it('prints the cellar designation and four selected cellar states after the handover writing fields', () => {
+    app.setPropertyTabFieldValue('predavaci-protokol', 'cellarVisible', 'ANO');
+    app.setPropertyTabFieldValue('predavaci-protokol', 'cellar', '45A');
+    app.setPropertyTabFieldValue('predavaci-protokol', 'cellar-section-cleared-landlord', 'ANO');
+    app.setPropertyTabFieldValue('predavaci-protokol', 'cellar-section-clean', 'ANO');
+    const report = printedProtocol();
+    const section = [...report.querySelectorAll('.section')].find(element => element.querySelector('.section-title')?.textContent === 'STAV NEMOVITOSTI PŘI PŘEDÁNÍ')!;
+    expect(section.querySelector('.cellar-main-label .handover-detail-value')?.textContent).toBe('45A');
+    expect(section.textContent).toContain('Nemovitost je předávána');
+    expect(section.textContent).not.toContain('Nemovitost je předávána:');
+    expect(section.querySelector('.cellar-main-label')?.previousElementSibling?.textContent).toBe('Sklep je předáván');
+    expect(section.querySelectorAll('[data-cellar-condition]')).toHaveLength(4);
+    expect(section.querySelector('[data-cellar-condition=clean]')?.textContent).toContain('☑');
+    expect(section.querySelector('[data-cellar-condition=defects]')?.textContent).toContain('☐');
+    expect(section.textContent!.indexOf('Označení sklepu:')).toBeLessThan(section.textContent!.indexOf('Ve sklepě zůstává'));
+    expect(section.textContent!.indexOf('Ve sklepě zůstává')).toBeLessThan(section.textContent!.indexOf('V nemovitosti zůstává'));
+    expect(section.querySelectorAll('.cellar-remains-print-boxes > .handover-write-box')).toHaveLength(4);
+    expect(section.querySelectorAll('.property-remains-print-boxes > .handover-write-box')).toHaveLength(4);
+    app.setPropertyTabFieldValue('predavaci-protokol', 'cellarVisible', 'NE');
+    const disabled = [...printedProtocol().querySelectorAll('.section')].find(element => element.querySelector('.section-title')?.textContent === 'STAV NEMOVITOSTI PŘI PŘEDÁNÍ')!;
+    expect(disabled.querySelector('[data-cellar-condition]')).toBeNull();
   });
 
   it('names protocol files with the service relationship and the surname on the selected side', () => {
@@ -362,8 +455,11 @@ describe('Property handover participants', () => {
     const headings = [...report.querySelectorAll('.section-title')].map(heading => heading.textContent);
     expect(headings).toContain('FINANČNÍ VYPOŘÁDÁNÍ A JISTOTA (KAUCE)');
     expect(headings).toContain('DALŠÍ VYBAVENÍ A DOKUMENTACE');
+    expect(report.body.textContent).toContain('Nájemce předal pronajímateli následující vybavení, dokumenty či další předměty');
+    expect(report.body.textContent).not.toContain('Nájemce předal pronajímateli následující vybavení, dokumenty či další předměty:');
     expect(headings).toContain('Fotodokumentace');
-    expect(headings.indexOf('KLÍČE')).toBeLessThan(headings.indexOf('DALŠÍ VYBAVENÍ A DOKUMENTACE'));
+    expect(headings.indexOf('SCHRÁNKA A ZVONEK')).toBe(headings.indexOf('KLÍČE') + 1);
+    expect(headings.indexOf('DALŠÍ VYBAVENÍ A DOKUMENTACE')).toBe(headings.indexOf('SCHRÁNKA A ZVONEK') + 1);
     expect(headings.indexOf('DALŠÍ VYBAVENÍ A DOKUMENTACE')).toBeLessThan(headings.indexOf('STAV NEMOVITOSTI PŘI PŘEDÁNÍ'));
     expect(report.body.textContent).toContain('SCHRÁNKA A ZVONEK');
     for (const conclusion of HANDOVER_RETURN_CONCLUSIONS.filter(conclusion => conclusion.defaultOn)) expect(report.body.textContent).toContain(conclusion.text);
@@ -376,7 +472,7 @@ describe('Property handover participants', () => {
 
   it('persists the optional sections and safely prints entered defects, amounts and bank details', () => {
     const values = {
-      cellarVisible: 'ANO', cellar: 'Sklep za domem', leaseReturnSectionVisible: 'ANO',
+      cellarVisible: 'ANO', cellar: 'Sklep za domem', leaseReturnSectionVisible: 'ANO', returnFinanceVisible: 'ANO',
       returnDefects: '<img src=x onerror=alert(1)>\nPoškozená podlaha.', returnRepairs: 'Nájemce opraví do 30.11.',
       returnKeysExceptions: 'Chybí čip.', returnEquipment: 'Návod ke kotli.',
       returnDepositAmount: '25 000', returnUnpaidDebts: 'Nájemné 1000 Kč.', returnDamageCosts: 'Oprava 2000 Kč.',

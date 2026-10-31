@@ -1,20 +1,23 @@
 import { Component, input, output, signal } from '@angular/core';
+import { HandoverTextareaDirective } from './handover-textarea.directive';
+import { CustomOptionAppearance } from './custom-option-appearance';
 import { HANDOVER_RETURN_CONCLUSIONS, HANDOVER_RETURN_GROUPS, HandoverConclusion, HandoverReturnValues, handoverConclusionChecked, handoverReturnCellarEnabled, handoverReturnCheckChanges } from './handover-return';
 
 @Component({
   selector: 'app-handover-return-fields',
+  imports: [HandoverTextareaDirective, CustomOptionAppearance],
   host: { '[class.handover-final-fields]': 'finalSectionsOnly()', '[class.handover-return-collapsed]': '!finalSectionsOnly() && collapsed("return")' },
   template: `
     @if (!finalSectionsOnly()) {
       <div class="handover-section-heading">
-      <label class="section-toggle handover-section-switch"><input type="checkbox" [checked]="values()['leaseReturnSectionVisible'] === 'ANO'" (change)="check('leaseReturnSectionVisible', $any($event.target).checked)" /> STAV NEMOVITOSTI PŘI VRÁCENÍ NÁJMU</label>
+      <div class="section-toggle handover-section-switch"><input type="checkbox" aria-label="Zahrnout stav nemovitosti při vrácení nájmu do tisku" [checked]="values()['leaseReturnSectionVisible'] === 'ANO'" (change)="check('leaseReturnSectionVisible', $any($event.target).checked)" /><button type="button" class="handover-section-title-button" [attr.aria-expanded]="!collapsed('return')" (click)="toggleCollapsed('return')">STAV NEMOVITOSTI PŘI VRÁCENÍ NÁJMU</button></div>
       <button type="button" class="handover-collapse-arrow" [attr.aria-expanded]="!collapsed('return')" aria-label="Sbalit / rozbalit stav nemovitosti při vrácení nájmu" (click)="toggleCollapsed('return')">{{ collapsed('return') ? '⌄' : '⌃' }}</button>
       </div>
       @if (!collapsed('return')) {
         @for (group of mainGroups(); track group.key) {
           @if (group.key === 'finance') {
             <div class="handover-section-heading">
-            <label class="section-toggle handover-section-switch finance-section-toggle"><input type="checkbox" [checked]="financeVisible()" (change)="set('returnFinanceVisible', $any($event.target).checked ? 'ANO' : 'NE')" /> {{ group.title }}</label>
+            <div class="section-toggle handover-section-switch finance-section-toggle"><input type="checkbox" aria-label="Zahrnout finanční vypořádání do tisku" [checked]="financeVisible()" (change)="set('returnFinanceVisible', $any($event.target).checked ? 'ANO' : 'NE')" /><button type="button" class="handover-section-title-button" [attr.aria-expanded]="!collapsed('finance')" (click)="toggleCollapsed('finance')">{{ group.title }}</button></div>
             <button type="button" class="handover-collapse-arrow" [attr.aria-expanded]="!collapsed('finance')" aria-label="Sbalit / rozbalit finanční vypořádání" (click)="toggleCollapsed('finance')">{{ collapsed('finance') ? '⌄' : '⌃' }}</button>
             </div>
           }
@@ -27,8 +30,8 @@ import { HANDOVER_RETURN_CONCLUSIONS, HANDOVER_RETURN_GROUPS, HandoverConclusion
                   <label class="check-line"><input type="checkbox" [checked]="values()[option.key] === 'ANO'" (change)="check(option.key, $any($event.target).checked)" /> {{ option.label }}</label>
                 }
                 <div class="handover-writing-control">
-                  <label class="field cellar-return-field"><span>V nemovitosti zůstává</span><textarea rows="2" [value]="values()['remainsInProperty'] || ''" (input)="set('remainsInProperty', $any($event.target).value)"></textarea></label>
-                  <label class="writing-rows">Počet řádků k dopsání:<input type="number" min="1" max="10" [value]="values()['remainsInPropertyWritingRows'] || 1" (input)="set('remainsInPropertyWritingRows', $any($event.target).value)" /></label>
+                  <label class="field cellar-return-field"><span>V nemovitosti zůstává</span><textarea appHandoverText [value]="values()['remainsInProperty'] || ''" (input)="set('remainsInProperty', $any($event.target).value)"></textarea></label>
+                  <label class="writing-rows">Počet řádku v tiskové sestavě:<input type="number" min="1" max="10" [value]="values()['remainsInPropertyWritingRows'] || 4" (input)="set('remainsInPropertyWritingRows', $any($event.target).value)" /></label>
                 </div>
               </fieldset>
             } @else {
@@ -48,10 +51,10 @@ import { HANDOVER_RETURN_CONCLUSIONS, HANDOVER_RETURN_GROUPS, HandoverConclusion
                 @if (field.money || field.lines === 1) {
                   <input type="text" [id]="'handover-' + field.key" [attr.inputmode]="field.money ? 'decimal' : 'text'" [value]="values()[field.key] || ''" (input)="set(field.key, $any($event.target).value)" />
                 } @else {
-                  <textarea [id]="'handover-' + field.key" [rows]="field.lines" [value]="values()[field.key] || ''" (input)="set(field.key, $any($event.target).value)"></textarea>
+                  <textarea appHandoverText [id]="'handover-' + field.key" [value]="values()[field.key] || ''" (input)="set(field.key, $any($event.target).value)"></textarea>
                 }
                 @if (!field.money && !field.inline) {
-                  <label class="writing-rows" [for]="'handover-' + field.key + '-rows'">Počet řádků k dopsání:<input type="number" min="1" max="10" [id]="'handover-' + field.key + '-rows'" [value]="values()[field.key + 'WritingRows'] || field.boxes || 4" (input)="set(field.key + 'WritingRows', $any($event.target).value)" /></label>
+                  <label class="writing-rows" [for]="'handover-' + field.key + '-rows'">Počet řádku v tiskové sestavě:<input type="number" min="1" max="10" [id]="'handover-' + field.key + '-rows'" [value]="values()[field.key + 'WritingRows'] || field.boxes || 4" (input)="set(field.key + 'WritingRows', $any($event.target).value)" /></label>
                 }
                 }
               </div>
@@ -75,7 +78,7 @@ import { HANDOVER_RETURN_CONCLUSIONS, HANDOVER_RETURN_GROUPS, HandoverConclusion
               @if (field.money || field.lines === 1) {
                 <input type="text" [id]="'handover-' + field.key" [attr.inputmode]="field.money ? 'decimal' : 'text'" [value]="values()[field.key] || ''" (input)="set(field.key, $any($event.target).value)" />
               } @else {
-                <textarea [id]="'handover-' + field.key" [rows]="field.lines" [value]="values()[field.key] || ''" (input)="set(field.key, $any($event.target).value)"></textarea>
+                <textarea appHandoverText [id]="'handover-' + field.key" [value]="values()[field.key] || ''" (input)="set(field.key, $any($event.target).value)"></textarea>
               }
             </div>
           }
@@ -85,7 +88,7 @@ import { HANDOVER_RETURN_CONCLUSIONS, HANDOVER_RETURN_GROUPS, HandoverConclusion
       <fieldset><legend>Závěrečná prohlášení</legend>@for (conclusion of conclusions; track conclusion.key) { <label class="check-line"><input type="checkbox" [checked]="conclusionChecked(conclusion)" (change)="check(conclusion.key, $any($event.target).checked)" /> {{ conclusion.text }}</label> }</fieldset>
     }
   `,
-  styleUrls: ['./handover-writing-rows.css', './handover-collapse.css'],
+  styleUrls: ['./handover-writing-rows.css', './handover-collapse.css', './handover-textarea.css'],
   styles: [`
     :host { display:block; min-width:0; color:#26384a; }
     :host(.handover-return-collapsed) .section-toggle { margin:0; }

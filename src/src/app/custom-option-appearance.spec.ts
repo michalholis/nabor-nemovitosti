@@ -6,7 +6,8 @@ import { CustomOptionAppearance } from './custom-option-appearance';
 @Component({
   imports: [CustomOptionAppearance],
   template: `<button id="normal">Soukromí</button><button id="custom">dopsat vlastní možnost</button>
-    <button id="short" class="active">Dopsat vlastní</button><select><option>Základní text</option><option id="own">Doplnit vlastní</option></select>`
+    <button id="short" class="active">Dopsat vlastní</button><select><option>Základní text</option><option id="own">Doplnit vlastní</option></select>
+    <label id="label"><input type="checkbox" /> Dopsat vlastní</label>`
 })
 class TestChoices {}
 
@@ -18,7 +19,7 @@ it('marks custom choices for subtle styling without disabling them or changing o
   fixture.detectChanges();
   const host = fixture.nativeElement as HTMLElement;
   expect(host.querySelector('#normal')?.classList.contains('custom-option-choice')).toBe(false);
-  for (const id of ['custom', 'short', 'own']) expect(host.querySelector('#' + id)?.classList.contains('custom-option-choice')).toBe(true);
+  for (const id of ['custom', 'short', 'own', 'label']) expect(host.querySelector('#' + id)?.classList.contains('custom-option-choice')).toBe(true);
   expect(host.querySelector('#short')?.classList.contains('active')).toBe(true);
   expect(host.querySelectorAll('[disabled]')).toHaveLength(0);
 });

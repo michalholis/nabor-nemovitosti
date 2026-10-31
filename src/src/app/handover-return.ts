@@ -7,7 +7,7 @@ interface ReturnGroup { key: string; title: string; intro?: string; checks?: Ret
 export const HANDOVER_RETURN_GROUPS: ReturnGroup[] = [
   {
     key: 'equipment', title: 'DALŠÍ VYBAVENÍ A DOKUMENTACE',     fields: [
-      { key: 'returnEquipment', label: 'Nájemce předal pronajímateli následující vybavení, dokumenty či další předměty:', lines: 3, boxes: 3 }
+      { key: 'returnEquipment', label: 'Nájemce předal pronajímateli následující vybavení, dokumenty či další předměty', lines: 3, boxes: 3 }
     ]
   },
   {
@@ -20,9 +20,9 @@ export const HANDOVER_RETURN_GROUPS: ReturnGroup[] = [
       { key: 'returnWithItems', label: 'S ponechaným vybavením nebo věcmi uvedenými níže' }
     ],
     fields: [
-      { key: 'returnDefects', label: 'Zjištěné závady, poškození a nedostatky:', lines: 4 },
-      { key: 'returnRepairs', label: 'Dohodnutý způsob odstranění závad, odpovědná osoba a termín:', lines: 3 },
-      { key: 'returnKeysExceptions', label: 'Nájemce prohlašuje, že předal veškeré klíče a přístupové prostředky, které má k dispozici, případně uvádí následující výjimky:', lines: 2 }
+      { key: 'returnDefects', label: 'Zjištěné závady, poškození a nedostatky', lines: 4 },
+      { key: 'returnRepairs', label: 'Dohodnutý způsob odstranění závad, odpovědná osoba a termín', lines: 3 },
+      { key: 'returnKeysExceptions', label: 'Nájemce prohlašuje, že předal veškeré klíče a přístupové prostředky, které má k dispozici, případně uvádí následující výjimky', lines: 2 }
     ]
   },
   {
@@ -53,6 +53,20 @@ export const HANDOVER_RETURN_CONCLUSIONS: HandoverConclusion[] = [
   { key: 'conclusionEarlyTermination', text: 'Převzetí domu není dohodou o předčasném ukončení nájmu. Případné předčasné ukončení nájmu podléhá podmínkám nájemní smlouvy a příslušným právním předpisům.' },
   { key: 'conclusionCopies', defaultOn: true, text: 'Protokol je vyhotoven ve dvou stejnopisech, z nichž každá smluvní strana obdrží jeden.' }
 ];
+
+export function createHandoverInitialValues(): HandoverReturnValues {
+  const unchecked = [
+    'metersSectionVisible', 'keysSectionVisible', 'remainsSectionVisible', 'returnEquipmentVisible',
+    'leaseReturnSectionVisible', 'returnFinanceVisible', 'returnDepositAgreementVisible',
+    'electricMeterVisible', 'electricT1MeterVisible', 'electricT2MeterVisible', 'hotWaterMeterVisible',
+    'coldWaterMeterVisible', 'gasMeterVisible', 'customMeterVisible',
+    'keysCountVisible', 'chipsCountVisible', 'keyCardsCountVisible',
+    'buyerObligationVisible', 'buyerObligationsaleVisible', 'buyerObligationleaseVisible',
+    'buyerObligationleaseReturnVisible', 'keysConfirmationVisible',
+    ...HANDOVER_RETURN_CONCLUSIONS.map(conclusion => conclusion.key)
+  ];
+  return Object.fromEntries(unchecked.map(key => [key, 'NE']));
+}
 
 export function handoverConclusionChecked(conclusion: HandoverConclusion, values: HandoverReturnValues): boolean {
   return conclusion.defaultOn ? values[conclusion.key] !== 'NE' : values[conclusion.key] === 'ANO';
@@ -114,14 +128,15 @@ export function renderHandoverReturnSections(values: HandoverReturnValues, escap
     + (definition.key === 'condition' && handoverReturnCellarEnabled(values) ? `<div class="handover-write-label">Sklep je předáván</div>
       <div class="handover-detail cellar-main-label"><div class="handover-detail-label">Označení sklepu:</div><div class="handover-detail-value">${escape(values['cellar'] || '')}</div></div>${[
       ['cleared', 'Vyklizený, bez osobních věcí nájemce'],
+      ['cleared-landlord', 'Vyklizená, bez osobních věcí pronajímatele'],
       ['clean', 'Uklizený a v čistém stavu'],
       ['no-defects', 'Bez zjevných závad nad rámec běžného opotřebení'],
       ['defects', 'Se závadami nebo poškozením uvedenými níže'],
       ['items', 'S ponechaným vybavením nebo věcmi uvedenými níže']
     ].map(([key, label]) => `<div class="handover-return-check"><span>${values[`cellar-section-${key}`] === 'ANO' ? '☑' : '☐'}</span> ${escape(label)}</div>`).join('')}
-      <div class="handover-write-label cellar-remains-print-label">Ve sklepě zůstává:</div>
-      <div class="handover-write-boxes cellar-remains-print-boxes">${Array.from({ length: Math.min(10, Math.max(1, Number.parseInt(values['cellarRemainsWritingRows'] || '', 10) || 1)) }, (_, index) => `<div class="handover-write-box">${index === 0 && values['cellarRemains'] ? escape(values['cellarRemains']) : '&nbsp;'}</div>`).join('')}</div>` : '')
-    + (definition.key === 'condition' ? `<div class="handover-write-label">V nemovitosti zůstává</div><div class="handover-write-boxes">${Array.from({ length: Math.min(10, Math.max(1, Number.parseInt(values['remainsInPropertyWritingRows'] || '', 10) || 1)) }, (_, index) => `<div class="handover-write-box">${index === 0 && values['remainsInProperty'] ? escape(values['remainsInProperty']) : '&nbsp;'}</div>`).join('')}</div>` : '')
+      <div class="handover-write-label cellar-remains-print-label">Ve sklepě zůstává</div>
+      <div class="handover-write-boxes cellar-remains-print-boxes">${Array.from({ length: Math.min(10, Math.max(1, Number.parseInt(values['cellarRemainsWritingRows'] || '', 10) || 4)) }, (_, index) => `<div class="handover-write-box">${index === 0 && values['cellarRemains'] ? escape(values['cellarRemains']) : '&nbsp;'}</div>`).join('')}</div>` : '')
+    + (definition.key === 'condition' ? `<div class="handover-write-label">V nemovitosti zůstává</div><div class="handover-write-boxes">${Array.from({ length: Math.min(10, Math.max(1, Number.parseInt(values['remainsInPropertyWritingRows'] || '', 10) || 4)) }, (_, index) => `<div class="handover-write-box">${index === 0 && values['remainsInProperty'] ? escape(values['remainsInProperty']) : '&nbsp;'}</div>`).join('')}</div>` : '')
     + (definition.fields || []).map(field).join('')
     + (definition.note ? `<p class="handover-finance-note">${escape(definition.note)}</p>` : '');
     return definition.key === 'condition'

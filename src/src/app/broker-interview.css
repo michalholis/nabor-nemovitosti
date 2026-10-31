@@ -1,0 +1,10 @@
+.broker-price-pair { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+.broker-interview-fields textarea { min-height:0; }
+.broker-listing-pair { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; break-inside:avoid; margin-bottom:.8rem; }
+.broker-listing-pair > .new-client-field-card { margin-bottom:0; grid-template-rows:1fr auto; }
+.broker-listing-price-value { display:flex; align-items:center; gap:.35rem; min-width:0; min-height:10mm; }
+.broker-listing-price-input { width:100%; min-width:0; min-height:0; height:1.2em; padding:0; border:0; outline:0; background:transparent; color:inherit; font:inherit; }
+.broker-listing-price-stamp { white-space:nowrap; font-size:.72rem; }
+.broker-listing-price-value:focus-within { border-color:var(--client-accent,#ff4f9a); }
+@media(max-width:760px) { .broker-price-pair { grid-template-columns:minmax(0,1fr); } }
+@media(max-width:760px) { .broker-listing-pair { grid-template-columns:minmax(0,1fr); } }

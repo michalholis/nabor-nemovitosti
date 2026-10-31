@@ -1,6 +1,6 @@
 import { AfterViewInit, Directive, ElementRef, Renderer2, inject } from '@angular/core';
 
-@Directive({ selector: 'button, option' })
+@Directive({ selector: 'button, option, label' })
 export class CustomOptionAppearance implements AfterViewInit {
   private readonly element = inject(ElementRef<HTMLElement>);
   private readonly renderer = inject(Renderer2);
