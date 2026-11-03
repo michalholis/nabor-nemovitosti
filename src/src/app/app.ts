@@ -11,9 +11,10 @@ import { CustomOptionAppearance } from './custom-option-appearance';
 import { compatibleWaterHeatingDevices, normalizeWaterHeatingValues } from './water-heating-fields';
 import { SEWAGE_OPTIONS, RAINWATER_DRAINAGE_OPTIONS, sewageOptionHint, normalizeSewageValues } from './sewage-fields';
 import { GAS_STATUS_OPTIONS, GAS_SOURCE_OPTIONS, GAS_METER_LOCATION_OPTIONS, GAS_USAGE_OPTIONS, GAS_CONNECTION_OPTIONS, GAS_INSPECTION_OPTIONS, GAS_DOCUMENTATION_OPTIONS, GAS_CHECK_FIELDS, GAS_DETAIL_GROUPS, normalizeGasValues } from './gas-fields';
-import { WATER_SUPPLY_CONTROLS, WATER_SOURCE_OPTIONS, WATER_METER_OPTIONS, WATER_QUALITY_OPTIONS, normalizeWaterSupplyValues } from './water-supply-fields';
+import { WATER_SUPPLY_CONTROLS, WATER_SOURCE_OPTIONS, WATER_METER_OPTIONS, WATER_QUALITY_OPTIONS, WATER_PROVIDER_OPTIONS, hasAdditionalWaterSource, isWaterSupplyFieldVisible, normalizeWaterSupplyValues } from './water-supply-fields';
 import { ELECTRICITY_CONTROLS, PHOTOVOLTAIC_CONTROLS, normalizeElectricityValues, shouldPrintElectricityField, type ElectricityControl } from './electricity-fields';
 import { SERVICE_BREAKDOWN_GROUPS, serviceBreakdownEntries, serviceBreakdownTotal, isServiceBreakdownValueField } from './service-breakdown-fields';
+import { splitClientTitles } from './client-titles';
 import { HEATING_ENERGY_OPTIONS, HEATING_METHOD_OPTIONS, HEATING_METHOD_HELP, HEATING_TERMINAL_OPTIONS, normalizeHeatingValues, compatibleHeatingDevices } from './heating-fields';
 import { HandoverContactOption, HandoverContactPicker } from './handover-contact-picker';
 import { HandoverReturnFields } from './handover-return-fields';
@@ -711,7 +712,9 @@ const MAJITEL_CESTY_OPTIONS: string[] = [
   'Družstva',
   'Třetí osoba / soused',
   'ČR',
-  'Lesy ČR'
+  'Lesy ČR',
+  'Správa silnic',
+  'Kraj'
 ];
 
 const PARKOVANI_OPTIONS: string[] = [
@@ -724,6 +727,7 @@ const PARKOVANI_OPTIONS: string[] = [
   'Na okraji pozemku',
   'Garáž',
   'Kryté stání',
+  'Nekryté stání',
   'Vyhrazené'
 ];
 
@@ -754,7 +758,6 @@ const VODA_VEDLEJSI_OPTIONS: string[] = ['Studna vlastní', 'Studna společná',
 const VODA_DRUH_STUDNY_OPTIONS: string[] = ['Studna vrtaná', 'Studna kopaná'];
 const VODA_PRIVOD_OPTIONS: string[] = ['Sezonní (na zimu se vypouští)', 'Celoroční'];
 const VODA_STOUPACKY_OPTIONS: string[] = ['Původní', 'Rekonstruováno', 'Částečně rekonstruováno'];
-const VODA_PROVOZOVATEL_OPTIONS: string[] = ['SMVaK'];
 
 const PLYN_TYP_OPTIONS: string[] = ['Propan-butan', 'Zemní plyn'];
 const PLYN_UMISTENI_OPTIONS: string[] = ['Do domu', 'Na hranici pozemku', 'Na okraji pozemku'];
@@ -4827,13 +4830,16 @@ export class App {
 
   protected vodaZdrojOptions(): string[] { return WATER_SOURCE_OPTIONS; }
   protected vodaMerakOptions(): string[] { return WATER_METER_OPTIONS; }
-  protected vodaControls(): typeof WATER_SUPPLY_CONTROLS { return WATER_SUPPLY_CONTROLS; }
+  protected vodaControls(): typeof WATER_SUPPLY_CONTROLS {
+    const values = this.normalizedPropertyTabCollection().voda || {};
+    return WATER_SUPPLY_CONTROLS.filter(control => isWaterSupplyFieldVisible(control.field, values));
+  }
   protected vodaVedlejsiOptions(): string[] { return VODA_VEDLEJSI_OPTIONS; }
   protected vodaDruhStudnyOptions(): string[] { return VODA_DRUH_STUDNY_OPTIONS; }
   protected vodaKvalitaOptions(): string[] { return WATER_QUALITY_OPTIONS; }
   protected vodaPrivodOptions(): string[] { return VODA_PRIVOD_OPTIONS; }
   protected vodaStoupackyOptions(): string[] { return VODA_STOUPACKY_OPTIONS; }
-  protected vodaProvozovatelOptions(): string[] { return VODA_PROVOZOVATEL_OPTIONS; }
+  protected vodaProvozovatelOptions(): string[] { return WATER_PROVIDER_OPTIONS; }
 
   protected hasVodaMultiValue(field: string, value: string): boolean {
     return this.hasPropertyTabMultiValue('voda', field, value);
@@ -4881,8 +4887,7 @@ export class App {
   }
 
   protected hasVodaAnyDalsiZdroj(): boolean {
-    const val = this.propertyTabFieldValue('voda', 'Další zdroj vody');
-    return !!val.trim();
+    return hasAdditionalWaterSource(this.normalizedPropertyTabCollection().voda || {});
   }
 
   protected kanalizaceOptions(): string[] { return SEWAGE_OPTIONS; }
@@ -5153,7 +5158,7 @@ export class App {
   protected pravniVadyOptions(): string[] {
     return [
       'Nejsou známa žádná', 'Dluh na družstvu', 'Břemena chůze, jízdy',
-      'Břemena elektřina', 'Břemena vodovod', 'Břemena kanalizace', 'Bankovní zástavy', 'Zatíženo hypotékou',
+      'Břemena elektřina', 'Břemena vodovod', 'Břemena kanalizace', 'Bankovní zástavy', 'Zástavní právo smluvní', 'Zatíženo hypotékou',
       'Předkupní právo', 'Památková zóna', 'Nemovitá kulturní památka', 'Chráněná krajinná oblast', 'Podnájemník do:',
       'Dluh na bytě nájemník', 'Černá stavba'
     ];
@@ -11332,6 +11337,7 @@ export class App {
   }
 
   private shouldPrintPropertyField(tab: NewPropertyTabKey, field: string, values: Record<string, string>): boolean {
+    if (tab === 'voda') return isWaterSupplyFieldVisible(field, values);
     if (tab === 'elektina') return shouldPrintElectricityField(field, values);
     if (tab === 'kanalizace' && field === 'Objem odpadní nádoby') return !this.isKanalizaceObjemHidden();
     if (tab === 'topeni' && field === 'S regulací topení') return /^ano$/i.test((values[field] || '').trim());
@@ -12256,7 +12262,7 @@ export class App {
     const genderMale = d.gender === 'Muž';
     const genderFemale = d.gender === 'Žena';
     const phone = ((d.phonePrefix ? d.phonePrefix + ' ' : '') + (d.phone || '')).trim();
-    const title = d.hasTitle ? (d.titleText || '') : '';
+    const titles = splitClientTitles(d.titleText || '');
     const repBody = d.companyRepresentationType === 'clenem-statutarniho-organu';
     const repEmployee = d.companyRepresentationType === 'zamestnancem';
     const repPower = d.companyRepresentationType === 'na-zaklade-plne-moci';
@@ -12321,8 +12327,8 @@ ${`<div class="aml aml-page">
     <div>
       <div class="row"><div class="label">Jméno (jména)</div><div class="value">${line(firstNames)}</div></div>
       <div class="row"><div class="label">Příjmení</div><div class="value">${line(surname)}</div></div>
-      <div class="row"><div class="label">Titul před jménem</div><div class="value">${line(title)}</div></div>
-      <div class="row"><div class="label">Titul za jménem</div><div class="value">${line('')}</div></div>
+      <div class="row"><div class="label">Titul před jménem</div><div class="value">${line(titles.before)}</div></div>
+      <div class="row"><div class="label">Titul za jménem</div><div class="value">${line(titles.after)}</div></div>
       <div class="row"><div class="label">Datum narození</div><div class="value">${line(d.birthDate)}</div></div>
       <div class="row"><div class="label">Obec a stát místa narození</div><div class="value">${line(d.birthPlace)}</div></div>
       <div class="row"><div class="label">Státní občanství</div><div class="value">${line(d.citizenship)}</div></div>

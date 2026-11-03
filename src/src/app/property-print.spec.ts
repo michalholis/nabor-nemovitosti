@@ -71,6 +71,7 @@ interface PrintHarness {
   vodaZdrojOptions(): string[];
   vodaMerakOptions(): string[];
   vodaKvalitaOptions(): string[];
+  vodaControls(): Array<{ field: string }>;
   isVodaHasStudna(): boolean;
   vodaCheckDateValue(field: string): string;
   setVodaCheckDateValue(field: string, value: string): void;
@@ -696,7 +697,7 @@ describe('Property print fields', () => {
       'Plyn': 'Nezaveden', 'Typ': 'Propan-butan', 'Umístění': 'Na hranici pozemku', 'Poskytovatel': 'Původní dodavatel'
     } } }));
     expect(app.propertyTabFieldValue('plyn', 'Plyn')).toBe('Bez přípojky');
-    expect(app.plynOptions()).toEqual(['Zaveden', 'Individuální', 'Bez přípojky', 'Přípojka zřízena', 'Bez odběru', 'Možnost připojení']);
+    expect(app.plynOptions()).toEqual(['Bez přípojky', 'Zaveden', 'Přípojka zřízena, bez odběru', 'Možnost připojení']);
     app.togglePlynMultiValue('Zdroj plynu', 'Vlastní zásobník LPG');
     app.togglePlynMultiValue('Zdroj plynu', 'Plynové lahve');
     app.togglePlynMultiValue('Využití plynu', 'Vytápění');
@@ -792,7 +793,7 @@ describe('Property print fields', () => {
     app.toggleVodaMultiValue('Zdroj vody', 'Vlastní studna – vrtaná');
     app.toggleVodaMultiValue('Zdroj vody', 'Společná studna');
     const values = {
-      'Zdroj vody vlastní': 'Záložní cisterna', 'Stav napojení': 'Přípojka zřízena, bez odběru',
+      'Zdroj vody vlastní': 'Záložní cisterna', 'Stav napojení': 'Přípojka zřízena, bez odběru', 'Další zdroj vody': 'Celoroční',
       'Umístění přípojky': 'Na hranici pozemku', 'Vodoměr': 'Společný',
       'Umístění vodoměru': 'Vodoměrná šachta', 'Umístění vodoměru vlastní': 'U vjezdu',
       'Způsob zásobování': 'Domácí vodárna|Čerpadlo', 'Kvalita vody': 'Neověřená kvalita',
@@ -829,6 +830,48 @@ describe('Property print fields', () => {
       }
       expect(answer('Poslední rozbor studniční vody')).toBe('20. 9. 2026');
     }
+  });
+
+  it.each([
+    ...['Sezonní (na zimu se vypouští)', 'Celoroční', 'Studna vlastní', 'Studna společná', 'Retenční nádrž na dešťovou vodu'].map(choice => ({ choice, custom: '' })),
+    { choice: '', custom: ' ' }, { choice: '', custom: 'Soukromý doplňkový zdroj' }
+  ])('gates the seven dependent water fields on the additional source ($choice / $custom) without erasing their saved values', ({ choice, custom }) => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    const dependent = { 'Využití studny': 'Zahrada', 'Hloubka studny': '14 m', 'Kvalita vody': 'Užitková', 'Rozbor vody': 'Ano', 'Úprava vody': 'Filtrace', 'Celoroční dostupnost vody': 'Ano', 'Čerpadlo': 'Ponorné', 'Využití studny vlastní': 'Skleník', 'Čerpadlo vlastní': 'Záložní čerpadlo' };
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Byt', tabValues: { voda: { 'Zdroj vody': 'Vlastní studna – vrtaná', ...dependent } } }));
+    const fields = () => app.vodaControls().map(control => control.field);
+    const gated = ['Využití studny', 'Hloubka studny', 'Kvalita vody', 'Rozbor vody', 'Úprava vody', 'Celoroční dostupnost vody', 'Čerpadlo'];
+    expect(fields().slice(fields().indexOf('Způsob zásobování') + 1, fields().indexOf('Způsob zásobování') + 5)).toEqual(['Měsíční zálohy', 'Dokumentace k přípojce', 'Smlouva s dodavatelem vody', 'Provozovatel vodovodu']);
+    for (const field of gated) expect(fields()).not.toContain(field);
+    app.setPropertyTabFieldValue('voda', 'Další zdroj vody', choice);
+    app.setPropertyTabFieldValue('voda', 'Další zdroj vody vlastní', custom);
+    for (const field of gated) expect(fields()).toContain(field);
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    const reports = () => { write.mockClear(); app.generateCurrentPropertyBuyerInfo(); app.generateCurrentPropertyBrokerInfo(); app.generateCurrentPropertyBlankForm(); return write.mock.calls.map(([html]) => new DOMParser().parseFromString(html as string, 'text/html')); };
+    for (const doc of reports()) {
+      const labels = [...doc.querySelectorAll('.info-label')].map(label => label.textContent);
+      for (const field of Object.keys(dependent)) expect(labels).toContain(field === 'Kvalita vody' ? 'Kvalita dalšího zdroje vody' : field);
+    }
+    app.setPropertyTabFieldValue('voda', 'Další zdroj vody', '');
+    app.setPropertyTabFieldValue('voda', 'Další zdroj vody vlastní', '');
+    app.applyXmlPayload(app.buildXmlString());
+    for (const field of gated) expect(fields()).not.toContain(field);
+    for (const doc of reports()) {
+      const labels = [...doc.querySelectorAll('.info-label')].map(label => label.textContent);
+      for (const field of Object.keys(dependent)) expect(labels).not.toContain(field === 'Kvalita vody' ? 'Kvalita dalšího zdroje vody' : field);
+    }
+    for (const [field, value] of Object.entries(dependent)) expect(app.propertyTabFieldValue('voda', field)).toBe(value);
+  });
+
+  it.each(['', 'Plynové lahve'])('keeps legacy individual gas-supply data when the old dropdown option is removed (source: %s)', source => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, tabValues: { plyn: { 'Plyn': 'Individuální', 'Zdroj plynu': source, 'Typ': 'Propan-butan' } } }));
+    app.applyXmlPayload(app.buildXmlString());
+    expect(app.propertyTabFieldValue('plyn', 'Plyn')).toBe('Bez přípojky');
+    expect(app.propertyTabFieldValue('plyn', 'Zdroj plynu')).toBe(source);
+    expect(app.propertyTabFieldValue('plyn', 'Zdroj plynu vlastní')).toBe(source ? '' : 'Individuální zdroj plynu');
+    expect(app.propertyTabFieldValue('plyn', 'Typ')).toBe('Propan-butan');
   });
 
   it('retains the last well-water analysis date across undocumented status and never prints its hidden cache', () => {

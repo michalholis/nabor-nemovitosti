@@ -227,9 +227,7 @@ export const PROPERTY_INTAKE_FORM: IntakeSection[] = [
     key: 'voda',
     fields: [
       ...waterSupplyIntakeControls(),
-      { kind: 'multi', label: 'Provozovatel vodovodu', field: 'Provozovatel vodovodu', sources: ['vodaProvozovatelOptions'] },
       { kind: 'multi', label: 'Stoupačky', field: 'Stoupačky', sources: ['vodaStoupackyOptions'] },
-      { kind: 'multi', label: 'Další zdroj vody', field: 'Další zdroj vody', options: ['Sezonní (na zimu se vypouští)', 'Celoroční', 'Studna vlastní', 'Studna společná', 'Retenční nádrž na dešťovou vodu'] },
       { kind: 'select', label: 'Druh studny', field: 'Druh studny', sources: ['vodaDruhStudnyOptions'] },
       { kind: 'select', label: 'Venkovní ventil na vodu', field: 'Venkovní ventil na vodu', options: ['ANO', 'NE'] },
       { kind: 'text', label: 'Poznámka k vodě', field: 'Poznámka k vodě' },

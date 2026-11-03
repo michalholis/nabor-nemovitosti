@@ -1,4 +1,4 @@
-export const GAS_STATUS_OPTIONS = ['Zaveden', 'Individuální', 'Bez přípojky', 'Přípojka zřízena', 'Bez odběru', 'Možnost připojení'];
+export const GAS_STATUS_OPTIONS = ['Bez přípojky', 'Zaveden', 'Přípojka zřízena, bez odběru', 'Možnost připojení'];
 export const GAS_SOURCE_OPTIONS = ['Veřejná plynovodní síť', 'Vlastní zásobník LPG', 'Plynové lahve'];
 export const GAS_METER_LOCATION_OPTIONS = ['Na hranici pozemku', 'Na fasádě', 'V domě', 'Ve společných prostorách'];
 export const GAS_USAGE_OPTIONS = ['Vytápění', 'Ohřev vody', 'Vaření'];
@@ -15,5 +15,10 @@ export const GAS_DETAIL_GROUPS = [
 export function normalizeGasValues(values: Record<string, string>): Record<string, string> {
   const next = { ...values };
   if (next['Plyn'] === 'Nezaveden') next['Plyn'] = 'Bez přípojky';
+  if (next['Plyn'] === 'Přípojka zřízena' || next['Plyn'] === 'Bez odběru') next['Plyn'] = 'Přípojka zřízena, bez odběru';
+  if (next['Plyn'] === 'Individuální') {
+    next['Plyn'] = 'Bez přípojky';
+    if (!next['Zdroj plynu'] && !next['Zdroj plynu vlastní']) next['Zdroj plynu vlastní'] = 'Individuální zdroj plynu';
+  }
   return next;
 }
