@@ -1,0 +1,15 @@
+/* Keep the directory controls fixed while the rows scroll in their own pane. */
+.workspace-panel.directory-sticky-panel,
+.directory-sticky-card { overflow: hidden; }
+
+.directory-sticky-card .client-directory-table-wrap {
+  flex: 1 1 auto;
+  overflow: auto;
+}
+
+.directory-sticky-card .client-directory-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #fff;
+}

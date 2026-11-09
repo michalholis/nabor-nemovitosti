@@ -7,12 +7,20 @@ import { PROPERTY_INTAKE_FORM } from './property-intake-form';
 import { Subject, throwError } from 'rxjs';
 import { DrivingRoute, DrivingRouteService } from './driving-route.service';
 import { BROKER_INTERVIEW_QUESTIONS, BROKER_STARTING_PRICE_FIELD, BROKER_CURRENT_PRICE_FIELD, BROKER_LISTING_URL_FIELD, BROKER_LISTING_DATE_FIELD, BROKER_LISTING_PRICE_FIELD, BROKER_LISTING_PRICE_DATE_FIELD } from './broker-interview';
+import { BROKER_DRIVING_VISIBILITY_FIELD, DEFAULT_AGENT_PHONE } from './agent-settings';
 
 interface PrintHarness {
   activeWorkspace: WritableSignal<string>;
   propertyWorkspaceMode: WritableSignal<string>;
   propertyDrivingInfo(): { status: string; summary: string };
-  agentProfile: WritableSignal<{ departureAddress: string }>;
+  agentProfile: WritableSignal<{ departureAddress: string; email?: string; phone?: string }>;
+  isBrokerDrivingVisible(): boolean;
+  toggleBrokerDrivingVisibility(): void;
+  agentContactOptions(kind: 'email' | 'phone'): string[];
+  agentReportEmail(): string;
+  agentReportPhone(): string;
+  setAgentReportContact(kind: 'email' | 'phone', value: string): void;
+  setAgentAdditionalPhone(value: string): void;
   buildXmlString(): string;
   applyXmlPayload(xml: string): void;
   newPropertyDraft: WritableSignal<{
@@ -48,9 +56,12 @@ interface PrintHarness {
   stavbaBuildingNumberOptions(): string[];
   defaultHandoverPropertyDescription(): string;
   prostoryRoomListOptions(): string[];
+  prostoryRoomGroupLabel(separator: string): string;
+  prostoryRoomGroupOptions(separator: string, unit?: string): string[];
   prostoryUnitAccessoryOptions(): string[];
   prostoryUnitAccessoryChips(unit?: string): string[];
   prostorySharedAccessoryOptions(): string[];
+  isProstoryCellarUnit(unit: string): boolean;
   toggleProstoryMultiValue(field: string, value: string, unit?: string): void;
   hasProstoryMultiValue(field: string, value: string, unit?: string): boolean;
   toggleProstoryAccessoryCustom(unit?: string): void;
@@ -122,11 +133,25 @@ interface PrintHarness {
   setProstoryRoomDimensionValue(room: string, index: number, dimension: 'width' | 'length', value: string, unit?: string): void;
   prostoryRoomDimensionValue(room: string, index: number, dimension: 'width' | 'length', unit?: string): string;
   shouldShowProstoryGeneralFields(): boolean;
-  visiblePropertySectionTabs(): Array<{ key: string }>;
+  prostoryAreaTotal(kind: 'podlahova' | 'obytna' | 'uzitna' | 'celkovaUzitna', unit?: string): string;
+  prostoryRoomArea(room: string, index: number, unit?: string): string;
+  prostoryRoomAreaInput(room: string, index: number, unit?: string): string;
+  setProstoryRoomAreaInput(room: string, index: number, value: string, unit?: string): void;
+  isProstoryRoomCounted(room: string, kind: 'podlahova' | 'obytna' | 'uzitna' | 'celkovaUzitna', index: number, unit?: string): boolean;
+  isProstoryRoomTypeCounted(room: string, kind: 'podlahova' | 'obytna' | 'uzitna' | 'celkovaUzitna', unit?: string): boolean;
+  isProstoryRoomListDeviated(room: string, unit?: string): boolean;
+  toggleProstoryRoomCounted(room: string, kind: 'podlahova' | 'obytna' | 'uzitna' | 'celkovaUzitna', index: number, unit?: string): void;
+  setProstoryRoomTypeCounted(room: string, kind: 'podlahova' | 'obytna' | 'uzitna' | 'celkovaUzitna', checked: boolean, unit?: string): void;
+  isProstoryRoomResidential(room: string, index: number, unit?: string): boolean;
+  setProstoryRoomResidential(room: string, index: number, unit?: string, checked?: boolean): void;
+  roomAreaOverviewRows(): Array<{ room: string; podlahova: boolean; obytna: boolean; uzitna: boolean; celkovaUzitna: boolean }>;
+  setRoomAreaOverviewSort(key: 'name' | 'podlahova' | 'obytna' | 'uzitna' | 'celkovaUzitna'): void;
+  visiblePropertySectionTabs(): Array<{ key: string; label: string }>;
   propertySectionTabs(): Array<{ key: string; label: string }>;
   hlavniPrednostiOptions(): string[];
   dispoziceUnits(): string[];
   dispoziceUnitName(unit: string): string;
+  hasMultipleDispoziceUnits(): boolean;
   setDispoziceUnitName(unit: string, name: string): void;
   prostoryUnitLabel(label: string, unit: string): string;
   socialniZazemiUnitTitle(unit: string): string;
@@ -163,6 +188,7 @@ describe('Property print fields', () => {
     const tabs = app.propertySectionTabs().map(tab => tab.key);
     expect(tabs.indexOf('makler')).toBe(tabs.indexOf('prodej') + 1);
     expect(app.propertySectionTabs().find(tab => tab.key === 'makler')?.label).toBe('NABÍZENO');
+    expect(app.propertySectionTabs().find(tab => tab.key === 'predavaci-protokol')?.label).toBe('TISK');
     expect(tabs.at(-1)).toBe('predavaci-protokol');
     expect(tabs.at(-2)).toBe('cena-nemovitosti');
     expect(BROKER_INTERVIEW_QUESTIONS).toHaveLength(15);
@@ -236,8 +262,8 @@ describe('Property print fields', () => {
       expect(rooms.classList.contains('info-row-full')).toBe(false);
       expect(rooms.classList.contains('info-row-rooms-inline')).toBe(true);
       expect(rooms.querySelector('.info-value')?.textContent).toBe('Obývací pokoj, Koupelna');
-      const accessoryLabel = type === 'Byt' ? 'Sklep a další vybavení v jednotce' : 'Sklep a další vybavení v domě';
-      expect(rows.some(row => row.querySelector('.info-label')?.textContent === accessoryLabel)).toBe(true);
+      expect(rows.some(row => row.querySelector('.info-label')?.textContent === 'Další prostory')).toBe(true);
+      expect(rows.some(row => row.querySelector('.info-label')?.textContent?.startsWith('Sklep a další vybavení'))).toBe(false);
       const legal = rows.filter(row => row.querySelector('.info-label')?.textContent?.startsWith('Právní vady a jiná omezení'));
       expect(legal).toHaveLength(1);
       expect(legal[0].querySelector('.info-value')?.textContent).toBe('Chráněná krajinná oblast, Zatíženo hypotékou, společné jmění manželů');
@@ -1900,10 +1926,10 @@ describe('Property print fields', () => {
       expect(reconstruction.classList.contains('info-row-full')).toBe(false);
       expect(reconstruction.querySelector('.info-value')!.textContent).toBe(longText);
       expect(labels).toContain('Podlahová plocha');
-      expect(labels).toContain('Celková užitná plocha');
+      expect(labels).toContain('Celková plocha');
       expect(labels.some(label => label.startsWith('PODLAHOVÁ') || label.startsWith('OBYTNÁ') || label.startsWith('UŽITNÁ'))).toBe(false);
       expect(rowFor('Podlahová plocha').querySelector('.info-value')!.textContent).toBe('35,00 m²');
-      expect(rowFor('Celková užitná plocha').querySelector('.info-value')!.textContent).toBe('35,00 m²');
+      expect(rowFor('Celková plocha').querySelector('.info-value')!.textContent).toBe('35,00 m²');
     }
   });
 
@@ -2007,10 +2033,33 @@ describe('Property print fields', () => {
     app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Bytový dům', tabValues: {
       stavba: { 'Rozděleno na jednotky': 'Ano', 'Počet jednotek v domě': '2' }
     } }));
-    expect(app.prostoryRoomListOptions()).not.toContain('Sklep');
+    const roomOptions = app.prostoryRoomListOptions();
+    expect(roomOptions).toContain('Sklep');
+    expect(roomOptions.slice(roomOptions.indexOf('__separator__2') + 1, roomOptions.indexOf('Jídelna'))).toEqual([
+      'Chodba (uvnitř bytu/domu)', 'Předsíň (zádveří)', 'Předsíň + chodba', 'Schodiště (RD)', 'Kuchyně'
+    ]);
+    expect(roomOptions).not.toContain('Kuchyně větší než 12m²');
+    expect(roomOptions).not.toContain('Kuchyně do 12m²');
+    expect(roomOptions).not.toContain('__separator__3');
+    expect(roomOptions.slice(roomOptions.indexOf('Jídelna'), roomOptions.indexOf('__separator__4'))).toEqual([
+      'Jídelna', 'Spíž', 'Komora', 'Šatna', 'Obytná místnost', 'Obývací pokoj', 'Obývací pokoj + kuchyně',
+      'Dětský pokoj', 'Pracovna', 'Ložnice', 'Koupelna', 'Koupelna s toaletou', 'Samostatná toaleta', 'Technická místnost', 'Půda'
+    ]);
+    expect(app.prostoryRoomGroupLabel('__separator__2')).toBe('Další místnosti');
+    expect(app.prostoryRoomGroupLabel('__separator__4')).toBe('Další prostory');
+    expect(app.prostoryRoomGroupOptions('__separator__2', 'A')).toContain('Koupelna');
+    expect(app.prostoryRoomGroupOptions('__separator__2', 'A')).toContain('Obývací pokoj');
+    const additionalRooms = app.prostoryRoomGroupOptions('__separator__2', 'A');
+    expect(additionalRooms.slice(additionalRooms.indexOf('Spíž'), additionalRooms.indexOf('Spíž') + 3)).toEqual(['Spíž', 'Komora', 'Šatna']);
+    expect(additionalRooms.at(-1)).toBe('Půda');
+    expect(additionalRooms).toContain('Pracovna');
+    expect(additionalRooms.indexOf('Dětský pokoj')).toBeLessThan(additionalRooms.indexOf('Pracovna'));
+    expect(additionalRooms.indexOf('Pracovna')).toBeLessThan(additionalRooms.indexOf('Ložnice'));
+    expect(roomOptions[roomOptions.indexOf('Půda') + 1]).toBe('__separator__4');
+    expect(roomOptions.slice(-6)).toEqual(['__separator__4', 'Nepodsklepený', 'Sklep', 'Garáž', 'Sauna', 'dopsat vlastní']);
     expect(app.prostoryUnitAccessoryOptions()).toEqual(['Nepodsklepený', 'Sklep', 'Garáž', 'Sauna']);
     expect(app.prostoryUnitAccessoryChips('A')).toEqual(['Nepodsklepený', 'Sklep', 'Garáž', 'Sauna']);
-    expect(app.prostorySharedAccessoryOptions()).toEqual(['Bazén', 'Bazén krytý', 'Dřevník', 'Garáž', 'Letní kuchyně', 'Pergola', 'Sauna', 'Skleník', 'Sklípek', 'Stodola', 'Udírna', 'Vyhřívaný bazén']);
+    expect(app.prostorySharedAccessoryOptions()).toEqual(['Bazén', 'Bazén krytý', 'Dřevník', 'Garáž', 'Letní kuchyně', 'Pergola', 'Sauna', 'Skleník', 'Sklep', 'Sklípek', 'Stodola', 'Udírna', 'Vyhřívaný bazén']);
     app.toggleProstoryMultiValue('Příslušenství v jednotce', 'Sklep', 'A');
     app.toggleProstoryMultiValue('Příslušenství v jednotce', 'Nepodsklepený', 'B');
     app.toggleProstoryMultiValue('Příslušenství nemovitosti', 'Pergola');
@@ -2018,6 +2067,23 @@ describe('Property print fields', () => {
     expect(app.hasProstoryMultiValue('Příslušenství v jednotce', 'Sklep', 'B')).toBe(false);
     expect(app.hasProstoryMultiValue('Příslušenství nemovitosti', 'Pergola')).toBe(true);
     expect(app.hasProstoryMultiValue('Příslušenství v jednotce', 'Pergola', 'A')).toBe(false);
+  });
+
+  it('selects Sklep from the room list only for the unit it was clicked in', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Bytový dům', tabValues: {
+      stavba: { 'Rozděleno na jednotky': 'Ano', 'Počet jednotek v domě': '2' }
+    } }));
+    app.toggleProstoryMultiValue('Seznam místností', 'Sklep', 'A');
+    expect(app.hasProstoryMultiValue('Seznam místností', 'Sklep', 'A')).toBe(true);
+    expect(app.hasProstoryMultiValue('Seznam místností', 'Sklep', 'B')).toBe(false);
+    expect(app.isProstoryCellarUnit('A')).toBe(true);
+    expect(app.isProstoryCellarUnit('B')).toBe(false);
+    expect(app.propertyTabFieldValue('prostory', 'Sklep číslo A')).toBe('');
+    expect(app.propertyTabFieldValue('prostory', 'Sklep číslo B')).toBe('');
+    app.setPropertyTabFieldValue('prostory', 'Sklep číslo A', '12');
+    expect(app.propertyTabFieldValue('prostory', 'Sklep číslo A')).toBe('12');
+    expect(app.propertyTabFieldValue('prostory', 'Sklep číslo B')).toBe('');
   });
 
   it('moves legacy unit accessories out of room lists without losing their dimensions', () => {
@@ -2116,6 +2182,137 @@ describe('Property print fields', () => {
     expect(app.selectedProstoryRoomEntries(unit).filter(entry => entry.floor === 'Suterén').map(entry => entry.floorStart)).toEqual([false, false]);
   });
 
+  it.each(['', 'A'])('sorts room sizes by floor and then by room-list category for unit %s', unit => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Rodinný dům', tabValues: {
+      stavba: { 'Rozděleno na jednotky': unit ? 'Ano' : 'Ne', 'Počet jednotek v domě': unit ? '2' : '' },
+      prostory: { [`Seznam místností${unit ? ' ' + unit : ''}`]: 'Sklep|Ložnice|Balkon|Kolárna|Spíž|Garáž|Terasa|Kočárkárna' }
+    } }));
+    for (const room of ['Sklep', 'Ložnice', 'Balkon', 'Kolárna', 'Spíž', 'Garáž', 'Terasa', 'Kočárkárna']) {
+      app.setProstoryRoomFloorValue(room, 0, room === 'Terasa' ? '1. patro' : 'Přízemí', unit);
+    }
+    expect(app.selectedProstoryRoomEntries(unit).map(({ room, floor }) => [room, floor])).toEqual([
+      ['Kočárkárna', 'Přízemí'], ['Kolárna', 'Přízemí'],
+      ['Balkon', 'Přízemí'],
+      ['Spíž', 'Přízemí'], ['Ložnice', 'Přízemí'],
+      ['Sklep', 'Přízemí'], ['Garáž', 'Přízemí'],
+      ['Terasa', '1. patro']
+    ]);
+    expect(app.selectedProstoryRoomEntries(unit).filter(entry => entry.floorStart).map(entry => entry.room)).toEqual(['Terasa']);
+  });
+
+  it.each(['', 'A'])('merges both legacy kitchen types into distinct Kitchen rows without losing dimensions for unit %s', unit => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    const suffix = unit ? `__${unit}__` : '__';
+    const list = `Seznam místností${unit ? ' ' + unit : ''}`;
+    const saved = app.cloneSavedPropertyRecord({ propertyType: 'Byt', tabValues: {
+      stavba: { 'Rozděleno na jednotky': unit ? 'Ano' : 'Ne', 'Počet jednotek v domě': unit ? '2' : '' },
+      prostory: {
+        [list]: 'Kuchyně do 12m²|Chodba (uvnitř bytu/domu)|Kuchyně větší než 12m²|Předsíň (zádveří)',
+        [`Kuchyně do 12m²${suffix}0__width`]: '2 m',
+        [`Kuchyně do 12m²${suffix}0__length`]: '3 m',
+        [`Kuchyně do 12m²${suffix}0__floor`]: 'Přízemí',
+        [`Kuchyně větší než 12m²${suffix}count`]: '2',
+        [`Kuchyně větší než 12m²${suffix}0__width`]: '4 m',
+        [`Kuchyně větší než 12m²${suffix}0__length`]: '4 m',
+        [`Kuchyně větší než 12m²${suffix}1__width`]: '5 m',
+        [`Kuchyně větší než 12m²${suffix}1__floor`]: '1. patro'
+      }
+    } });
+    const values = saved.tabValues['prostory'];
+    expect(values[list]).toBe('Kuchyně|Chodba (uvnitř bytu/domu)|Předsíň (zádveří)');
+    expect(values[`Kuchyně${suffix}count`]).toBe('3');
+    expect([0, 1, 2].map(index => values[`Kuchyně${suffix}${index}__width`])).toEqual(['2 m', '4 m', '5 m']);
+    expect([0, 1, 2].map(index => values[`Kuchyně${suffix}${index}__obytná`])).toEqual(['NE', 'ANO', 'ANO']);
+    expect(app.cloneSavedPropertyRecord(saved).tabValues['prostory']).toEqual(values);
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Byt', tabValues: saved.tabValues }));
+    expect(app.selectedProstoryRoomEntries(unit).map(({ room, index, floor }) => [room, index, floor])).toEqual([
+      ['Kuchyně', 0, 'Přízemí'], ['Kuchyně', 2, '1. patro'],
+      ['Chodba (uvnitř bytu/domu)', 0, ''], ['Předsíň (zádveří)', 0, ''], ['Kuchyně', 1, '']
+    ]);
+  });
+
+  it('counts rooms into floor, living, usable and total usable areas with default rules and per-type/per-instance overrides', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Rodinný dům', tabValues: { prostory: {
+      'Seznam místností': 'Obývací pokoj|Garáž|Koupelna',
+      'Obývací pokoj__0__width': '4 m', 'Obývací pokoj__0__length': '5 m',
+      'Garáž__0__width': '3 m', 'Garáž__0__length': '3 m',
+      'Koupelna__0__width': '2 m', 'Koupelna__0__length': '3 m'
+    } } }));
+    expect(app.isProstoryRoomCounted('Obývací pokoj', 'podlahova', 0)).toBe(true);
+    expect(app.isProstoryRoomCounted('Obývací pokoj', 'obytna', 0)).toBe(true);
+    expect(app.isProstoryRoomCounted('Obývací pokoj', 'uzitna', 0)).toBe(true);
+    expect(app.isProstoryRoomCounted('Obývací pokoj', 'celkovaUzitna', 0)).toBe(true);
+    expect(app.isProstoryRoomCounted('Garáž', 'podlahova', 0)).toBe(false);
+    expect(app.isProstoryRoomCounted('Garáž', 'uzitna', 0)).toBe(true);
+    expect(app.isProstoryRoomCounted('Koupelna', 'obytna', 0)).toBe(false);
+    expect(app.prostoryAreaTotal('podlahova')).toBe('26,00 m²');
+    expect(app.prostoryAreaTotal('obytna')).toBe('20,00 m²');
+    expect(app.prostoryAreaTotal('uzitna')).toBe('35,00 m²');
+    expect(app.prostoryAreaTotal('celkovaUzitna')).toBe('35,00 m²');
+
+    app.toggleProstoryRoomCounted('Garáž', 'podlahova', 0);
+    expect(app.isProstoryRoomCounted('Garáž', 'podlahova', 0)).toBe(true);
+    expect(app.prostoryAreaTotal('podlahova')).toBe('35,00 m²');
+
+    app.setProstoryRoomTypeCounted('Koupelna', 'obytna', true);
+    expect(app.isProstoryRoomTypeCounted('Koupelna', 'obytna')).toBe(true);
+    expect(app.isProstoryRoomListDeviated('Koupelna')).toBe(true);
+    expect(app.prostoryAreaTotal('obytna')).toBe('26,00 m²');
+
+    app.toggleProstoryRoomCounted('Koupelna', 'obytna', 0);
+    expect(app.isProstoryRoomCounted('Koupelna', 'obytna', 0)).toBe(false);
+    expect(app.prostoryAreaTotal('obytna')).toBe('20,00 m²');
+
+    app.setProstoryRoomTypeCounted('Koupelna', 'obytna', false);
+    expect(app.isProstoryRoomTypeCounted('Koupelna', 'obytna')).toBe(false);
+    expect(app.isProstoryRoomListDeviated('Koupelna')).toBe(false);
+    expect(app.isProstoryRoomCounted('Koupelna', 'obytna', 0)).toBe(false);
+  });
+
+  it('accepts a custom m² value, prints it in the totals, and falls back to computed dimensions when cleared', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Byt', tabValues: { prostory: {
+      'Seznam místností': 'Obývací pokoj',
+      'Obývací pokoj__0__width': '4 m', 'Obývací pokoj__0__length': '5 m'
+    } } }));
+    expect(app.prostoryRoomArea('Obývací pokoj', 0)).toBe('20,00 m²');
+    app.setProstoryRoomAreaInput('Obývací pokoj', 0, '25,5');
+    expect(app.prostoryRoomAreaInput('Obývací pokoj', 0)).toBe('25,5');
+    expect(app.prostoryRoomArea('Obývací pokoj', 0)).toBe('25,50 m²');
+    expect(app.prostoryAreaTotal('podlahova')).toBe('25,50 m²');
+    app.setProstoryRoomDimensionValue('Obývací pokoj', 0, 'width', '6 m');
+    app.setProstoryRoomDimensionValue('Obývací pokoj', 0, 'length', '7 m');
+    expect(app.prostoryRoomArea('Obývací pokoj', 0)).toBe('42,00 m²');
+    expect(app.prostoryAreaTotal('podlahova')).toBe('42,00 m²');
+    const saved = app.cloneSavedPropertyRecord({ propertyType: 'Byt', tabValues: { prostory: { ...app.newPropertyDraft().tabValues['prostory'] } } });
+    expect(saved.tabValues['prostory']['Obývací pokoj__0__area']).toBeUndefined();
+    app.setProstoryRoomAreaInput('Obývací pokoj', 0, '');
+    expect(app.prostoryRoomArea('Obývací pokoj', 0)).toBe('42,00 m²');
+    expect(app.prostoryAreaTotal('podlahova')).toBe('42,00 m²');
+  });
+
+  it('lists the usual area inclusion for rooms and sorts the overview table by every column', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    const rows = app.roomAreaOverviewRows();
+    const byName = new Map(rows.map(row => [row.room, row]));
+    expect(byName.get('Obývací pokoj')).toMatchObject({ podlahova: true, obytna: true, uzitna: true, celkovaUzitna: true });
+    expect(byName.get('Pracovna')).toMatchObject({ podlahova: true, obytna: true, uzitna: true, celkovaUzitna: true });
+    expect(byName.get('Koupelna')).toMatchObject({ podlahova: true, obytna: false, uzitna: true, celkovaUzitna: true });
+    expect(byName.get('Garáž')).toMatchObject({ podlahova: false, obytna: false, uzitna: true, celkovaUzitna: true });
+    expect(byName.get('Sklep')).toMatchObject({ podlahova: false, obytna: false, uzitna: true, celkovaUzitna: true });
+    expect(byName.get('Terasa')).toMatchObject({ podlahova: false, obytna: false, uzitna: false, celkovaUzitna: true });
+    expect(byName.get('Nepodsklepený')).toBeUndefined();
+    expect(rows.map(row => row.room)).toEqual([...rows.map(row => row.room)].sort((first, second) => first.localeCompare(second, 'cs')));
+    app.setRoomAreaOverviewSort('obytna');
+    expect(app.roomAreaOverviewRows().at(-1)?.obytna).toBe(true);
+    app.setRoomAreaOverviewSort('obytna');
+    expect(app.roomAreaOverviewRows()[0].obytna).toBe(true);
+    app.setRoomAreaOverviewSort('podlahova');
+    expect(app.roomAreaOverviewRows()[0].podlahova).toBe(false);
+  });
+
   it('ignores stale unit-less prostory keys in unit sections when the property is split into units', () => {
     const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
     app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Bytový dům', tabValues: {
@@ -2148,8 +2345,8 @@ describe('Property print fields', () => {
       stavba: { 'Rozděleno na jednotky': 'Ano', 'Počet jednotek v domě': '2' },
       prostory: {
         'Poznámka k příslušenství mimo jednotku': 'Stodola za domem', 'Příslušenství nemovitosti': 'Pergola',
-        'Poznámka k jednotce B': 'Poznámka pro B', 'Příslušenství v jednotce B': 'Nepodsklepený', 'Dispozice jednotky B': '2+kk',
-        'Poznámka k jednotce A': 'Poznámka pro A', 'Příslušenství v jednotce A': 'Sklep', 'Dispozice jednotky A': '1+kk'
+        'Poznámka k dispozici B': 'Poznámka pro B', 'Příslušenství v jednotce B': 'Nepodsklepený', 'Dispozice jednotky B': '2+kk',
+        'Poznámka k dispozici A': 'Poznámka pro A', 'Příslušenství v jednotce A': 'Sklep', 'Dispozice jednotky A': '1+kk'
       }
     } }));
     const write = vi.fn();
@@ -2162,11 +2359,11 @@ describe('Property print fields', () => {
       const card = (label: string) => cards.find(section => section.querySelector('h2')?.textContent === label)!;
       const labels = (label: string) => [...card(label).querySelectorAll('.info-label')].map(element => element.textContent);
       expect(cards.some(section => section.querySelector('h2')?.textContent === 'DISPOZICE')).toBe(false);
-      expect(labels('DISPOZICE A')).toEqual(['Dispozice', 'Sklep a další vybavení v jednotce', 'Poznámka k jednotce']);
-      expect(labels('DISPOZICE B')).toEqual(['Dispozice', 'Sklep a další vybavení v jednotce', 'Poznámka k jednotce']);
-      expect(labels('SAMOSTATNĚ STOJÍCÍ VYBAVENÍ')).toEqual(['Samostatně stojící vybavení', 'Poznámka k samostatně stojícímu vybavení']);
-      expect(card('SAMOSTATNĚ STOJÍCÍ VYBAVENÍ').textContent).toContain('Stodola za domem');
-      expect(card('SAMOSTATNĚ STOJÍCÍ VYBAVENÍ').textContent).toContain('Pergola');
+      expect(labels('DISPOZICE A')).toEqual(['Dispozice', 'Další prostory', 'Poznámka k dispozici']);
+      expect(labels('DISPOZICE B')).toEqual(['Dispozice', 'Další prostory', 'Poznámka k dispozici']);
+      expect(labels('SAMOSTATNĚ STOJÍCÍ')).toEqual(['Samostatně stojící', 'Poznámka k samostatně stojícímu vybavení']);
+      expect(card('SAMOSTATNĚ STOJÍCÍ').textContent).toContain('Stodola za domem');
+      expect(card('SAMOSTATNĚ STOJÍCÍ').textContent).toContain('Pergola');
       expect(cards.some(section => section.querySelector('h2')?.textContent === 'SOCIÁLNÍ ZÁZEMÍ')).toBe(false);
     }
     app.generateCurrentPropertyBlankForm();
@@ -2175,12 +2372,12 @@ describe('Property print fields', () => {
     const blankHeadings = [...blankDocument.querySelectorAll('main > section')].map(section => section.querySelector('h2')?.textContent);
     expect(blankHeadings).toContain('DISPOZICE A');
     expect(blankHeadings).toContain('DISPOZICE B');
-    expect(blankHeadings).toContain('SAMOSTATNĚ STOJÍCÍ VYBAVENÍ');
+    expect(blankHeadings).toContain('SAMOSTATNĚ STOJÍCÍ');
     const blankCard = (label: string) => [...blankDocument.querySelectorAll('main > section')].find(section => section.querySelector('h2')?.textContent === label)!;
     const blankLabels = (label: string) => [...blankCard(label).querySelectorAll('.info-label')].map(element => element.textContent);
-    expect(blankLabels('DISPOZICE A')).toContain('Sklep a další vybavení v jednotce');
-    expect(blankLabels('DISPOZICE A')).not.toContain('Sklep a další vybavení v jednotce A');
-    expect(blankLabels('DISPOZICE A')).not.toContain('Samostatně stojící vybavení');
+    expect(blankLabels('DISPOZICE A')).toContain('Další prostory');
+    expect(blankLabels('DISPOZICE A')).not.toContain('Další prostory A');
+    expect(blankLabels('DISPOZICE A')).not.toContain('Samostatně stojící');
     expect(blank).toContain('Poznámka pro B');
     expect(blank).toContain('Stodola za domem');
     expect(blank).not.toContain('Příslušenství nemovitosti A');
@@ -2252,14 +2449,14 @@ describe('Property print fields', () => {
     app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Bytový dům', tabValues: {
       stavba: { 'Rozděleno na jednotky': 'Ano', 'Počet jednotek v domě': '3' },
       prostory: { 'Dispozice jednotky A': '2+kk', 'Dispozice jednotky B': '1+kk', 'Dispozice jednotky C': '3+1',
-        'Poznámka k jednotce A': 'Poznámka přízemí', 'Poznámka k jednotce B': 'Poznámka podkroví' },
+        'Poznámka k dispozici A': 'Poznámka přízemí', 'Poznámka k dispozici B': 'Poznámka podkroví' },
       'socialni-zazemi': { 'Počet koupelen A': '1', 'Počet koupelen B': '2', 'Počet koupelen C': '3', 'Počet WC A': '1', 'Vybavení koupelny A': 'Vana' }
     } }));
     app.setDispoziceUnitName('A', 'Byt v přízemí');
     app.setDispoziceUnitName('B', 'Podkroví');
     expect(app.dispoziceUnits()).toEqual(['A', 'B', 'C']);
     expect(app.dispoziceUnitName('A')).toBe('Byt v přízemí');
-    expect(app.prostoryUnitLabel('Poznámka k jednotce', 'A')).toBe('Poznámka k jednotce Byt v přízemí');
+    expect(app.prostoryUnitLabel('Poznámka k dispozici', 'A')).toBe('Poznámka k dispozici Byt v přízemí');
     expect(app.socialniZazemiUnitTitle('A')).toBe('SOCIÁLNÍ ZÁZEMÍ Byt v přízemí');
     expect(app.newPropertyDraft().tabValues['prostory']['Dispozice jednotky A']).toBe('2+kk');
     const write = vi.fn();
@@ -2312,6 +2509,42 @@ describe('Property print fields', () => {
     expect(app.newPropertyDraft().tabValues['prostory']['unitName__Z']).toBeUndefined();
   });
 
+  it('keeps one disposition for multiple floors without divided units and restores floor-split answers', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.newPropertyDraft.update(draft => ({ ...draft, propertyType: 'Rodinný dům', tabValues: {
+      stavba: { 'Podlaží celkem': '2' },
+      prostory: { 'Seznam místností': 'Obývací pokoj', 'Obývací pokoj__0__width': '4 m', 'Obývací pokoj__0__length': '5 m' }
+    } }));
+    expect(app.dispoziceUnits()).toEqual(['']);
+    expect(app.hasMultipleDispoziceUnits()).toBe(false);
+    expect(app.prostoryRoomDimensionValue('Obývací pokoj', 0, 'width')).toBe('4 m');
+    const restored = app.cloneSavedPropertyRecord({ propertyType: 'Rodinný dům', tabValues: {
+      stavba: { 'Podlaží celkem': '2' },
+      prostory: { 'Seznam místností A': 'Ložnice', 'Seznam místností B': 'Koupelna', 'Ložnice__A__0__width': '3 m' }
+    } }).tabValues['prostory'];
+    expect(restored['Seznam místností']).toBe('Ložnice|Koupelna');
+    expect(restored['Ložnice__0__width']).toBe('3 m');
+    expect(restored['Ložnice__A__0__width']).toBe('3 m');
+    expect(restored['Seznam místností B']).toBe('Koupelna');
+    app.newPropertyDraft.update(draft => ({ ...draft, tabValues: {
+      ...draft.tabValues,
+      stavba: { 'Podlaží celkem': '2', 'Rozděleno na jednotky': 'Ano', 'Počet jednotek v domě': '2' }
+    } }));
+    expect(app.dispoziceUnits()).toEqual(['A', 'B']);
+    expect(app.hasMultipleDispoziceUnits()).toBe(true);
+    app.setPropertyTabFieldValue('stavba', 'Rozděleno na jednotky', 'Ne');
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo();
+    const html = write.mock.calls[0][0] as string;
+    const report = new DOMParser().parseFromString(html, 'text/html');
+    const titles = [...report.querySelectorAll('.info-card h2')].map(header => header.textContent);
+    expect(titles).toContain('DISPOZICE');
+    expect(titles).not.toContain('PODLAŽÍ 1');
+    expect(titles).not.toContain('PODLAŽÍ 2');
+    expect(report.body.textContent).toContain('Obývací pokoj');
+  });
+
   it('opens Google and Seznam maps for an address in a new window', () => {
     const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
     const open = vi.spyOn(window, 'open').mockReturnValue(null as unknown as Window);
@@ -2332,7 +2565,7 @@ describe('Property print fields', () => {
     app.newPropertyDraft.update(draft => ({ ...draft, title: 'Rozpracovaná zakázka', address: 'Neuložená adresa', tabValues: { plyn: { 'Poznámka k plynu': 'Neuložená poznámka' } } }));
     const saved: ReturnType<PrintHarness['savedPropertyRecords']> = [
       { id: 'other-property', createdAt: '', title: 'Jiná zakázka', propertyType: 'Byt', address: 'Jiná adresa', price: '', seller: '', status: 'active' as const, phase: '', tabValues: {} },
-      { id: 'selected-property', createdAt: '', title: 'Vybraná zakázka', propertyType: 'Byt', address: 'Vybraná adresa', price: '', seller: '', status: 'active' as const, phase: '', tabValues: { plyn: { 'Poznámka k plynu': 'Uložené údaje vybrané nemovitosti' } } }
+      { id: 'selected-property', createdAt: '', title: 'Vybraná zakázka', propertyType: 'Byt', address: 'Vybraná adresa', price: '', seller: '', status: 'active' as const, phase: '', tabValues: { zakladni: { [BROKER_DRIVING_VISIBILITY_FIELD]: 'ANO' }, plyn: { 'Poznámka k plynu': 'Uložené údaje vybrané nemovitosti' } } }
     ];
     app.savedPropertyRecords.set(saved);
     app.savedClientRecords.set([
@@ -2371,10 +2604,11 @@ describe('Property print fields', () => {
     expect(open).toHaveBeenCalledTimes(1);
   });
 
-  it.each([false, true])('prints compact driving directions once at the end of basic information (linked client: %s)', linkedClient => {
+  it.each([false, true])('prints enabled driving directions directly below the property address (linked client: %s)', linkedClient => {
     const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
     app.agentProfile.update(profile => ({ ...profile, departureAddress: 'Výjezd 1' }));
     app.newPropertyDraft.update(draft => ({ ...draft, address: 'Cíl 2', linkedClientIds: linkedClient ? ['client-1'] : [] }));
+    app.setPropertyTabFieldValue('zakladni', BROKER_DRIVING_VISIBILITY_FIELD, 'ANO');
     if (linkedClient) app.savedClientRecords.set([{ id: 'client-1', draft: {
       fullName: 'Jan Novák', companyName: '', phonePrefix: '+420', phone: '777123456', email: 'jan@example.cz'
     } }]);
@@ -2397,7 +2631,7 @@ describe('Property print fields', () => {
     expect(drivingRows).toHaveLength(1);
     expect(drivingRows[0].querySelector('.info-value')?.textContent).toBe('205 km, 2:55 hod');
     expect(drivingRows[0].classList.contains('info-row-full')).toBe(false);
-    expect(basic.querySelector('.info-card-body')?.lastElementChild).toBe(drivingRows[0]);
+    expect(drivingRows[0].previousElementSibling?.querySelector('.info-label')?.textContent).toBe('Adresa nemovitosti');
     expect(basic.textContent).not.toContain('Havířov');
     expect(basic.textContent).not.toContain('Skorošice');
     expect(report.body.textContent).not.toContain('DOJEZD MAKLÉŘE');
@@ -2415,6 +2649,7 @@ describe('Property print fields', () => {
     const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
     app.agentProfile.update(profile => ({ ...profile, departureAddress: 'Výjezd 1' }));
     app.newPropertyDraft.update(draft => ({ ...draft, address: '', tabValues: { zakladni: { 'Nejblížší adresa': 'Orientační bod 3' } } }));
+    app.setPropertyTabFieldValue('zakladni', BROKER_DRIVING_VISIBILITY_FIELD, 'ANO');
     const calculate = vi.spyOn(TestBed.inject(DrivingRouteService), 'calculate').mockReturnValue(throwError(() => new Error('Trasa není dostupná.')));
     const write = vi.fn();
     vi.spyOn(window, 'open').mockReturnValue({ closed: false, document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
@@ -2422,6 +2657,53 @@ describe('Property print fields', () => {
     expect(calculate).toHaveBeenCalledWith('Výjezd 1', 'Orientační bod 3');
     expect(write.mock.calls[1][0]).toContain('Trasa není dostupná.');
     expect(write.mock.calls[1][0]).not.toContain('0 km');
+  });
+
+  it('keeps driving out of broker reports by default and when its independent switch is off', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.agentProfile.update(profile => ({ ...profile, departureAddress: 'Výjezd 1' }));
+    app.newPropertyDraft.update(draft => ({ ...draft, address: 'Cíl 2' }));
+    const calculate = vi.spyOn(TestBed.inject(DrivingRouteService), 'calculate');
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    expect(app.isBrokerDrivingVisible()).toBe(false);
+    app.generateCurrentPropertyBrokerInfo();
+    app.toggleBrokerDrivingVisibility(); expect(app.isBrokerDrivingVisible()).toBe(true);
+    app.toggleBrokerDrivingVisibility(); expect(app.isBrokerDrivingVisible()).toBe(false);
+    app.generateCurrentPropertyBrokerInfo();
+    expect(calculate).not.toHaveBeenCalled();
+    for (const [html] of write.mock.calls) {
+      const doc = new DOMParser().parseFromString(html as string, 'text/html');
+      expect([...doc.querySelectorAll('.info-label')].map(label => label.textContent)).not.toContain('Dojezd');
+      expect(doc.body.textContent).not.toContain('broker-info-visible');
+    }
+  });
+
+  it('preserves selectable broker contacts and prints the selected email and phone in every property report', () => {
+    const app = TestBed.createComponent(App).componentInstance as unknown as PrintHarness;
+    app.agentProfile.update(profile => ({ ...profile, email: 'legacy@example.cz', phone: '777 111 222' }));
+    expect(app.agentContactOptions('email')).toContain('eliska.petrasova@artem-saykin.cz');
+    expect(app.agentContactOptions('email')).toContain('legacy@example.cz');
+    expect(app.agentContactOptions('phone')).toContain(DEFAULT_AGENT_PHONE);
+    app.setAgentAdditionalPhone('777 000 222');
+    app.setAgentReportContact('email', 'eliska.petrasova@artem-saykin.cz');
+    app.setAgentReportContact('phone', '777 000 222');
+    app.applyXmlPayload(app.buildXmlString());
+    expect(app.agentReportEmail()).toBe('eliska.petrasova@artem-saykin.cz');
+    expect(app.agentReportPhone()).toBe('777 000 222');
+    expect(app.agentContactOptions('email')).toContain('legacy@example.cz');
+    expect(app.agentContactOptions('phone')).toContain('777 111 222');
+    const write = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({ document: { open: vi.fn(), write, close: vi.fn() } } as unknown as Window);
+    app.generateCurrentPropertyBuyerInfo(); app.generateCurrentPropertyBrokerInfo(); app.generateCurrentPropertyBlankForm();
+    for (const [html] of write.mock.calls) {
+      const doc = new DOMParser().parseFromString(html as string, 'text/html');
+      expect(doc.querySelector('.contact')?.textContent).toContain('eliska.petrasova@artem-saykin.cz');
+      expect(doc.querySelector('.contact')?.textContent).toContain('777 000 222');
+    }
+    app.setAgentAdditionalPhone('777 000 333');
+    expect(app.agentReportPhone()).toBe('777 000 333');
+    expect(app.agentContactOptions('phone')).not.toContain('777 000 222');
   });
 
   it('preserves the departure address in XML and loads older profiles without one', () => {

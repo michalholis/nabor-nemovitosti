@@ -88,7 +88,7 @@ describe('Property archiving', () => {
     expect(app.savedPropertyRecords()[0].archiveReason).toBeUndefined();
   });
 
-  it.each([0, 1, 2])('saves archive reason %s, the description, and current form edits together', reasonIndex => {
+  it.each([0, 1, 2, 3, 4])('saves archive reason %s, the description, and current form edits together', reasonIndex => {
     app.newPropertyDraft.update(draft => ({ ...draft, title: 'Upravený název' }));
     app.pinnedPropertyId.set('one');
     app.setPropertyPhase('Archivováno');

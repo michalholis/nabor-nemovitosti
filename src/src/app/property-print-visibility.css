@@ -1,7 +1,8 @@
 .buyer-info-dependent-hidden .new-client-label:not(.new-client-label-with-switch),
 .buyer-info-dependent-hidden .new-client-label-with-switch span,
 .buyer-info-dependent-hidden .new-client-input,
-.buyer-info-dependent-hidden .new-client-toggle-btn { opacity:.42; }
+.buyer-info-dependent-hidden .new-client-toggle-btn,
+.buyer-info-dependent-hidden .new-client-toggle-btn:hover { opacity:.42 !important; }
 .buyer-info-dependent-hidden .new-client-input,
 .buyer-info-dependent-hidden .new-client-toggle-btn {
   background-color:#eef2f6 !important;

@@ -15,6 +15,8 @@ import { WATER_SUPPLY_CONTROLS, WATER_SOURCE_OPTIONS, WATER_METER_OPTIONS, WATER
 import { ELECTRICITY_CONTROLS, PHOTOVOLTAIC_CONTROLS, normalizeElectricityValues, shouldPrintElectricityField, type ElectricityControl } from './electricity-fields';
 import { SERVICE_BREAKDOWN_GROUPS, serviceBreakdownEntries, serviceBreakdownTotal, isServiceBreakdownValueField } from './service-breakdown-fields';
 import { splitClientTitles } from './client-titles';
+import { DEFAULT_AGENT_EMAIL, DEFAULT_AGENT_PHONE, AGENT_EMAIL_OPTIONS, BROKER_DRIVING_VISIBILITY_FIELD, agentContactOptions } from './agent-settings';
+import { LAND_BUILDING_LINK_FIELD, BUILDING_LAND_META_FIELDS, syncBuildingFromLand } from './land-building-sync';
 import { HEATING_ENERGY_OPTIONS, HEATING_METHOD_OPTIONS, HEATING_METHOD_HELP, HEATING_TERMINAL_OPTIONS, normalizeHeatingValues, compatibleHeatingDevices } from './heating-fields';
 import { HandoverContactOption, HandoverContactPicker } from './handover-contact-picker';
 import { HandoverReturnFields } from './handover-return-fields';
@@ -568,7 +570,8 @@ const PROPERTY_ARCHIVE_REASONS = [
   'Již prodal – dobíhající smlouva u jiné RK',
   'Již prodal – bez RK',
   'Nechce už prodávat',
-  'Nedomluvili jsme se na podmínkách'
+  'Nedomluvili jsme se na podmínkách',
+  'Vybral jiného makléře'
 ];
 
 const JEDNOTKA_OWNERSHIP_OPTIONS: string[] = ['Osobní', 'Družstevní', 'Podílové', 'V nájmu'];
@@ -790,30 +793,33 @@ const PROSTORY_ROOM_LIST_OPTIONS: string[] = [
   'Lodžie',
   'Terasa',
   `${PROSTORY_ROOM_GROUP_SEPARATOR_PREFIX}2`,
-  'Schodiště (RD)',
-  'Spíž',
-  'Předsíň (zádveří)',
   'Chodba (uvnitř bytu/domu)',
+  'Předsíň (zádveří)',
   'Předsíň + chodba',
+  'Schodiště (RD)',
+  'Kuchyně',
+  'Jídelna',
+  'Spíž',
+  'Komora',
+  'Šatna',
+  'Obytná místnost',
+  'Obývací pokoj',
+  'Obývací pokoj + kuchyně',
+  'Dětský pokoj',
+  'Pracovna',
+  'Ložnice',
   'Koupelna',
   'Koupelna s toaletou',
   'Samostatná toaleta',
-  'Šatna',
-  'Komora',
   'Technická místnost',
-  'Jídelna',
-  'Kuchyně do 12m²',
-  'Kuchyně větší než 12m²',
-  'Ložnice',
-  'Obývací pokoj',
-  'Dětský pokoj',
-  'Obývací pokoj + kuchyně',
-  'Obytná místnost'
+  'Půda',
+  `${PROSTORY_ROOM_GROUP_SEPARATOR_PREFIX}4`,
+  'Nepodsklepený', 'Sklep', 'Garáž', 'Sauna', 'dopsat vlastní'
 ];
 
 const PROSTORY_UNIT_ACCESSORY_OPTIONS = ['Nepodsklepený', 'Sklep', 'Garáž', 'Sauna'];
-const PROSTORY_UNIT_ACCESSORY_VALUES = ['Nepodsklepený', 'Sklep', 'Garáž', 'Bazén', 'Sauna'];
-const PROSTORY_SHARED_ACCESSORY_OPTIONS = ['Bazén krytý', 'Pergola', 'Stodola', 'Garáž', 'Bazén', 'Vyhřívaný bazén', 'Sauna', 'Sklípek', 'Dřevník', 'Letní kuchyně', 'Udírna', 'Skleník'];
+const PROSTORY_UNIT_ACCESSORY_VALUES = ['Nepodsklepený', 'Sklep', 'Sklepní kóje', 'Garáž', 'Bazén', 'Sauna'];
+const PROSTORY_SHARED_ACCESSORY_OPTIONS = ['Bazén krytý', 'Pergola', 'Stodola', 'Garáž', 'Bazén', 'Vyhřívaný bazén', 'Sauna', 'Sklípek', 'Dřevník', 'Letní kuchyně', 'Udírna', 'Skleník', 'Sklep'];
 const PROSTORY_SHARED_FIELDS = new Set(['Poznámka k dispozici', 'Příslušenství nemovitosti', 'Poznámka k příslušenství mimo jednotku']);
 
 const PROPERTY_PRINT_NOTE_LABEL_PATTERN = /^poznámka/;
@@ -835,17 +841,44 @@ const PROSTORY_GENERAL_TYPES: string[] = ['Rodinný dům', 'Bytový dům', 'Byt'
 
 const PROSTORY_OBYTNA_ROOMS: string[] = [
   'Jídelna',
-  'Kuchyně větší než 12m²',
   'Ložnice',
   'Obývací pokoj',
   'Dětský pokoj',
   'Obývací pokoj + kuchyně',
-  'Obytná místnost'
+  'Obytná místnost',
+  'Pracovna'
 ];
 
 const PROSTORY_PODLAHOVA_EXCLUDED_ROOMS: string[] = ['Garáž', 'Kočárkárna', 'Kolárna', 'Společná chodba', 'Jiné společné prostory', 'Schodiště (RD)', 'Výtah', 'Balkon', 'Lodžie', 'Terasa', 'Sklep', 'Bazén'];
 
 const PROSTORY_UZITNA_EXCLUDED_ROOMS: string[] = ['Kočárkárna', 'Kolárna', 'Společná chodba', 'Jiné společné prostory', 'Schodiště (RD)', 'Výtah', 'Balkon', 'Lodžie', 'Terasa', 'Bazén'];
+
+export type ProstoryAreaKind = 'podlahova' | 'obytna' | 'uzitna' | 'celkovaUzitna';
+
+interface ProstoryAreaInfoRow {
+  room: string;
+  podlahova: boolean;
+  obytna: boolean;
+  uzitna: boolean;
+  celkovaUzitna: boolean;
+}
+
+interface RoomInclusionMenuState {
+  key: string;
+  room: string;
+  unit: string;
+  top: number;
+  left: number;
+}
+
+type ProstoryAreaInfoSortKey = 'name' | ProstoryAreaKind;
+
+const PROSTORY_AREA_KIND_LABELS: Record<ProstoryAreaKind, string> = {
+  podlahova: 'Podlahová plocha',
+  obytna: 'Obytná plocha',
+  uzitna: 'Užitná plocha',
+  celkovaUzitna: 'Celková užitná plocha'
+};
 
 const PROPERTY_SECTION_TABS: Array<{ key: NewPropertyTabKey; label: string }> = [
   { key: 'zakladni', label: 'ZÁKLADNÍ INFORMACE' },
@@ -882,7 +915,7 @@ const PROPERTY_SECTION_TABS: Array<{ key: NewPropertyTabKey; label: string }> = 
   { key: 'doplnkove-informace', label: 'DOPLŇKOVÉ INFORMACE' },
   { key: 'informace-do-letaku', label: 'INFORMACE DO LETÁKU' },
   { key: 'cena-nemovitosti', label: 'CENA NEMOVITOSTI' },
-  { key: 'predavaci-protokol', label: 'DOKLADY' }
+  { key: 'predavaci-protokol', label: 'TISK' }
 ];
 
 const PROPERTY_TAB_FIELDS: Partial<Record<NewPropertyTabKey, string[]>> = {
@@ -1278,6 +1311,9 @@ interface AgentProfile {
   departureAddress: string;
   accountNumber: string;
   web: string;
+  emailOptions?: string[];
+  phoneOptions?: string[];
+  additionalPhone?: string;
 }
 
 interface SavedClientRecord {
@@ -1424,7 +1460,7 @@ interface RoomAreaTotal {
   selector: 'app-root',
   imports: [CommonModule, FormsModule, AddressAutocompleteDirective, SelectedFirstPipe, HandoverContactPicker, HandoverReturnFields, BlankHandoverEditor, HandoverTextareaDirective, CustomOptionAppearance],
   templateUrl: './app.html',
-  styleUrls: ['./app.scss', './property-archive.scss', './handover-writing-rows.css', './handover-collapse.css', './handover-textarea.css', './broker-interview.css', './property-repeat-fields.css', './room-floors.css', './property-print-visibility.css', './heating.css', './property-client-window.css']
+  styleUrls: ['./app.scss', './property-archive.scss', './handover-writing-rows.css', './handover-collapse.css', './handover-textarea.css', './broker-interview.css', './property-repeat-fields.css', './room-floors.css', './directory-sticky.css', './property-print-visibility.css', './heating.css', './property-client-window.css', './agent-settings.css']
 })
 export class App {
   protected readonly brokerInterviewQuestions = BROKER_INTERVIEW_QUESTIONS;
@@ -1604,6 +1640,10 @@ export class App {
   protected readonly activeDispoziceUnit = signal<string | null>('A');
   protected readonly activeSocialniZazemiUnit = signal<string | null>('A');
   protected readonly prostoryAccessoryCustomUnit = signal<string | null>(null);
+  protected readonly dispoziceSharedSection = signal<'cellar' | 'equipment' | 'garage' | 'disposition' | null>('disposition');
+  protected readonly openRoomInclusionMenu = signal<RoomInclusionMenuState | null>(null);
+  protected readonly roomAreaOverviewOpen = signal(false);
+  protected readonly roomAreaOverviewSort = signal<{ key: ProstoryAreaInfoSortKey; direction: 'asc' | 'desc' }>({ key: 'name', direction: 'asc' });
   private readonly highRiskCountries = signal<string[]>(HIGH_RISK_COUNTRIES);
   protected readonly agentProfile = signal<AgentProfile>({
     fullName: 'Petrášová Eliška',
@@ -1613,6 +1653,9 @@ export class App {
     companyName: '',
     address: '',
     departureAddress: '',
+    emailOptions: [...AGENT_EMAIL_OPTIONS],
+    phoneOptions: [DEFAULT_AGENT_PHONE],
+    additionalPhone: '',
     accountNumber: '',
     web: ''
   });
@@ -2478,9 +2521,36 @@ export class App {
     this.scheduleResizeNewClientTextareas();
   }
 
-  protected setAgentProfileField(field: keyof AgentProfile, value: string): void {
+  protected setAgentProfileField(field: Exclude<keyof AgentProfile, 'emailOptions' | 'phoneOptions'>, value: string): void {
     this.agentProfile.update((profile) => ({ ...profile, [field]: value }));
     this.agentProfileSaved.set(false);
+  }
+
+  protected agentContactOptions(kind: 'email' | 'phone'): string[] { return agentContactOptions(this.agentProfile(), kind); }
+  protected agentReportEmail(): string { return (this.agentProfile().email || '').trim() || DEFAULT_AGENT_EMAIL; }
+  protected agentReportPhone(): string { return (this.agentProfile().phone || '').trim() || DEFAULT_AGENT_PHONE; }
+  protected setAgentReportContact(kind: 'email' | 'phone', value: string): void {
+    const options = this.agentContactOptions(kind);
+    this.agentProfile.update(profile => ({ ...profile, [kind]: value.trim(), [kind === 'email' ? 'emailOptions' : 'phoneOptions']: options }));
+    this.agentProfileSaved.set(false);
+  }
+  protected setAgentAdditionalPhone(value: string): void {
+    const profile = this.agentProfile();
+    const previous = (profile.additionalPhone || '').trim();
+    const options = this.agentContactOptions('phone').filter(phone => !previous || phone !== previous);
+    this.agentProfile.set({ ...profile, additionalPhone: value, phoneOptions: options, phone: previous && (profile.phone || '').trim() === previous ? value.trim() : profile.phone });
+    this.agentProfileSaved.set(false);
+  }
+
+  protected isBrokerDrivingVisible(draft = this.newPropertyDraft()): boolean {
+    return draft.tabValues?.zakladni?.[BROKER_DRIVING_VISIBILITY_FIELD] === 'ANO';
+  }
+  protected toggleBrokerDrivingVisibility(): void {
+    this.setPropertyTabFieldValue('zakladni', BROKER_DRIVING_VISIBILITY_FIELD, this.isBrokerDrivingVisible() ? 'NE' : 'ANO');
+  }
+  protected propertyDrivingDisplayValue(): string {
+    const state = this.propertyDrivingInfo();
+    return state.status === 'ready' ? state.summary : state.status === 'loading' ? 'Počítám dojezd…' : state.status === 'error' ? 'Dojezd nedostupný' : '';
   }
 
   protected async saveAgentProfile(): Promise<void> {
@@ -4357,7 +4427,8 @@ export class App {
         .map((index) => ({
           parcel: currentTab[this.landParcelFieldKey(index, 'parcel')] || '',
           type: currentTab[this.landParcelFieldKey(index, 'type')] || '',
-          area: currentTab[this.landParcelFieldKey(index, 'area')] || ''
+          area: currentTab[this.landParcelFieldKey(index, 'area')] || '',
+          buildingLink: currentTab[`parcel-${index}-${LAND_BUILDING_LINK_FIELD}`] || ''
         }));
 
       for (const key of Object.keys(currentTab)) {
@@ -4370,6 +4441,7 @@ export class App {
         currentTab[this.landParcelFieldKey(index, 'parcel')] = row.parcel;
         currentTab[this.landParcelFieldKey(index, 'type')] = row.type;
         currentTab[this.landParcelFieldKey(index, 'area')] = row.area;
+        if (row.buildingLink) currentTab[`parcel-${index}-${LAND_BUILDING_LINK_FIELD}`] = row.buildingLink;
       });
 
       currentTab[this.landParcelCountKey()] = String(Math.max(rows.length, 1));
@@ -4402,17 +4474,22 @@ export class App {
 
   protected setLandParcelValue(index: number, field: 'parcel' | 'type' | 'area', value: string): void {
     const normalizedValue = field === 'area' ? this.sanitizePropertyIntegerInput(value) : value;
+    this.updateLandParcelValue(index, field, normalizedValue);
+  }
+
+  private updateLandParcelValue(index: number, field: 'parcel' | 'type' | 'area', value: string): void {
     this.newPropertyDraft.update(draft => {
       const values = { ...(draft.tabValues?.pozemek || {}) };
-      values[this.landParcelFieldKey(index, field)] = normalizedValue;
-      if (normalizedValue.trim()) values['Pozemek ano/ne'] = 'Ano';
-      return { ...draft, tabValues: { ...draft.tabValues, pozemek: values } };
+      values[this.landParcelFieldKey(index, field)] = value;
+      if (value.trim()) values['Pozemek ano/ne'] = 'Ano';
+      const synced = syncBuildingFromLand(values, this.normalizePropertyTabValues('stavba', draft.tabValues?.stavba || {}), index);
+      return { ...draft, tabValues: { ...draft.tabValues, pozemek: synced?.land || values, ...(synced ? { stavba: synced.buildings } : {}) } };
     });
   }
 
   protected formatLandParcelArea(index: number): void {
     const formatted = this.formatIntegerWithUnit(this.landParcelValue(index, 'area'), 'm²');
-    this.setPropertyTabFieldValue('pozemek', this.landParcelFieldKey(index, 'area'), formatted);
+    this.updateLandParcelValue(index, 'area', formatted);
   }
 
   protected landTotalArea(): string {
@@ -4443,6 +4520,7 @@ export class App {
   protected stavbaFacadeOptions(): string[] { return STAVBA_FACADE_OPTIONS; }
   protected stavbaLocationOptions(): string[] { return STAVBA_LOCATION_OPTIONS; }
   protected stavbaSettlementOptions(): string[] { return STAVBA_SETTLEMENT_OPTIONS; }
+  protected stavbaConditionOptions(): string[] { return ['Původní', 'Udržovaný', 'Před rekonstrukcí']; }
   protected stavbaInsulationActiveOptions(): string[] { return STAVBA_INSULATION_ACTIVE_OPTIONS; }
   protected stavbaInsulationOptions(): string[] { return STAVBA_INSULATION_OPTIONS; }
   protected stavbaOrientationOptions(): string[] { return STAVBA_ORIENTATION_OPTIONS; }
@@ -4489,7 +4567,8 @@ export class App {
           type: currentTab[this.stavbaParcelFieldKey(index, 'type')] || '',
           area: currentTab[this.stavbaParcelFieldKey(index, 'area')] || '',
           buildingNumber: currentTab[this.stavbaParcelFieldKey(index, 'buildingNumber')] || '',
-          buildingNumberType: currentTab[this.stavbaParcelFieldKey(index, 'buildingNumberType')] || ''
+          buildingNumberType: currentTab[this.stavbaParcelFieldKey(index, 'buildingNumberType')] || '',
+          metadata: Object.fromEntries(BUILDING_LAND_META_FIELDS.map(field => [field, currentTab[`stavba-parcel-${index}-${field}`]]).filter((entry): entry is [string, string] => typeof entry[1] === 'string'))
         }));
       for (const key of Object.keys(currentTab)) {
         if (key.startsWith('stavba-parcel-') || key === this.stavbaParcelCountKey()) {
@@ -4502,6 +4581,7 @@ export class App {
         currentTab[this.stavbaParcelFieldKey(index, 'area')] = row.area;
         currentTab[this.stavbaParcelFieldKey(index, 'buildingNumber')] = row.buildingNumber;
         currentTab[this.stavbaParcelFieldKey(index, 'buildingNumberType')] = row.buildingNumberType;
+        for (const [field, value] of Object.entries(row.metadata)) currentTab[`stavba-parcel-${index}-${field}`] = value;
       });
       currentTab[this.stavbaParcelCountKey()] = String(Math.max(rows.length, 1));
       tabValues.stavba = currentTab;
@@ -5160,7 +5240,7 @@ export class App {
       'Nejsou známa žádná', 'Dluh na družstvu', 'Břemena chůze, jízdy',
       'Břemena elektřina', 'Břemena vodovod', 'Břemena kanalizace', 'Bankovní zástavy', 'Zástavní právo smluvní', 'Zatíženo hypotékou',
       'Předkupní právo', 'Památková zóna', 'Nemovitá kulturní památka', 'Chráněná krajinná oblast', 'Podnájemník do:',
-      'Dluh na bytě nájemník', 'Černá stavba'
+      'Dluh na bytě nájemník', 'Černá stavba', 'Zákaz zcizení'
     ];
   }
 
@@ -6294,6 +6374,22 @@ export class App {
   protected prostoryAdditionalOptions(): string[] { return PROSTORY_ADDITIONAL_OPTIONS; }
   protected prostoryRoomEquipmentOptions(): string[] { return PROSTORY_ROOM_EQUIPMENT_OPTIONS; }
   protected prostoryRoomListOptions(): string[] { return PROSTORY_ROOM_LIST_OPTIONS; }
+  protected prostoryRoomGroupLabel(option: string): string {
+    return ({ '__separator__1': 'Venkovní prostory', '__separator__2': 'Další místnosti', '__separator__4': 'Další prostory' } as Record<string, string>)[option] || 'Společné prostory';
+  }
+  protected prostoryRoomGroupOptions(separator: string, unit = ''): string[] {
+    const groups: Record<string, string[]> = {
+      '__separator__1': ['Balkon', 'Lodžie', 'Terasa'],
+      '__separator__2': PROSTORY_ROOM_LIST_OPTIONS.slice(PROSTORY_ROOM_LIST_OPTIONS.indexOf(`${PROSTORY_ROOM_GROUP_SEPARATOR_PREFIX}2`) + 1, PROSTORY_ROOM_LIST_OPTIONS.indexOf(`${PROSTORY_ROOM_GROUP_SEPARATOR_PREFIX}4`)),
+      '__separator__4': ['Nepodsklepený', 'Sklep', 'Sklepní kóje', 'Garáž', 'Sauna']
+    };
+    return groups[separator] || ['Kočárkárna', 'Kolárna', 'Společná chodba', 'Výtah', 'Jiné společné prostory'];
+  }
+  protected isProstoryAdditionalRoom(room: string): boolean {
+    const position = PROSTORY_ROOM_LIST_OPTIONS.indexOf(room);
+    return position > PROSTORY_ROOM_LIST_OPTIONS.indexOf(`${PROSTORY_ROOM_GROUP_SEPARATOR_PREFIX}2`)
+      && position < PROSTORY_ROOM_LIST_OPTIONS.indexOf(`${PROSTORY_ROOM_GROUP_SEPARATOR_PREFIX}4`);
+  }
   protected prostoryUnitAccessoryOptions(): string[] { return PROSTORY_UNIT_ACCESSORY_OPTIONS; }
   protected prostoryUnitAccessoryChips(unit = ''): string[] {
     const extras = this.selectedProstoryAccessories(unit).filter(value => !PROSTORY_UNIT_ACCESSORY_OPTIONS.includes(value));
@@ -6301,9 +6397,33 @@ export class App {
   }
   protected prostorySharedAccessoryOptions(): string[] { return [...PROSTORY_SHARED_ACCESSORY_OPTIONS].sort((a, b) => a.localeCompare(b, 'cs')); }
 
-  protected prostoryUnitAccessoriesLabel(): string {
-    return this.isCurrentPropertyType('Rodinný dům') ? 'Sklep a další vybavení v domě' : 'Sklep a další vybavení v jednotce';
+  protected isDispoziceSharedSectionOpen(section: 'cellar' | 'equipment' | 'garage' | 'disposition'): boolean { return this.dispoziceSharedSection() === section; }
+  protected toggleDispoziceSharedSection(section: 'cellar' | 'equipment' | 'garage' | 'disposition'): void {
+    this.dispoziceSharedSection.set(this.isDispoziceSharedSectionOpen(section) ? null : section);
   }
+  protected isProstoryCellarUnit(unit: string): boolean {
+    const accessories = this.selectedProstoryAccessories(unit);
+    return accessories.includes('Sklep') || accessories.includes('Sklepní kóje');
+  }
+  protected shouldShowDispoziceCellarSection(): boolean {
+    return this.dispoziceUnits().some(unit => this.isProstoryCellarUnit(unit));
+  }
+  protected isProstoryGarageUnit(unit: string): boolean {
+    return this.selectedProstoryAccessories(unit).includes('Garáž');
+  }
+  protected shouldShowDispoziceGarageSection(): boolean {
+    return this.dispoziceUnits().some(unit => this.isProstoryGarageUnit(unit)) || this.standaloneAccessories().includes('Garáž');
+  }
+  protected garageSectionFromRoomList(): boolean {
+    return this.dispoziceUnits().some(unit => this.isProstoryGarageUnit(unit));
+  }
+  protected garageSectionFromStandalone(): boolean {
+    return this.standaloneAccessories().includes('Garáž');
+  }
+  protected standaloneAccessories(): string[] {
+    return (this.propertyTabFieldValue('prostory', 'Příslušenství nemovitosti') || '').split('|').map(value => value.trim()).filter(Boolean);
+  }
+
   protected isProstoryRoomGroupSeparator(option: string): boolean { return option.startsWith(PROSTORY_ROOM_GROUP_SEPARATOR_PREFIX); }
   protected prostoryCellarTypeOptions(): string[] { return PROSTORY_CELLAR_TYPE_OPTIONS; }
   protected prostoryCellarSidesOptions(): string[] { return PROSTORY_CELLAR_SIDES_OPTIONS; }
@@ -6437,7 +6557,9 @@ export class App {
 
   protected selectedProstoryListOptions(unit = ''): string[] {
     const rooms = this.propertyTabMultiValues('prostory', this.prostoryKey('Seznam místností', unit)).filter(room => !PROSTORY_UNIT_ACCESSORY_VALUES.includes(room));
-    return [...new Set([...rooms.map(room => this.normalizeLegacyProstoryRoom(room)), ...this.selectedProstoryAccessories(unit)])];
+    const custom = (this.propertyTabFieldValue('prostory', this.prostoryKey('Další prostory vlastní', unit)) || '').trim();
+    const customRooms = custom ? [custom] : [];
+    return [...new Set([...rooms.map(room => this.normalizeLegacyProstoryRoom(room)), ...this.selectedProstoryAccessories(unit), ...customRooms])];
   }
 
   protected selectedProstoryAccessories(unit = ''): string[] {
@@ -6462,6 +6584,7 @@ export class App {
       const key = this.prostoryKey('Příslušenství v jednotce', unit);
       this.setPropertyTabFieldValue('prostory', key, this.propertyTabFieldValue('prostory', key));
     }
+    if (value === 'Sklep' && this.isProstoryCellarUnit(unit)) this.dispoziceSharedSection.set('cellar');
   }
 
   protected prostoryAccessoryCustomKey(unit: string): string {
@@ -6516,8 +6639,23 @@ export class App {
     return this.propertyTabFieldValue('prostory', this.prostoryRoomDimensionKey(room, index, 'floor', unit));
   }
 
-  protected isProstoryLivingRoom(room: string): boolean {
-    return ['Obytná místnost', 'Obývací pokoj', 'Dětský pokoj', 'Ložnice', 'Obývací pokoj + kuchyně'].includes(room);
+  protected isProstoryRoomResidential(room: string, index: number, unit = ''): boolean {
+    const key = this.prostoryRoomResidentialKey(room, index, unit);
+    const values = this.newPropertyDraft().tabValues?.prostory || {};
+    return key in values ? values[key] === 'ANO' : PROSTORY_OBYTNA_ROOMS.includes(room);
+  }
+
+  protected setProstoryRoomResidential(room: string, index: number, unit = '', checked = false): void {
+    this.setPropertyTabFieldValue('prostory', this.prostoryRoomResidentialKey(room, index, unit), checked ? 'ANO' : 'NE');
+  }
+
+  private prostoryRoomResidentialKey(room: string, index: number, unit = ''): string {
+    return unit ? `${room}__${unit}__${index}__obytná` : `${room}__${index}__obytná`;
+  }
+
+  protected isProstorySmallLivingRoom(room: string, index: number, unit = ''): boolean {
+    const area = this.parseLocalizedNumber(this.prostoryRoomArea(room, index, unit).replace(/\s*m²\s*$/i, ''));
+    return this.isProstoryRoomResidential(room, index, unit) && area > 0 && area < 8;
   }
 
   protected setProstoryRoomFloorValue(room: string, index: number, value: string, unit = ''): void {
@@ -6525,13 +6663,25 @@ export class App {
   }
 
   protected selectedProstoryRoomEntries(unit = '') {
-    const rank = (floor: string): number => floor ? this.prostoryRoomFloorOptions.indexOf(floor) : Number.MAX_SAFE_INTEGER;
+    const floorRank = (floor: string): number => {
+      const position = this.prostoryRoomFloorOptions.indexOf(floor);
+      return position < 0 ? Number.MAX_SAFE_INTEGER : position;
+    };
+    const roomGroupRank = (room: string): number => {
+      const position = PROSTORY_ROOM_LIST_OPTIONS.indexOf(room);
+      if (position < 0) return 3;
+      if (position < PROSTORY_ROOM_LIST_OPTIONS.indexOf(`${PROSTORY_ROOM_GROUP_SEPARATOR_PREFIX}1`)) return 0;
+      if (position < PROSTORY_ROOM_LIST_OPTIONS.indexOf(`${PROSTORY_ROOM_GROUP_SEPARATOR_PREFIX}2`)) return 1;
+      if (position < PROSTORY_ROOM_LIST_OPTIONS.indexOf(`${PROSTORY_ROOM_GROUP_SEPARATOR_PREFIX}4`)) return 2;
+      return 3;
+    };
     const entries = this.selectedProstoryRooms(unit).flatMap((room) =>
       this.prostoryRoomInstanceIndexes(room, unit).map((index) => ({
         room, index, primary: index === 0, key: `${room}__${index}`,
         floor: this.prostoryRoomFloorValue(room, index, unit)
       }))
-    ).sort((a, b) => rank(a.floor) - rank(b.floor));
+    ).sort((a, b) => floorRank(a.floor) - floorRank(b.floor) || roomGroupRank(a.room) - roomGroupRank(b.room)
+      || PROSTORY_ROOM_LIST_OPTIONS.indexOf(a.room) - PROSTORY_ROOM_LIST_OPTIONS.indexOf(b.room));
     return entries.map((entry, index) => ({ ...entry, floorStart: index > 0 && entry.floor !== entries[index - 1].floor }));
   }
 
@@ -6554,22 +6704,23 @@ export class App {
     this.newPropertyDraft.update((draft) => {
       const tabValues = { ...draft.tabValues };
       const currentTab = { ...(tabValues.prostory || {}) };
-      const rows = indexes
-        .filter((index) => index !== indexToRemove)
-        .map((index) => ({
-          width: currentTab[`${roomPrefix}${index}__width`] || '',
-          length: currentTab[`${roomPrefix}${index}__length`] || '',
-          floor: currentTab[`${roomPrefix}${index}__floor`] || ''
-        }));
-      for (const key of Object.keys(currentTab)) {
-        if (key.startsWith(roomPrefix) && (key.endsWith('__width') || key.endsWith('__length') || key.endsWith('__floor'))) {
-          delete currentTab[key];
+      const instanceFields = (index: number): Record<string, string> => {
+        const instancePrefix = `${roomPrefix}${index}__`;
+        const fields: Record<string, string> = {};
+        for (const [key, value] of Object.entries(currentTab)) {
+          if (key.startsWith(instancePrefix)) fields[key.slice(instancePrefix.length)] = value;
         }
+        return fields;
+      };
+      const rows = indexes.filter((index) => index !== indexToRemove).map(instanceFields);
+      for (const key of Object.keys(currentTab)) {
+        if (!key.startsWith(roomPrefix)) continue;
+        if (/^\d+__/.test(key.slice(roomPrefix.length))) delete currentTab[key];
       }
-      rows.forEach((row, index) => {
-        currentTab[`${roomPrefix}${index}__width`] = row.width;
-        currentTab[`${roomPrefix}${index}__length`] = row.length;
-        currentTab[`${roomPrefix}${index}__floor`] = row.floor;
+      rows.forEach((fields, index) => {
+        for (const [field, value] of Object.entries(fields)) {
+          currentTab[`${roomPrefix}${index}__${field}`] = value;
+        }
       });
       currentTab[this.prostoryRoomCountKey(room, unit)] = String(rows.length);
       tabValues.prostory = currentTab;
@@ -6587,6 +6738,13 @@ export class App {
 
   protected setProstoryRoomDimensionValue(room: string, index: number, key: 'width' | 'length', value: string, unit = ''): void {
     this.setPropertyTabFieldValue('prostory', this.prostoryRoomDimensionKey(room, index, key, unit), this.sanitizePropertyNumberInput(value));
+    this.newPropertyDraft.update((draft) => {
+      const tabValues = { ...draft.tabValues };
+      const currentTab = { ...(tabValues.prostory || {}) };
+      delete currentTab[this.prostoryRoomManualAreaKey(room, index, unit)];
+      tabValues.prostory = currentTab;
+      return { ...draft, tabValues };
+    });
   }
 
   protected formatProstoryRoomDimensionValue(room: string, index: number, key: 'width' | 'length', unit = ''): void {
@@ -6594,16 +6752,221 @@ export class App {
   }
 
   protected prostoryRoomArea(room: string, index: number, unit = ''): string {
+    const manual = this.prostoryRoomManualArea(room, index, unit);
+    const manualValue = manual ? this.parseLocalizedNumber(manual) : 0;
+    if (manualValue > 0) return this.formatDecimalNumber(manualValue, 'm²');
     const width = this.parseLocalizedNumber(this.prostoryRoomDimensionValue(room, index, 'width', unit).replace(/\s*m\s*$/i, ''));
     const length = this.parseLocalizedNumber(this.prostoryRoomDimensionValue(room, index, 'length', unit).replace(/\s*m\s*$/i, ''));
     const total = width * length;
     return total > 0 ? this.formatDecimalNumber(total, 'm²') : '';
   }
 
-  protected prostoryAreaTotal(kind: 'podlahova' | 'obytna' | 'uzitna' | 'celkovaUzitna', unit = ''): string {
+  protected prostoryAreaRoomsTooltip(kind: ProstoryAreaKind, unit = ''): string {
+    const lines = this.selectedProstoryRoomEntries(unit)
+      .filter(entry => this.isProstoryRoomCounted(entry.room, kind, entry.index, unit))
+      .map(entry => `${entry.floor ? entry.floor : 'Patro neurčeno'}: ${entry.room}`);
+    return lines.join('\n');
+  }
+  protected prostoryAreaKinds(): ProstoryAreaKind[] { return ['podlahova', 'obytna', 'uzitna', 'celkovaUzitna']; }
+  protected prostoryAreaKindLabel(kind: ProstoryAreaKind): string { return PROSTORY_AREA_KIND_LABELS[kind]; }
+  protected isRoomInclusionMenuOpen(room: string, unit = ''): boolean {
+    return this.openRoomInclusionMenu()?.key === `${unit}|${room}`;
+  }
+  protected toggleRoomInclusionMenu(event: MouseEvent, room: string, unit = ''): void {
+    const key = `${unit}|${room}`;
+    if (this.openRoomInclusionMenu()?.key === key) {
+      this.openRoomInclusionMenu.set(null);
+      return;
+    }
+    const trigger = event.currentTarget as HTMLElement | null;
+    const rect = trigger?.getBoundingClientRect();
+    const menuWidth = 190;
+    const menuHeight = 132;
+    const margin = 8;
+    const left = rect
+      ? Math.max(margin, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - margin))
+      : margin;
+    const below = rect ? rect.bottom + 4 : margin;
+    const top = rect && below + menuHeight <= window.innerHeight - margin
+      ? below
+      : Math.max(margin, (rect?.top ?? 0) - menuHeight - 4);
+    this.openRoomInclusionMenu.set({ key, room, unit, top, left });
+  }
+  protected closeRoomInclusionMenu(): void {
+    if (this.openRoomInclusionMenu() !== null) this.openRoomInclusionMenu.set(null);
+  }
+  protected toggleRoomAreaOverview(): void {
+    this.roomAreaOverviewOpen.update(open => !open);
+  }
+  protected closeRoomAreaOverview(): void {
+    if (this.roomAreaOverviewOpen()) this.roomAreaOverviewOpen.set(false);
+  }
+  protected setRoomAreaOverviewSort(key: ProstoryAreaInfoSortKey): void {
+    this.roomAreaOverviewSort.update(current => current.key === key
+      ? { key, direction: current.direction === 'asc' ? 'desc' : 'asc' }
+      : { key, direction: 'asc' });
+  }
+  protected roomAreaOverviewSortDirection(key: ProstoryAreaInfoSortKey): 'asc' | 'desc' | '' {
+    const current = this.roomAreaOverviewSort();
+    return current.key === key ? current.direction : '';
+  }
+  protected roomAreaOverviewSortAria(key: ProstoryAreaInfoSortKey): 'ascending' | 'descending' | 'none' {
+    const direction = this.roomAreaOverviewSortDirection(key);
+    return direction === 'asc' ? 'ascending' : direction === 'desc' ? 'descending' : 'none';
+  }
+  protected roomAreaOverviewSortMark(key: ProstoryAreaInfoSortKey): string {
+    const direction = this.roomAreaOverviewSortDirection(key);
+    return direction === 'asc' ? ' ▲' : direction === 'desc' ? ' ▼' : '';
+  }
+  protected roomAreaOverviewRows(): ProstoryAreaInfoRow[] {
+    const rooms = [
+      'Kočárkárna', 'Kolárna', 'Společná chodba', 'Výtah', 'Jiné společné prostory',
+      'Balkon', 'Lodžie', 'Terasa',
+      ...PROSTORY_ROOM_LIST_OPTIONS
+        .filter(option => !option.startsWith(PROSTORY_ROOM_GROUP_SEPARATOR_PREFIX) && option !== 'dopsat vlastní' && option !== 'Nepodsklepený')
+    ];
+    const rows = [...new Set(rooms)].map(room => ({
+      room,
+      podlahova: !PROSTORY_PODLAHOVA_EXCLUDED_ROOMS.includes(room),
+      obytna: PROSTORY_OBYTNA_ROOMS.includes(room),
+      uzitna: !PROSTORY_UZITNA_EXCLUDED_ROOMS.includes(room),
+      celkovaUzitna: true
+    }));
+    const { key, direction } = this.roomAreaOverviewSort();
+    const factor = direction === 'asc' ? 1 : -1;
+    return rows.sort((first, second) => {
+      if (key === 'name') return first.room.localeCompare(second.room, 'cs') * factor;
+      const difference = Number(first[key]) - Number(second[key]);
+      return (difference || first.room.localeCompare(second.room, 'cs')) * factor;
+    });
+  }
+
+  private prostoryRoomManualAreaKey(room: string, index: number, unit = ''): string {
+    return unit ? `${room}__${unit}__${index}__area` : `${room}__${index}__area`;
+  }
+
+  private prostoryRoomManualArea(room: string, index: number, unit = ''): string {
+    return (this.propertyTabFieldValue('prostory', this.prostoryRoomManualAreaKey(room, index, unit)) || '').trim();
+  }
+
+  protected hasProstoryRoomManualArea(room: string, index: number, unit = ''): boolean {
+    return !!this.prostoryRoomManualArea(room, index, unit);
+  }
+
+  protected prostoryRoomAreaInput(room: string, index: number, unit = ''): string {
+    return this.prostoryRoomManualArea(room, index, unit) || this.prostoryRoomArea(room, index, unit);
+  }
+
+  protected setProstoryRoomAreaInput(room: string, index: number, value: string, unit = ''): void {
+    const sanitized = this.sanitizePropertyNumberInput(value).trim();
+    this.setPropertyTabFieldValue('prostory', this.prostoryRoomManualAreaKey(room, index, unit), sanitized);
+  }
+
+  protected formatProstoryRoomAreaInput(room: string, index: number, unit = ''): void {
+    const manual = this.prostoryRoomManualArea(room, index, unit);
+    if (!manual) return;
+    this.setPropertyTabFieldValue('prostory', this.prostoryRoomManualAreaKey(room, index, unit), this.formatDecimalWithUnit(manual, 'm²'));
+  }
+
+  private prostoryRoomTypeInclusionKey(room: string, kind: ProstoryAreaKind, unit = ''): string {
+    return unit ? `${room}__${unit}__zapocet__${kind}` : `${room}__zapocet__${kind}`;
+  }
+
+  private prostoryRoomInstanceInclusionKey(room: string, kind: ProstoryAreaKind, index: number, unit = ''): string {
+    return unit ? `${room}__${unit}__${index}__zapocet__${kind}` : `${room}__${index}__zapocet__${kind}`;
+  }
+
+  private prostoryStoredInclusion(key: string): boolean | null {
+    const values = this.newPropertyDraft().tabValues?.prostory || {};
+    if (!(key in values)) return null;
+    return values[key] === 'ANO';
+  }
+
+  private prostoryRoomDefaultIncluded(room: string, kind: ProstoryAreaKind, index: number | null, unit = ''): boolean {
+    if (kind === 'celkovaUzitna') return true;
+    if (kind === 'obytna') {
+      return index === null ? PROSTORY_OBYTNA_ROOMS.includes(room) : this.isProstoryRoomResidential(room, index, unit);
+    }
+    if (kind === 'podlahova') return !PROSTORY_PODLAHOVA_EXCLUDED_ROOMS.includes(room);
+    return !PROSTORY_UZITNA_EXCLUDED_ROOMS.includes(room);
+  }
+
+  private prostoryRoomTypeDefaultIncluded(room: string, kind: ProstoryAreaKind): boolean {
+    return this.prostoryRoomDefaultIncluded(room, kind, null);
+  }
+
+  protected isProstoryRoomCounted(room: string, kind: ProstoryAreaKind, index: number, unit = ''): boolean {
+    const instance = this.prostoryStoredInclusion(this.prostoryRoomInstanceInclusionKey(room, kind, index, unit));
+    if (instance !== null) return instance;
+    const type = this.prostoryStoredInclusion(this.prostoryRoomTypeInclusionKey(room, kind, unit));
+    if (type !== null) return type;
+    return this.prostoryRoomDefaultIncluded(room, kind, index, unit);
+  }
+
+  protected isProstoryRoomTypeCounted(room: string, kind: ProstoryAreaKind, unit = ''): boolean {
+    const type = this.prostoryStoredInclusion(this.prostoryRoomTypeInclusionKey(room, kind, unit));
+    if (type !== null) return type;
+    const instances = this.prostoryRoomInstanceIndexes(room, unit).map(index => {
+      const instance = this.prostoryStoredInclusion(this.prostoryRoomInstanceInclusionKey(room, kind, index, unit));
+      return instance !== null ? instance : this.prostoryRoomDefaultIncluded(room, kind, index, unit);
+    });
+    return instances.length && instances.every(value => value === instances[0])
+      ? instances[0]
+      : this.prostoryRoomTypeDefaultIncluded(room, kind);
+  }
+
+  protected isProstoryRoomInclusionDeviated(room: string, kind: ProstoryAreaKind, index: number, unit = ''): boolean {
+    return this.isProstoryRoomCounted(room, kind, index, unit) !== this.prostoryRoomDefaultIncluded(room, kind, index, unit);
+  }
+
+  protected isProstoryRoomListDeviated(room: string, unit = ''): boolean {
+    return this.prostoryAreaKinds().some(kind => {
+      const type = this.prostoryStoredInclusion(this.prostoryRoomTypeInclusionKey(room, kind, unit));
+      return type !== null && type !== this.prostoryRoomTypeDefaultIncluded(room, kind);
+    });
+  }
+
+  protected isProstoryRoomResidentialDeviated(room: string, index: number, unit = ''): boolean {
+    return this.isProstoryRoomResidential(room, index, unit) !== PROSTORY_OBYTNA_ROOMS.includes(room);
+  }
+
+  protected toggleProstoryRoomCounted(room: string, kind: ProstoryAreaKind, index: number, unit = ''): void {
+    const next = !this.isProstoryRoomCounted(room, kind, index, unit);
+    const type = this.prostoryStoredInclusion(this.prostoryRoomTypeInclusionKey(room, kind, unit));
+    const fallback = type !== null ? type : this.prostoryRoomDefaultIncluded(room, kind, index, unit);
+    this.newPropertyDraft.update((draft) => {
+      const values = this.normalizePropertyTabValues('prostory', draft.tabValues?.prostory || {});
+      const key = this.prostoryRoomInstanceInclusionKey(room, kind, index, unit);
+      if (next === fallback) delete values[key];
+      else values[key] = next ? 'ANO' : 'NE';
+      return { ...draft, tabValues: { ...draft.tabValues, prostory: values } };
+    });
+  }
+
+  protected setProstoryRoomTypeCounted(room: string, kind: ProstoryAreaKind, checked: boolean, unit = ''): void {
+    this.newPropertyDraft.update((draft) => {
+      const values = this.normalizePropertyTabValues('prostory', draft.tabValues?.prostory || {});
+      const typeKey = this.prostoryRoomTypeInclusionKey(room, kind, unit);
+      if (checked === this.prostoryRoomTypeDefaultIncluded(room, kind)) delete values[typeKey];
+      else values[typeKey] = checked ? 'ANO' : 'NE';
+      const instancePrefix = unit ? `${room}__${unit}__` : `${room}__`;
+      for (const key of Object.keys(values)) {
+        if (key === typeKey) continue;
+        if (!key.startsWith(instancePrefix)) continue;
+        const rest = key.slice(instancePrefix.length);
+        if (!/^\d+__/.test(rest)) continue;
+        if (rest.endsWith(`__zapocet__${kind}`)) delete values[key];
+        if (kind === 'obytna' && rest.endsWith('__obytná')) values[key] = checked ? 'ANO' : 'NE';
+      }
+      return { ...draft, tabValues: { ...draft.tabValues, prostory: values } };
+    });
+  }
+
+  protected prostoryAreaTotal(kind: ProstoryAreaKind, unit = ''): string {
     const total = this.selectedProstoryRooms(unit)
-      .filter((room) => this.shouldIncludeRoomInProstoryTotal(room, kind))
-      .flatMap((room) => this.prostoryRoomInstanceIndexes(room, unit).map((index) => this.parseLocalizedNumber(this.prostoryRoomArea(room, index, unit).replace(/\s*m²\s*$/i, ''))))
+      .flatMap((room) => this.prostoryRoomInstanceIndexes(room, unit).map((index) => ({ room, index })))
+      .filter(({ room, index }) => this.shouldIncludeRoomInProstoryTotal(room, kind, index, unit))
+      .map(({ room, index }) => this.parseLocalizedNumber(this.prostoryRoomArea(room, index, unit).replace(/\s*m²\s*$/i, '')))
       .filter((value) => value > 0)
       .reduce((sum, value) => sum + value, 0);
     return total > 0 ? this.formatDecimalNumber(total, 'm²') : '';
@@ -6625,20 +6988,12 @@ export class App {
     this.setPropertyTabFieldValue('prostory', this.prostoryDimensionKey(field, side, unit), this.formatMeterValue(this.prostoryDimensionValue(field, side, unit)));
   }
 
-  private shouldIncludeRoomInProstoryTotal(room: string, kind: 'podlahova' | 'obytna' | 'uzitna' | 'celkovaUzitna'): boolean {
-    if (kind === 'celkovaUzitna') {
-      return true;
-    }
-    if (kind === 'obytna') {
-      return PROSTORY_OBYTNA_ROOMS.includes(room);
-    }
-    if (kind === 'podlahova') {
-      return !PROSTORY_PODLAHOVA_EXCLUDED_ROOMS.includes(room);
-    }
-    return !PROSTORY_UZITNA_EXCLUDED_ROOMS.includes(room);
+  private shouldIncludeRoomInProstoryTotal(room: string, kind: ProstoryAreaKind, index: number, unit: string): boolean {
+    return this.isProstoryRoomCounted(room, kind, index, unit);
   }
 
   private normalizeLegacyProstoryRoom(room: string): string {
+    if (/^Kuchyně (?:větší než|do|menší než)\s*12\s*m(?:²|2)$/u.test(room)) return 'Kuchyně';
     if (/^Obytná místnost [2-5]$/u.test(room)) {
       return 'Obytná místnost';
     }
@@ -6649,6 +7004,7 @@ export class App {
   }
 
   private prostoryRoomAliases(room: string): string[] {
+    if (room === 'Kuchyně') return ['Kuchyně', 'Kuchyně větší než 12m²', 'Kuchyně do 12m²'];
     if (room === 'Obytná místnost') {
       return ['Obytná místnost', 'Obytná místnost 1', 'Obytná místnost 2', 'Obytná místnost 3', 'Obytná místnost 4', 'Obytná místnost 5'];
     }
@@ -6952,6 +7308,7 @@ export class App {
       }
     }
 
+    this.restoreSingleDispoziceFromFloors(clone);
     return clone;
   }
 
@@ -7010,6 +7367,7 @@ export class App {
       if (!(target in next)) next[target] = next[legacyKey];
       delete next[legacyKey];
     }
+    this.migrateLegacyKitchenRows(next);
     for (const key of Object.keys(next).filter(key => /^Seznam místností(?: [A-Z])?$/.test(key))) {
       const selected = [...new Set(next[key].split('|').map(room => this.normalizeLegacyProstoryRoom(room.trim())).filter(Boolean))];
       const suffix = key.slice('Seznam místností'.length);
@@ -7053,6 +7411,26 @@ export class App {
       linkedClientIds: this.normalizeLinkedClientIds(record),
       tabValues: this.clonePropertyTabValues(record.tabValues)
     };
+  }
+
+  private restoreSingleDispoziceFromFloors(tabValues: Partial<Record<NewPropertyTabKey, Record<string, string>>>): void {
+    const building = tabValues.stavba || {};
+    const floorCount = Number.parseInt(building['Podlaží celkem'] || '', 10);
+    if (building['Rozděleno na jednotky'] === 'Ano' || !Number.isFinite(floorCount) || floorCount <= 1 || !tabValues.prostory) return;
+    const values = { ...tabValues.prostory };
+    tabValues.prostory = values;
+    for (const unit of Array.from({ length: Math.min(floorCount, 26) }, (_, index) => String.fromCharCode(65 + index))) {
+      for (const [key, value] of Object.entries(values)) {
+        let target = '';
+        if (key.endsWith(` ${unit}`)) target = key.slice(0, -2);
+        else if (key.includes(`__${unit}__`)) target = key.replace(`__${unit}__`, '__');
+        else if (key.endsWith(` ${unit}__vlastní`)) target = key.replace(` ${unit}__vlastní`, '__vlastní');
+        if (!target) continue;
+        if (['Seznam místností', 'Příslušenství v jednotce'].includes(target)) {
+          values[target] = [...new Set([...(values[target] || '').split('|'), ...value.split('|')].filter(Boolean))].join('|');
+        } else if (!(target in values)) values[target] = value;
+      }
+    }
   }
 
   private syncLinkedClientRecord(propertyId: string, linkedClientIds: string[]): void {
@@ -11141,7 +11519,7 @@ export class App {
       }
     };
     const { origin, destination } = this.currentDrivingAddresses(draft);
-    if (!origin) {
+    if (!origin || !this.isBrokerDrivingVisible(draft)) {
       writeSummary();
       return;
     }
@@ -11212,10 +11590,11 @@ export class App {
               .filter(([key, value]) => this.shouldPrintPropertyField(sourceTab, key, values) && !combinedFieldKeys.has(key) && (includeExcluded || this.isPropertyBuyerInfoFieldVisible(sourceTab, key)) && !key.includes('__') && !key.endsWith(' počet') && !key.startsWith('parcel-') && !key.startsWith('stavba-parcel-') && Boolean(String(value).trim()))
               .map(([key, value]) => ({ field: key, label: key === 'Pozemek ano/ne' ? 'Pozemek' : sourceTab === 'voda' && key === 'Kvalita vody' ? 'Kvalita dalšího zdroje vody' : sourceTab === 'ohrev-vody' && key.startsWith('Způsob ohřevu vody') ? key.replace(/^Způsob ohřevu vody/, 'Zařízení pro ohřev vody') : key === 'Zastavěná plocha RÚIAN' ? 'Zastavěná plocha dle RÚIAN' : sourceTab === 'prostory' ? (key === 'Příslušenství nemovitosti' ? 'Příslušenství' : key.replace(/^Dispozice jednotky(?= [A-Z]$|$)/, 'Dispozice')) : sourceTab === 'elektina' && key === 'Zásuvka venku' ? 'Venkovní zásuvka' : sourceTab === 'dostupnost-v-okoli' && key === 'Poznámka' ? 'Poznámka k okolí' : key, value: String(value).replace(/\|/g, ', ') }))
           ];
-          return this.orderPropertyPrintRows(sourceTab, fieldRows).map(row => this.brokerInfoSimpleRow(row.label, row.value, sourceTab === 'rozpis-sluzeb' ? (row.fullWidth ?? false) : row.fullWidth, row.emphasized));
+          const printable = fieldRows.map(row => ({ field: row.field, html: this.brokerInfoSimpleRow(row.label, row.value, sourceTab === 'rozpis-sluzeb' ? (row.fullWidth ?? false) : row.fullWidth, row.emphasized) }));
+          if (sourceTab === 'zakladni' && includeExcluded && drivingInfo) printable.push({ field: '@driving-route', html: drivingInfo });
+          return this.orderPropertyPrintRows(sourceTab, printable).map(row => row.html);
         }).join('');
-        const trailingDrivingInfo = tab.key === 'zakladni' && includeExcluded ? drivingInfo : '';
-        return rows || trailingDrivingInfo ? `<section class="info-card"><h2>${this.escapeHtml(tab.label)}</h2><div class="info-card-body">${rows}${trailingDrivingInfo}</div></section>` : '';
+        return rows ? `<section class="info-card"><h2>${this.escapeHtml(tab.label)}</h2><div class="info-card-body">${rows}</div></section>` : '';
       })
       .filter(Boolean)
       .join('');
@@ -11223,8 +11602,8 @@ export class App {
     const propertyType = this.normalizedPropertyType(draft.propertyType || this.propertyTabFieldValue('zakladni', 'Nemovitost')) || 'nemovitosti';
     const title = [service, propertyType.toLowerCase(), draft.address || this.propertyTabFieldValue('zakladni', 'Adresa nemovitosti')].filter(Boolean).join(' ');
     const agent = this.agentProfile();
-    const phone = agent.phone || '775 946 596';
-    const email = agent.email || 'eliska.petrasova@re-max.cz';
+    const phone = this.agentReportPhone();
+    const email = this.agentReportEmail();
     const html = `<!doctype html><html lang="cs"><head><meta charset="utf-8"><title>${reportTitle}</title><style>
       @page{size:A4;margin:12mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#334155;margin:0;background:#fff;font-size:11px}.page{min-height:273mm;position:relative}.top{background:#075da8;color:#fff;border-radius:4px;padding:7px 18px;margin-bottom:14px;position:relative}.top h1{font-size:18px;letter-spacing:2px;margin:0;line-height:1}.top .subtitle{font-size:11px;margin-top:3px}.grid{columns:2 310px;column-gap:14px}.info-card{break-inside:avoid;margin:0 0 12px;border:1px solid #dce5ee;border-radius:5px;overflow:hidden;background:#fff}.info-card h2{margin:0;background:#2f8ed3;color:#fff;font-size:13px;letter-spacing:.4px;padding:6px 10px;text-transform:uppercase}.info-card-body{padding:7px 10px}.info-row{display:grid;grid-template-columns:48% 52%;gap:6px;border-bottom:1px solid #edf2f7;padding:3px 0}.info-row:last-child{border-bottom:0}.info-label{font-weight:700;color:#2f3f50}.info-value{text-align:right;color:#7b8794;white-space:pre-wrap}.footer{break-inside:avoid;margin-top:14px;border-top:1px solid #9aa4b2;padding-top:8px;display:flex;justify-content:flex-end}.contact{text-align:right;font-size:11px;color:#2f3f50}.contact strong{display:block;font-size:13px}.empty{color:#7b8794;font-size:13px}@media print{button{display:none}}
       ${includeExcluded ? '.top{background:#b91c1c}.info-card h2{background:#dc2626}' : ''}
@@ -11308,8 +11687,8 @@ export class App {
     const propertyType = this.normalizedPropertyType(draft.propertyType || this.propertyTabFieldValue('zakladni', 'Nemovitost')) || 'nemovitosti';
     const title = [service, propertyType.toLowerCase(), draft.address || this.propertyTabFieldValue('zakladni', 'Adresa nemovitosti')].filter(Boolean).join(' ');
     const agent = this.agentProfile();
-    const phone = agent.phone || '775 946 596';
-    const email = agent.email || 'eliska.petrasova@re-max.cz';
+    const phone = this.agentReportPhone();
+    const email = this.agentReportEmail();
     const html = `<!doctype html><html lang="cs"><head><meta charset="utf-8"><title>Prázdný formulář</title><style>
       @page{size:A4;margin:12mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#334155;margin:0;background:#fff;font-size:11px}.page{min-height:273mm;position:relative}.top{background:#075da8;color:#fff;border-radius:4px;padding:7px 18px;margin-bottom:14px;position:relative}.top h1{font-size:18px;letter-spacing:2px;margin:0;line-height:1}.top .subtitle{font-size:11px;margin-top:3px}.grid{columns:2 320px;column-gap:14px}.info-card{break-inside:avoid;margin:0 0 12px;border:1px solid #dce5ee;border-radius:5px;overflow:hidden;background:#fff}.info-card h2{margin:0;background:#2f8ed3;color:#fff;font-size:13px;letter-spacing:.4px;padding:6px 10px;text-transform:uppercase}.info-card-body{padding:7px 10px}.info-row{display:grid;grid-template-columns:40% 60%;gap:6px;border-bottom:1px solid #edf2f7;padding:4px 0}.info-row:last-child{border-bottom:0}.info-label{font-weight:700;color:#2f3f50;line-height:1.35}.info-value{color:#5b6b7c;line-height:1.7}.opt{display:inline-block;margin:0 10px 2px 0}.opt.on{color:#0c5a96;font-weight:700}.opt.muted{color:#ff4f9a}.blank{color:#b6bec7}.footer{break-inside:avoid;margin-top:14px;border-top:1px solid #9aa4b2;padding-top:8px;display:flex;justify-content:flex-end}.contact{text-align:right;font-size:11px;color:#2f3f50}.contact strong{display:block;font-size:13px}.empty{color:#7b8794;font-size:13px}@media print{button{display:none}}
       .info-row-full{grid-template-columns:minmax(0,1fr)}.info-row-full .info-value{text-align:left;white-space:pre-wrap;overflow-wrap:anywhere}
@@ -11368,8 +11747,40 @@ export class App {
     return next;
   }
 
+  private migrateLegacyKitchenRows(values: Record<string, string>): void {
+    for (const listKey of Object.keys(values).filter(key => /^Seznam místností(?: [A-Z])?$/.test(key))) {
+      const suffix = listKey.slice('Seznam místností'.length).trim();
+      const selected = (values[listKey] || '').split('|').map(value => value.trim());
+      const kitchenPrefix = suffix ? `Kuchyně__${suffix}__` : 'Kuchyně__';
+      const countKey = `${kitchenPrefix}count`;
+      const parsedCount = Number.parseInt(values[countKey] || '', 10);
+      const savedCount = Number.isFinite(parsedCount) ? parsedCount : 0;
+      let count = selected.includes('Kuchyně') ? Math.max(savedCount, 1) : 0;
+      let migrated = false;
+      for (const legacyRoom of [...new Set(selected.filter(room => room !== 'Kuchyně' && this.normalizeLegacyProstoryRoom(room) === 'Kuchyně'))]) {
+        const legacyPrefix = suffix ? `${legacyRoom}__${suffix}__` : `${legacyRoom}__`;
+        const rawCount = Number.parseInt(values[`${legacyPrefix}count`] || '', 10);
+        const indexes = Object.keys(values).filter(key => key.startsWith(legacyPrefix))
+          .map(key => Number.parseInt(key.slice(legacyPrefix.length), 10)).filter(Number.isFinite);
+        const instances = Math.max(Number.isFinite(rawCount) && rawCount > 0 ? rawCount : 1, ...indexes.map(index => index + 1));
+        for (let index = 0; index < instances; index++) {
+          for (const field of ['width', 'length', 'floor', 'obytná']) {
+            const source = `${legacyPrefix}${index}__${field}`;
+            const target = `${kitchenPrefix}${count + index}__${field}`;
+            if (source in values && !(target in values)) values[target] = values[source];
+            if (field === 'obytná' && !(target in values)) values[target] = legacyRoom.includes('větší než') ? 'ANO' : 'NE';
+          }
+        }
+        for (const key of Object.keys(values).filter(key => key.startsWith(legacyPrefix))) delete values[key];
+        count += instances;
+        migrated = true;
+      }
+      if (count > 0 && (migrated || countKey in values)) values[countKey] = String(count);
+    }
+  }
+
   private isLengthLimitedPropertyNote(label: string): boolean {
-    return /^poznámka k jednotce(?: |$)/i.test(label) || /^poznámka k samostatně stojícímu vybavení$/i.test(label);
+    return /^poznámka k dispozici(?: |$)/i.test(label) || /^poznámka k samostatně stojícímu vybavení$/i.test(label);
   }
 
   private isFullWidthPropertyPrintLabel(label: string, value = ''): boolean {
@@ -11383,7 +11794,7 @@ export class App {
   }
 
   private brokerInfoRow(field: IntakeControl, values: Record<string, string>, keyOverride?: string, labelOverride?: string): string {
-    const rawLabel = (labelOverride ?? field.label).replace(/^Sklep a další vybavení v jednotce/, this.prostoryUnitAccessoriesLabel());
+    const rawLabel = labelOverride ?? field.label;
     const label = this.escapeHtml(rawLabel);
     const answer = field.kind === 'text'
       ? this.brokerInfoTextValue(field, values, keyOverride)
@@ -11436,7 +11847,7 @@ export class App {
   }
 
   private prostoryPrintLabel(field: string): string {
-    if (field === 'Příslušenství nemovitosti') return 'Samostatně stojící vybavení';
+    if (field === 'Příslušenství nemovitosti') return 'Samostatně stojící';
     if (field === 'Poznámka k příslušenství mimo jednotku') return 'Poznámka k samostatně stojícímu vybavení';
     return field.replace(/^Dispozice jednotky(?= [A-Z]$|$)/, 'Dispozice');
   }
@@ -11494,7 +11905,7 @@ export class App {
     }
     const sharedRows = allRows.filter((row) => unitOf(row.field) === '@shared');
     const accessoryRows = sharedRows.filter((row) => row.field !== 'Poznámka k dispozici');
-    if (accessoryRows.length) sections.push({ label: 'SAMOSTATNĚ STOJÍCÍ VYBAVENÍ', rows: this.orderPropertyPrintRows('prostory', accessoryRows) });
+    if (accessoryRows.length) sections.push({ label: 'SAMOSTATNĚ STOJÍCÍ', rows: this.orderPropertyPrintRows('prostory', accessoryRows) });
     const layoutNote = sharedRows.filter((row) => row.field === 'Poznámka k dispozici');
     if (layoutNote.length) sections.push({ label: 'POZNÁMKA K DISPOZICI', rows: layoutNote });
     return sections;
@@ -11581,7 +11992,7 @@ export class App {
       if (rows.length) sections.push(this.propertyPrintSectionHtml(this.dispoziceUnitPrintTitle(unit), rows.map((row) => row.html).join('')));
     }
     const accessoryRows = sharedRows.filter((row) => row.field !== 'Poznámka k dispozici');
-    sections.push(this.propertyPrintSectionHtml('SAMOSTATNĚ STOJÍCÍ VYBAVENÍ', this.orderPropertyPrintRows('prostory', accessoryRows).map((row) => row.html).join('')));
+    sections.push(this.propertyPrintSectionHtml('SAMOSTATNĚ STOJÍCÍ', this.orderPropertyPrintRows('prostory', accessoryRows).map((row) => row.html).join('')));
     const layoutNote = sharedRows.filter((row) => row.field === 'Poznámka k dispozici');
     if (layoutNote.length) sections.push(this.propertyPrintSectionHtml('POZNÁMKA K DISPOZICI', layoutNote.map((row) => row.html).join('')));
     return sections;
@@ -11746,6 +12157,7 @@ export class App {
       const index = fields.indexOf(anchor);
       fields.splice(index < 0 ? fields.length : index, 0, ...extra);
     };
+    if (tabKey === 'zakladni') before('Nejblížší adresa', ['@driving-route']);
     if (tabKey === 'pozemek') before('Vzhled pozemku', ['@parcels']);
     if (tabKey === 'stavba') {
       const cadastralIndex = fields.indexOf('Zapsaná v katastru');
@@ -11753,9 +12165,9 @@ export class App {
     }
     if (tabKey === 'prostory') {
       before('Příslušenství v jednotce', ['Seznam místností']);
-      before('Poznámka k jednotce', [
+      before('Poznámka k dispozici', [
         'Garážová vrata (A x B)', 'Místnost garáže (C x D)', 'Výška stropu garáže (vpředu x vzadu) (E x F)',
-        'PODLAHOVÁ PLOCHA', 'OBYTNÁ PLOCHA', 'UŽITNÁ PLOCHA', 'CELKOVÁ UŽITNÁ PLOCHA'
+        'PODLAHOVÁ PLOCHA', 'OBYTNÁ PLOCHA', 'UŽITNÁ PLOCHA', 'CELKOVÁ PLOCHA'
       ]);
     }
 
@@ -11792,9 +12204,11 @@ export class App {
       if (this.hasSelectedProstoryListOption('Nepodsklepený', unit)) accessoryDescriptions.unshift('Nepodsklepený');
       const customAccessory = this.prostoryAccessoryCustomValue(unit).trim();
       if (customAccessory) accessoryDescriptions.push(customAccessory);
+      const customRoomAccessory = this.propertyTabFieldValue('prostory', this.prostoryKey('Další prostory vlastní', unit)).trim();
+      if (customRoomAccessory) accessoryDescriptions.push(customRoomAccessory);
       const measuredRooms = this.hasRoomListDimensions(unit);
       add(this.prostoryKey('Seznam místností', unit), this.prostoryUnitLabel('Seznam místností', unit), roomDescriptions.join(measuredRooms ? '\n' : ', '), measuredRooms);
-      add(this.prostoryKey('Příslušenství v jednotce', unit), this.prostoryUnitLabel(this.prostoryUnitAccessoriesLabel(), unit), accessoryDescriptions.join(', '));
+      add(this.prostoryKey('Příslušenství v jednotce', unit), this.prostoryUnitLabel('Další prostory', unit), accessoryDescriptions.join(', '));
       if (this.shouldShowProstoryGarageFields(unit)) {
         for (const [field, label] of [
           ['Garážová vrata (A x B)', 'Vrata (A x B)'], ['Místnost garáže (C x D)', 'Místnost (C x D)'],
@@ -11804,7 +12218,7 @@ export class App {
           add(this.prostoryKey(field, unit), this.prostoryUnitLabel(label, unit), value);
         }
       }
-      for (const [label, kind] of [['PODLAHOVÁ PLOCHA', 'podlahova'], ['OBYTNÁ PLOCHA', 'obytna'], ['UŽITNÁ PLOCHA', 'uzitna'], ['CELKOVÁ UŽITNÁ PLOCHA', 'celkovaUzitna']] as const) {
+      for (const [label, kind] of [['PODLAHOVÁ PLOCHA', 'podlahova'], ['OBYTNÁ PLOCHA', 'obytna'], ['UŽITNÁ PLOCHA', 'uzitna'], ['CELKOVÁ PLOCHA', 'celkovaUzitna']] as const) {
         if (kind === 'obytna' && this.isCurrentPropertyType('Garáž')) continue;
         add(this.prostoryKey(label, unit), this.prostoryUnitLabel(label.charAt(0) + label.slice(1).toLowerCase(), unit), this.prostoryAreaTotal(kind, unit));
       }
